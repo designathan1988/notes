@@ -6,6 +6,8 @@ import type {
 import { api } from '../state/api.js';
 import type { WorkspaceState } from '../state/store.js';
 export interface KnowledgeSlice {
+  knowledgeVersion: number;
+  invalidateKnowledge(): void;
   searchResults: SearchResult[];
   searchLoading: boolean;
   indexing: boolean;
@@ -21,6 +23,17 @@ export function knowledgeSlice(
 ): KnowledgeSlice {
   let searchSequence = 0;
   return {
+    knowledgeVersion: 0,
+    invalidateKnowledge() {
+      searchSequence++;
+      set({
+        knowledgeVersion: get().knowledgeVersion + 1,
+        graphs: {},
+        mentions: {},
+        searchResults: [],
+        searchLoading: false,
+      });
+    },
     searchResults: [],
     searchLoading: false,
     indexing: false,
@@ -28,6 +41,8 @@ export function knowledgeSlice(
     mentions: {},
     async search(query, filters = {}) {
       const workspace = get().workspaceId;
+      const identity = get().user?.id,
+        version = get().knowledgeVersion;
       if (!workspace) return;
       const sequence = ++searchSequence;
       set({ searchLoading: true });
@@ -36,7 +51,12 @@ export function knowledgeSlice(
         const result = await api<{ results: SearchResult[]; indexing: boolean }>(
           `/workspaces/${workspace}/search?${params}`,
         );
-        if (sequence === searchSequence && workspace === get().workspaceId)
+        if (
+          sequence === searchSequence &&
+          workspace === get().workspaceId &&
+          identity === get().user?.id &&
+          version === get().knowledgeVersion
+        )
           set({ searchResults: result.results, indexing: result.indexing });
       } finally {
         if (sequence === searchSequence) set({ searchLoading: false });
@@ -44,17 +64,25 @@ export function knowledgeSlice(
     },
     async loadGraph(center) {
       const workspace = get().workspaceId;
+      const identity = get().user?.id,
+        version = get().knowledgeVersion;
       if (!workspace) return;
       const graph = await api<GraphData>(
         `/workspaces/${workspace}/graph${center ? '?center=' + encodeURIComponent(center) : ''}`,
       );
-      if (workspace === get().workspaceId)
+      if (
+        workspace === get().workspaceId &&
+        identity === get().user?.id &&
+        version === get().knowledgeVersion
+      )
         set({ graphs: { ...get().graphs, [`${workspace}:${center ?? 'all'}`]: graph } });
     },
     async loadMentions(id) {
       const user = get().user?.id;
+      const version = get().knowledgeVersion;
       const mentions = await api<KnowledgeLink[]>(`/pages/${id}/backlinks`);
-      if (user === get().user?.id) set({ mentions: { ...get().mentions, [id]: mentions } });
+      if (user === get().user?.id && version === get().knowledgeVersion)
+        set({ mentions: { ...get().mentions, [id]: mentions } });
     },
   };
 }

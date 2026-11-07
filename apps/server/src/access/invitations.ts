@@ -23,17 +23,21 @@ export class Invitations {
     email: string,
     role: Role,
   ): Promise<{ id: string }> {
-    await new Access(this.db).requireWorkspace(actor, workspace, 'admin');
     if (!['admin', 'editor', 'viewer'].includes(role))
       throw new DomainError('FORBIDDEN', 'Invite members as admin, editor, or viewer.');
     email = email.trim().toLowerCase();
     if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
       throw new DomainError('INVALID', 'Enter a valid email address.');
     const id = randomUUID();
-    await this.db.query(
-      "INSERT INTO invitation (id,organization_id,email,role,status,expires_at,inviter_id) VALUES ($1,$2,$3,$4,'pending',now()+interval '7 days',$5)",
-      [id, workspace, email, role, actor.userId],
-    );
+    await this.db.transaction(async (tx) => {
+      const access = new Access(tx);
+      await access.guardWorkspace(workspace);
+      await access.requireWorkspace(actor, workspace, 'admin');
+      await tx.query(
+        "INSERT INTO invitation (id,organization_id,email,role,status,expires_at,inviter_id) VALUES ($1,$2,$3,$4,'pending',now()+interval '7 days',$5)",
+        [id, workspace, email, role, actor.userId],
+      );
+    });
     const [organization] = await this.db.query<{ name: string }>(
       'SELECT name FROM organization WHERE id=$1',
       [workspace],
@@ -59,6 +63,7 @@ export class Invitations {
     return this.db.transaction(async (tx) => {
       await tx.query('SELECT id FROM invitation WHERE id=$1 FOR UPDATE', [id]);
       const { invite, user } = await new Invitations(tx, this.mail).peek(actor, id);
+      await new Access(tx).guardWorkspace(invite.organization_id);
       if (invite.status !== 'pending' || new Date(invite.expires_at).getTime() <= Date.now())
         throw new DomainError('CONFLICT', 'This invitation has expired or was already used.');
       if (!user.email_verified)

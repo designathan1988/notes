@@ -5,7 +5,35 @@ import { useWorkspace } from '../state/store.js';
 import { snapshotAcknowledgementCovers } from './durability.js';
 import { openRecovery, type Recovery } from './recovery.js';
 import type { Page, SaveStatus } from '../../../../packages/contracts/src/index.js';
+const activeSessions = new Set<DocumentSession>();
+export async function assertIdentityCanSignOut(identity: string) {
+  if ([...activeSessions].some((session) => session.identity === identity && session.dirty))
+    throw new Error(
+      'Some edits are saved only on this device. Reconnect and reopen your edited pages before signing out. Your local drafts have been kept.',
+    );
+  if (!globalThis.indexedDB) return;
+  const recovery = await openRecovery();
+  try {
+    if ((await recovery.pendingIdentity(identity)).length)
+      throw new Error(
+        'Some edits are saved only on this device. Reconnect and reopen your edited pages before signing out. Your local drafts have been kept.',
+      );
+  } finally {
+    recovery.close();
+  }
+}
+export async function closeIdentitySessions(identity: string) {
+  await Promise.all(
+    [...activeSessions]
+      .filter((session) => session.identity === identity)
+      .map((session) => session.destroy()),
+  );
+}
 export class DocumentSession {
+  get identity() {
+    return this.userId;
+  }
+  private readonly recoveryWrites = new Set<Promise<void>>();
   readonly doc = new Y.Doc();
   provider!: HocuspocusProvider;
   recovery: Recovery | null = null;
@@ -20,6 +48,7 @@ export class DocumentSession {
   constructor(readonly page: Page) {
     this.userId = useWorkspace.getState().user!.id;
     this.key = `${this.userId}:${page.workspaceId}:${page.id}:${page.generation}`;
+    activeSessions.add(this);
   }
   private setStatus(status: SaveStatus) {
     if (!this.destroyed && useWorkspace.getState().selectedId === this.page.id)
@@ -36,7 +65,10 @@ export class DocumentSession {
     try {
       this.recovery = await openRecovery();
       const update = await this.recovery.read(this.key);
-      if (update) Y.applyUpdate(this.doc, update, 'recovery');
+      if (update) {
+        Y.applyUpdate(this.doc, update, 'recovery');
+        this.dirty = true;
+      }
     } catch {
       useWorkspace
         .getState()
@@ -62,7 +94,7 @@ export class DocumentSession {
       },
       onSynced: () => {
         if (this.readOnly) this.setStatus('read-only');
-        else this.provider.sendStateless('checkpoint');
+        this.provider.sendStateless('checkpoint');
       },
       onStateless: ({ payload }) => {
         try {
@@ -78,6 +110,17 @@ export class DocumentSession {
             this.lastAcknowledgement = ack.snapshot;
             if (snapshotAcknowledgementCovers(Y.encodeStateAsUpdate(this.doc), ack.snapshot)) {
               this.dirty = false;
+              if (this.recovery) {
+                const clearing = this.recovery.setPending(this.key, false).catch(() => {
+                  useWorkspace
+                    .getState()
+                    .setError(
+                      'Could not update local recovery. Reopen this page before signing out.',
+                    );
+                });
+                this.recoveryWrites.add(clearing);
+                void clearing.finally(() => this.recoveryWrites.delete(clearing));
+              }
               this.setStatus(this.readOnly ? 'read-only' : 'saved');
             }
           }
@@ -136,28 +179,38 @@ export class DocumentSession {
     this.locallySaved = false;
     if (!this.readOnly)
       this.setStatus(this.dirty ? (this.connected ? 'saving' : 'connecting') : 'saved');
-    if (this.recovery)
-      void this.recovery
-        .write(this.key, Y.encodeStateAsUpdate(this.doc))
+    if (this.recovery) {
+      const writing = this.recovery
+        .write(this.key, Y.encodeStateAsUpdate(this.doc), this.dirty)
         .then(() => {
+          if (this.destroyed) return;
           this.locallySaved = true;
           if (!this.connected && this.dirty) this.setStatus('local');
         })
         .catch(() => {
+          if (this.destroyed) return;
           this.locallySaved = false;
           if (!this.connected) this.setStatus('error');
           useWorkspace.getState().setError('Local recovery storage is full or unavailable.');
         });
+      this.recoveryWrites.add(writing);
+      void writing.finally(() => this.recoveryWrites.delete(writing));
+    }
   };
   async destroy() {
+    if (this.destroyed) {
+      await Promise.allSettled(this.recoveryWrites);
+      return;
+    }
     this.destroyed = true;
+    activeSessions.delete(this);
     this.doc.off('update', this.onUpdate);
     window.removeEventListener('beforeunload', this.beforeUnload);
     window.removeEventListener('offline', this.onOffline);
     window.removeEventListener('online', this.onOnline);
     this.provider?.destroy();
+    await Promise.allSettled(this.recoveryWrites);
     if (this.recovery) {
-      if (!useWorkspace.getState().user) await this.recovery.clearIdentity(this.userId);
       this.recovery.close();
     }
     this.doc.destroy();

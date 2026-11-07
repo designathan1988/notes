@@ -15,10 +15,10 @@ Open **http://127.0.0.1:5173**. The API runs at **http://127.0.0.1:3001**. The f
 
 The development sign-in screen provides **Open demo workspace**. Two test identities are seeded for collaboration testing:
 
-| Identity | Email | Development-only password |
-| --- | --- | --- |
-| Jonathan, workspace owner | jonathan@note.test | Note-local-demo-2026 |
-| Amelia, workspace editor | amelia@note.test | Note-local-demo-2026 |
+| Identity                  | Email              | Development-only password |
+| ------------------------- | ------------------ | ------------------------- |
+| Jonathan, workspace owner | jonathan@note.test | Note-local-demo-2026      |
+| Amelia, workspace editor  | amelia@note.test   | Note-local-demo-2026      |
 
 These are disposable local fixture credentials. Production mode does not run the seed routines or render the development demo button.
 
@@ -58,7 +58,7 @@ Ignored `.runtime/` contains:
 - `mail/`: local verification/invitation messages. No external email is sent by the development transport.
 - `auth-secret`: a locally generated persistent session-signing secret.
 
-Browser IndexedDB stores document recovery data partitioned by identity, workspace, page, and generation. Logout clears the active identity's accessible recovery cache. Local recovery is not a backup against device loss or cleared browser storage. Initial account/workspace loading, structural commands, and new uploads need the server; this is not a fully offline workspace.
+Browser IndexedDB stores document recovery data partitioned by identity, workspace, page, and generation. Logout refuses to erase unsynchronized drafts, including documents that are no longer open. Settings → Data → Download local drafts exports structured JSON and exact collaborative recovery data without needing the network. This recovery archive is separate from Workspace ZIP import and does not contain media bytes. After synchronization, logout clears the active identity's recovery cache. Local recovery is not a backup against device loss or cleared browser storage. Initial account/workspace loading, structural commands, and new uploads need the server; this is not a fully offline workspace.
 
 The documents service records recovery checkpoints at most once per ten-minute interval during writes. Workspace ZIP exports are the user-facing full-content backup. For an operator-level local backup, stop the server and copy the entire `.runtime/` directory together; restore the directory before restarting. External PostgreSQL/object storage requires a coordinated database and object-version backup procedure before commercial launch.
 
@@ -80,7 +80,7 @@ npm run test:e2e
 npm run build
 ```
 
-Browser tests cover two-identity editing, reload persistence, rich-paste safety and source preservation, exact uploaded bytes, record editing, body search, graph navigation, ZIP transfer, verified invitation acceptance, live access revocation, and disconnected-edit recovery. Behavior tests use an actual PostgreSQL engine rather than a mocked persistence layer.
+Browser tests cover pointer-only block dragging, page-tree dragging, durable reorder, block transformations, root creation, inline editable databases, table row/column operations, typed records and relation selection, sorting/filtering/saved views/columns, favorites, trash restoration, rapid metadata edits, retry states, mobile keyboard focus, two-identity editing, rich-paste safety and source preservation, exact uploaded bytes, body search, graph navigation, ZIP transfer, verified invitation acceptance, live access revocation, disconnected recovery, and offline recovery export. Behavior tests use an actual PostgreSQL engine rather than a mocked persistence layer.
 
 The current continuous-block interface and visual evidence are documented in `docs/design/verification.md`. Generated concepts in `docs/design/concepts/` are historical; the user rejected the separated-card directions. The current interface follows the user's explicit Notion-style block interaction requirements.
 

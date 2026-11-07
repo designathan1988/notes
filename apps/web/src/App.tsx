@@ -6,6 +6,7 @@ import { WorkspaceSetup, InvitationAccept } from './identity/Onboarding.js';
 export default function App() {
   const loading = useWorkspace((state) => state.loading);
   const user = useWorkspace((state) => state.user);
+  const connectionError = useWorkspace((state) => state.connectionError);
   const workspaceCount = useWorkspace((state) => state.workspaces.length);
   const invitation = new URLSearchParams(location.search).get('invite');
   useEffect(() => {
@@ -45,6 +46,19 @@ export default function App() {
       <main className="loading-screen">
         <span className="brand">Note</span>
         <p>Opening your workspace…</p>
+      </main>
+    );
+  if (!user && connectionError)
+    return (
+      <main className="loading-screen">
+        <span className="brand">Note</span>
+        <p>We couldn’t reach your workspace.</p>
+        <button
+          className="button primary"
+          onClick={() => void useWorkspace.getState().initialize()}
+        >
+          Retry connection
+        </button>
       </main>
     );
   return user ? (

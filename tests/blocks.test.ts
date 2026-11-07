@@ -6,10 +6,19 @@ import {
   changeBlock,
   duplicateBlock,
   moveBlock,
+  moveBlockTo,
   removeBlock,
 } from '../packages/editor/src/blocks.js';
 
 const schema = editorSchema();
+test('drops a whole block at an arbitrary document boundary and rejects an interior drop', () => {
+  const current = state();
+  const last = current.doc.content.size - current.doc.lastChild!.nodeSize;
+  const moved = current.apply(moveBlockTo(current, last, 0)!);
+  expect(moved.doc.firstChild?.textContent).toBe('Last');
+  expect(moved.doc.lastChild?.type.name).toBe('bulletList');
+  expect(moveBlockTo(current, 0, 2)).toBeNull();
+});
 function state() {
   return EditorState.create({
     schema,

@@ -6,6 +6,7 @@ import { useWorkspace } from '../state/store.js';
 export function LinkPicker({ editor, close }: { editor: TiptapEditor; close(): void }) {
   const pages = useWorkspace((state) => state.searchResults);
   const search = useWorkspace((state) => state.search);
+  const version = useWorkspace((state) => state.knowledgeVersion);
   const loading = useWorkspace((state) => state.searchLoading);
   const [query, setQuery] = useState('');
   useEffect(() => {
@@ -13,7 +14,7 @@ export function LinkPicker({ editor, close }: { editor: TiptapEditor; close(): v
       void search(query).catch(useWorkspace.getState().setError);
     }, 120);
     return () => clearTimeout(timer);
-  }, [query, search]);
+  }, [query, search, version]);
   return (
     <Dialog title="Connect an idea" onClose={close}>
       <label>

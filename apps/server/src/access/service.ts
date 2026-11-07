@@ -8,11 +8,24 @@ import {
   type Role,
   type Workspace,
 } from '../../../../packages/contracts/src/index.js';
-import { toPage, type PageRow } from '../pages/model.js';
+import { toPage, toVisiblePage, type VisiblePageRow, type PageRow } from '../pages/model.js';
 import { randomUUID } from 'node:crypto';
 export class Access {
   onChanged: (workspace: string) => void = () => {};
   constructor(readonly db: Database) {}
+  async guardWorkspace(workspace: string) {
+    if (!this.db.transactional) throw new Error('Workspace write guards require a transaction.');
+    await this.db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [workspace]);
+  }
+  async lockPage(actor: Actor, id: string, includeDeleted = false): Promise<Page> {
+    const [location] = await this.db.query<{ workspace_id: string }>(
+      'SELECT workspace_id FROM pages WHERE id=$1',
+      [id],
+    );
+    if (!location) throw new DomainError('FORBIDDEN', 'This page is unavailable.');
+    await this.guardWorkspace(location.workspace_id);
+    return this.requirePage(actor, id, 'write', includeDeleted);
+  }
   async requireWorkspace(actor: Actor, workspace: string, minimum: Role = 'viewer'): Promise<Role> {
     const [member] = await this.db.query<{ role: Role }>(
       'SELECT role FROM member WHERE organization_id=$1 AND user_id=$2',
@@ -40,30 +53,28 @@ export class Access {
     await this.requireWorkspace(actor, row.workspace_id, mode === 'write' ? 'editor' : 'viewer');
     if (
       (!includeDeleted && lineage.some((page) => page.deleted_at)) ||
-      (root.visibility === 'private' && root.created_by !== actor.userId)
+      (root.visibility === 'private' && (root.private_owner_id ?? root.created_by) !== actor.userId)
     )
       throw new DomainError('FORBIDDEN', 'This page is unavailable.');
-    return { ...toPage(row), visibility: root.visibility };
+    return {
+      ...toPage(row),
+      visibility: root.visibility,
+      accessOwnerId: root.private_owner_id ?? root.created_by,
+    };
   }
   async visiblePages(actor: Actor, workspace: string, trash = false): Promise<Page[]> {
     const scope = await this.scope(actor, workspace, trash);
-    const rows = await this.db.query<PageRow>(
+    const rows = await this.db.query<VisiblePageRow>(
       `${scope.sql} SELECT * FROM visible ${trash ? 'WHERE deleted_at IS NOT NULL' : ''} ORDER BY position,title LIMIT 5000`,
       scope.params,
     );
-    return rows.map((row) =>
-      toPage({
-        ...row,
-        visibility: (row as PageRow & { inherited_visibility: Page['visibility'] })
-          .inherited_visibility,
-      }),
-    );
+    return rows.map(toVisiblePage);
   }
   async scope(actor: Actor, workspace: string, trash = false) {
     await this.requireWorkspace(actor, workspace);
     return {
       sql: `WITH RECURSIVE visible AS (
-      SELECT p.*,p.visibility AS inherited_visibility,p.created_by AS visibility_owner FROM pages p WHERE workspace_id=$1 AND parent_id IS NULL AND (visibility='workspace' OR created_by=$2) ${trash ? '' : 'AND deleted_at IS NULL'}
+      SELECT p.*,p.visibility AS inherited_visibility,coalesce(p.private_owner_id,p.created_by) AS visibility_owner FROM pages p WHERE workspace_id=$1 AND parent_id IS NULL AND (visibility='workspace' OR coalesce(private_owner_id,created_by)=$2) ${trash ? '' : 'AND deleted_at IS NULL'}
       UNION ALL SELECT p.*,v.inherited_visibility,v.visibility_owner FROM pages p JOIN visible v ON p.parent_id=v.id ${trash ? '' : 'WHERE p.deleted_at IS NULL'}
     )`,
       params: [workspace, actor.userId],
@@ -92,6 +103,7 @@ export class Access {
     if (role !== null && !(role in roleRank))
       throw new DomainError('INVALID', 'Unknown workspace role.');
     await this.db.transaction(async (tx) => {
+      await new Access(tx).guardWorkspace(workspace);
       await tx.query('SELECT id FROM organization WHERE id=$1 FOR UPDATE', [workspace]);
       const access = new Access(tx);
       const callerRole = await access.requireWorkspace(actor, workspace, 'admin');

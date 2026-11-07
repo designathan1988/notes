@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Dialog } from '../ui/Dialog.js';
 import { useWorkspace } from '../state/store.js';
-import { api, json } from '../state/api.js';
 export function MovePage() {
   const state = useWorkspace();
-  const page = state.pages.find((item) => item.id === state.selectedId)!;
+  const page = state.pages.find((item) => item.id === (state.pendingMove?.id ?? state.selectedId))!;
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const descendants = new Set([page.id]);
@@ -29,16 +28,16 @@ export function MovePage() {
           setBusy(true);
           const data = new FormData(event.currentTarget);
           try {
-            await api(`/pages/${page.id}/move`, {
-              method: 'POST',
-              body: json({
-                parentId: String(data.get('parent')) || null,
-                revision: page.revision,
-                confirmed: data.get('confirmed') === 'on',
-              }),
-            });
-            await state.reload();
-            state.openDialog(null);
+            const parentId = String(data.get('parent')) || null;
+            const moved = await state.movePage(
+              page.id,
+              parentId,
+              parentId === state.pendingMove?.parentId ? state.pendingMove.beforeId : undefined,
+              data.get('confirmed') === 'on',
+            );
+            if (moved) state.openDialog(null);
+            else setError('Confirm the access change to continue.');
+            setBusy(false);
           } catch (error) {
             setError((error as Error).message);
             setBusy(false);
@@ -47,7 +46,10 @@ export function MovePage() {
       >
         <label>
           Destination
-          <select name="parent" defaultValue={page.parentId ?? ''}>
+          <select
+            name="parent"
+            defaultValue={(state.pendingMove ? state.pendingMove.parentId : page.parentId) ?? ''}
+          >
             <option value="">Workspace root</option>
             {state.pages
               .filter((item) => item.kind !== 'database' && !descendants.has(item.id))

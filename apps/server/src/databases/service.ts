@@ -26,33 +26,55 @@ const map = (row: RecordRow): DatabaseRecord => ({
 export class Databases {
   constructor(readonly db: Database) {}
   async fields(actor: Actor, id: string) {
-    await new Access(this.db).requirePage(actor, id, 'read');
-    const [row] = await this.db.query<{ fields: RecordField[] }>(
-      'SELECT fields FROM database_definitions WHERE page_id=$1',
+    return (await this.definition(actor, id)).fields;
+  }
+  async definition(actor: Actor, id: string) {
+    const page = await new Access(this.db).requirePage(actor, id, 'read');
+    const [row] = await this.db.query<{ fields: RecordField[]; revision: number }>(
+      'SELECT fields,revision FROM database_definitions WHERE page_id=$1',
       [id],
     );
     if (!row) throw new DomainError('INVALID', 'This page is not a database.');
-    return row.fields.length ? row.fields : defaultFields;
+    return {
+      title: page.title,
+      pageRevision: page.revision,
+      fields: row.fields.length || row.revision > 1 ? row.fields : defaultFields,
+      fieldsRevision: row.revision,
+    };
   }
-  async setFields(actor: Actor, id: string, fields: RecordField[]): Promise<void> {
+  async setFields(
+    actor: Actor,
+    id: string,
+    fields: RecordField[],
+    expectedRevision?: number,
+  ): Promise<void> {
     await new Access(this.db).requirePage(actor, id, 'write');
     validateFields(fields);
+    const revision = expectedRevision ?? (await this.definition(actor, id)).fieldsRevision;
     await this.db.transaction(async (tx) => {
       await this.lock(actor, id, tx);
+      const [definition] = await tx.query<{ revision: number }>(
+        'SELECT revision FROM database_definitions WHERE page_id=$1',
+        [id],
+      );
+      if (!definition || definition.revision !== revision)
+        throw new DomainError(
+          'CONFLICT',
+          'The properties changed. Review the latest schema and retry.',
+        );
       const rows = await tx.query<{ values: Record<string, unknown> }>(
         'SELECT values FROM records WHERE database_id=$1',
         [id],
       );
       for (const row of rows) validateValues(fields, row.values);
-      await tx.query('UPDATE database_definitions SET fields=$2 WHERE page_id=$1', [
-        id,
-        JSON.stringify(fields),
-      ]);
+      await tx.query(
+        'UPDATE database_definitions SET fields=$2,revision=revision+1 WHERE page_id=$1',
+        [id, JSON.stringify(fields)],
+      );
     });
   }
   private async lock(actor: Actor, id: string, tx: Database) {
-    const page = await new Access(tx).requirePage(actor, id, 'write');
-    await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [page.workspaceId]);
+    const page = await new Access(tx).lockPage(actor, id);
     await tx.query('SELECT page_id FROM database_definitions WHERE page_id=$1 FOR UPDATE', [id]);
     return page;
   }

@@ -7,6 +7,9 @@ import {
 } from '../../../../packages/contracts/src/index.js';
 import { validateFields, validateValues } from '../databases/values.js';
 export const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024;
+export const MAX_MANIFEST_BYTES = 32 * 1024 * 1024;
+export const MAX_ARCHIVED_PAGE_BYTES = 8 * 1024 * 1024;
+const MAX_EXPANDED_BYTES = 128 * 1024 * 1024;
 export interface ArchivePage {
   id: string;
   parentId: string | null;
@@ -33,7 +36,22 @@ export interface Manifest {
   }[];
 }
 export function pack(manifest: Manifest, files: Record<string, Uint8Array>) {
-  return zipSync({ 'manifest.json': strToU8(JSON.stringify(manifest)), ...files }, { level: 6 });
+  const bytes = strToU8(JSON.stringify(manifest));
+  if (bytes.length > MAX_MANIFEST_BYTES)
+    throw new DomainError('LIMIT', 'The backup manifest exceeds the 32 MiB restore budget.');
+  let total = bytes.length;
+  for (const [path, content] of Object.entries(files)) {
+    if (!/^attachments\/[\w-]{1,128}$/.test(path) || content.length > 25 * 1024 * 1024)
+      throw new DomainError('LIMIT', 'A backup attachment exceeds restore limits.');
+    total += content.length;
+  }
+  if (total > MAX_EXPANDED_BYTES || Object.keys(files).length > 9999)
+    throw new DomainError('LIMIT', 'The backup exceeds the expanded restore budget.');
+  validateManifest(manifest, files);
+  const archive = zipSync({ 'manifest.json': bytes, ...files }, { level: 6 });
+  if (archive.length > MAX_ARCHIVE_BYTES)
+    throw new DomainError('LIMIT', 'The compressed backup exceeds 64 MiB.');
+  return archive;
 }
 export function unpack(bytes: Uint8Array): {
   manifest: Manifest;
@@ -49,7 +67,7 @@ export function unpack(bytes: Uint8Array): {
     const unzip = new Unzip((file) => {
       if (failure) return;
       count++;
-      const limit = file.name === 'manifest.json' ? 8 * 1024 * 1024 : 25 * 1024 * 1024;
+      const limit = file.name === 'manifest.json' ? MAX_MANIFEST_BYTES : 25 * 1024 * 1024;
       if (
         count > 10000 ||
         !/^(manifest\.json|attachments\/[\w-]{1,128})$/.test(file.name) ||
@@ -72,7 +90,7 @@ export function unpack(bytes: Uint8Array): {
         if (failure) return;
         size += data.length;
         total += data.length;
-        if (size > limit || total > 128 * 1024 * 1024) {
+        if (size > limit || total > MAX_EXPANDED_BYTES) {
           failure = new DomainError('LIMIT', 'Expanded archive exceeds the import limit.');
           file.terminate();
           return;
@@ -156,7 +174,7 @@ function validateManifest(manifest: Manifest, files: Record<string, Uint8Array>)
       typeof page.description !== 'string' ||
       page.description.length > 2000 ||
       !page.content ||
-      JSON.stringify(page.content).length > 3 * 1024 * 1024
+      strToU8(JSON.stringify(page.content)).length > MAX_ARCHIVED_PAGE_BYTES
     )
       throw new DomainError('INVALID', 'An archived page is invalid or too large.');
     ids.add(page.id);

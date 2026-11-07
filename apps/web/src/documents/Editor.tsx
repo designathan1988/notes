@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   EditorContent,
   useEditor,
+  useEditorState,
   NodeViewWrapper,
   ReactNodeViewRenderer,
   type NodeViewProps,
@@ -32,21 +33,44 @@ import { DatabaseView } from '../databases/DatabaseView.js';
 import { LinkPicker } from './LinkPicker.js';
 import { BlockSurface } from './BlockSurface.js';
 import { BlockControls } from './BlockControls.js';
+import { TableTools } from './TableTools.js';
+import { DatabasePicker } from './DatabasePicker.js';
 
 export function DocumentEditor({ page }: { page: Page }) {
   const [session, setSession] = useState<DocumentSession | null>(null);
+  const [failure, setFailure] = useState('');
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
+    let active = true;
+    setFailure('');
+    setSession(null);
     const next = new DocumentSession(page);
     void next
       .start()
       .then(() => {
-        if (!next.destroyed) setSession(next);
+        if (active && !next.destroyed) setSession(next);
       })
-      .catch(useWorkspace.getState().setError);
+      .catch((error) => {
+        if (active) setFailure(error.message);
+        void next.destroy();
+      });
     return () => {
+      active = false;
       void next.destroy();
     };
-  }, [page.id, page.generation]);
+  }, [page.id, page.generation, attempt]);
+  useEffect(() => {
+    if (session && !session.destroyed) session.provider.sendStateless('checkpoint');
+  }, [page.updatedAt, session]);
+  if (failure)
+    return (
+      <div className="editor-error" role="alert">
+        <p>{failure}</p>
+        <button className="button" onClick={() => setAttempt((value) => value + 1)}>
+          Retry document
+        </button>
+      </div>
+    );
   return session ? (
     <ConnectedEditor session={session} />
   ) : (
@@ -58,6 +82,7 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
   const [blockActions, setBlockActions] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [embedOpen, setEmbedOpen] = useState(false);
+  const [databaseOpen, setDatabaseOpen] = useState(false);
   const [pasteMode, setPasteMode] = useState('auto');
   const [uploading, setUploading] = useState(0);
   const [failed, setFailed] = useState<{ file: File; id?: string }[]>([]);
@@ -178,6 +203,18 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
   const role = useWorkspace(
     (state) => state.workspaces.find((item) => item.id === state.workspaceId)?.role,
   );
+  const formatting = useEditorState({
+    editor,
+    selector: ({ editor }) =>
+      editor
+        ? {
+            bold: editor.isActive('bold'),
+            italic: editor.isActive('italic'),
+            undo: editor.can().undo(),
+            redo: editor.can().redo(),
+          }
+        : null,
+  });
   useEffect(() => {
     if (editor) {
       session.readOnly = role === 'viewer';
@@ -201,6 +238,7 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
           attachment={() => fileInput.current?.click()}
           embed={() => setEmbedOpen(true)}
           link={() => setLinkOpen(true)}
+          database={() => setDatabaseOpen(true)}
         />
       )}
       {uploading > 0 && (
@@ -245,14 +283,14 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
           <span className="tool-divider" />
           <IconButton
             label="Bold"
-            aria-pressed={editor.isActive('bold')}
+            aria-pressed={formatting?.bold}
             onClick={() => editor.chain().focus().toggleBold().run()}
           >
             <Bold />
           </IconButton>
           <IconButton
             label="Italic"
-            aria-pressed={editor.isActive('italic')}
+            aria-pressed={formatting?.italic}
             onClick={() => editor.chain().focus().toggleItalic().run()}
           >
             <Italic />
@@ -263,13 +301,22 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
           <IconButton label="Add attachment" onClick={() => fileInput.current?.click()}>
             <Paperclip />
           </IconButton>
+          <TableTools editor={editor} />
+          <IconButton
+            label="Undo"
+            disabled={!formatting?.undo}
+            onClick={() => editor.chain().focus().undo().run()}
+          >
+            <Undo2 />
+          </IconButton>
+          <IconButton
+            label="Redo"
+            disabled={!formatting?.redo}
+            onClick={() => editor.chain().focus().redo().run()}
+          >
+            <Redo2 />
+          </IconButton>
           <span className="desktop-tool">
-            <IconButton label="Undo" onClick={() => editor.commands.undo()}>
-              <Undo2 />
-            </IconButton>
-            <IconButton label="Redo" onClick={() => editor.commands.redo()}>
-              <Redo2 />
-            </IconButton>
             <select
               aria-label="Paste mode"
               value={pasteMode}
@@ -284,6 +331,13 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
         </div>
       )}
       {linkOpen && <LinkPicker editor={editor} close={() => setLinkOpen(false)} />}
+      {databaseOpen && (
+        <DatabasePicker
+          editor={editor}
+          pageId={session.page.id}
+          close={() => setDatabaseOpen(false)}
+        />
+      )}
       {embedOpen && (
         <Dialog title="Embed a video" onClose={() => setEmbedOpen(false)}>
           <form

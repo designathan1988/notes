@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   root: 'apps/web',
   plugins: [react()],
+  optimizeDeps: { include: ['fflate', 'y-prosemirror'] },
   server: {
     port: 5173,
     strictPort: true,

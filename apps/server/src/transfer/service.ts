@@ -122,10 +122,7 @@ export class Transfer {
       manifest.attachments.push({ ...row, path });
     }
     for (const page of pages) await access.requirePage(actor, page.id, 'read');
-    const archive = pack(manifest, files);
-    if (archive.length > 64 * 1024 * 1024)
-      throw new DomainError('LIMIT', 'The compressed export exceeds 64 MiB.');
-    return archive;
+    return pack(manifest, files);
   }
   async beginImport(actor: Actor, workspace: string, archive: Uint8Array): Promise<ImportReport> {
     await new Access(this.db).requireWorkspace(actor, workspace, 'editor');
@@ -148,6 +145,9 @@ export class Transfer {
     };
     try {
       const job = await this.db.transaction(async (tx) => {
+        const access = new Access(tx);
+        await access.guardWorkspace(workspace);
+        await access.requireWorkspace(actor, workspace, 'editor');
         await tx.query('SELECT id FROM organization WHERE id=$1 FOR UPDATE', [workspace]);
         const [active] = await tx.query<{ count: string }>(
           'SELECT count(*)::text AS count FROM transfer_jobs WHERE workspace_id=$1 AND stage<>$2',
@@ -237,6 +237,9 @@ export class Transfer {
       nextOffset = 0;
     }
     const storeProgress = async (tx: Database) => {
+      const access = new Access(tx);
+      await access.guardWorkspace(job.workspace_id);
+      await access.requireWorkspace(actor, job.workspace_id, 'editor');
       const [updated] = await tx.query<Job>(
         'UPDATE transfer_jobs SET stage=$2,offset_value=$3,warnings=$4 WHERE id=$1 AND stage=$5 AND offset_value=$6 RETURNING *',
         [id, nextStage, nextOffset, JSON.stringify(warnings), job.stage, start],
@@ -264,6 +267,9 @@ export class Transfer {
       updated = await this.db.transaction(storeProgress);
     } else
       updated = await this.db.transaction(async (tx) => {
+        const access = new Access(tx);
+        await access.guardWorkspace(job.workspace_id);
+        await access.requireWorkspace(actor, job.workspace_id, 'editor');
         const [locked] = await tx.query<Job>('SELECT * FROM transfer_jobs WHERE id=$1 FOR UPDATE', [
           id,
         ]);
@@ -341,12 +347,7 @@ export class Transfer {
               warnings.push(`Original JSON preserved for ${page.title}`);
             }
             try {
-              await new Documents(tx).save(
-                actor,
-                job.mapping.pages[page.id],
-                Y.encodeStateAsUpdate(doc),
-                1,
-              );
+              await new Documents(tx).importContent(actor, job.mapping.pages[page.id], doc, 1);
             } finally {
               doc.destroy();
             }

@@ -35,6 +35,21 @@ export function moveBlock(
   const tr = state.tr.delete(block.from, block.to).insert(target, block.node);
   return tr.setSelection(NodeSelection.create(tr.doc, target)).scrollIntoView();
 }
+export function moveBlockTo(
+  state: EditorState,
+  position: number,
+  destination: number,
+): Transaction | null {
+  const block = blockAt(state.doc, position);
+  if (!block) return null;
+  const boundaries = new Set<number>([state.doc.content.size]);
+  state.doc.forEach((_node, from) => boundaries.add(from));
+  if (!boundaries.has(destination) || (destination >= block.from && destination <= block.to))
+    return null;
+  const target = destination > block.from ? destination - block.node.nodeSize : destination;
+  const tr = state.tr.delete(block.from, block.to).insert(target, block.node);
+  return tr.setSelection(NodeSelection.create(tr.doc, target)).scrollIntoView();
+}
 export function duplicateBlock(state: EditorState, position: number): Transaction | null {
   const block = blockAt(state.doc, position);
   if (!block) return null;

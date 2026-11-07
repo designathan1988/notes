@@ -7,7 +7,7 @@ import {
   type NavigationSnapshot,
 } from '../../../../packages/contracts/src/index.js';
 import { Access } from '../access/service.js';
-import { toPage, type PageRow } from './model.js';
+import { toPage, toVisiblePage, type VisiblePageRow, type PageRow } from './model.js';
 export interface Children {
   pages: Page[];
   nextCursor: PageCursor | null;
@@ -23,14 +23,18 @@ export class Navigation {
     const rows = await this.db.query<PageRow>(
       `SELECT p.*,EXISTS(SELECT 1 FROM pages child WHERE child.parent_id=p.id AND child.deleted_at IS NULL AND child.kind<>'record') AS has_children FROM pages p
       WHERE p.workspace_id=$1 AND p.parent_id IS NOT DISTINCT FROM $2::text AND p.deleted_at IS NULL AND p.kind<>'record'
-      AND ($2::text IS NOT NULL OR p.visibility='workspace' OR p.created_by=$3) AND ($4::integer IS NULL OR (p.position,p.id)>($4::integer,$5::text)) ORDER BY p.position,p.id LIMIT 101`,
+      AND ($2::text IS NOT NULL OR p.visibility='workspace' OR coalesce(p.private_owner_id,p.created_by)=$3) AND ($4::integer IS NULL OR (p.position,p.id)>($4::integer,$5::text)) ORDER BY p.position,p.id LIMIT 101`,
       [workspace, parent?.id ?? null, actor.userId, cursor?.position ?? null, cursor?.id ?? null],
     );
     const batch = rows.slice(0, 100);
     const last = batch.at(-1);
     return {
       pages: batch.map((row) =>
-        toPage({ ...row, visibility: parent?.visibility ?? row.visibility }),
+        toPage({
+          ...row,
+          visibility: parent?.visibility ?? row.visibility,
+          private_owner_id: parent?.accessOwnerId ?? row.private_owner_id,
+        }),
       ),
       nextCursor: rows.length > 100 && last ? { position: last.position, id: last.id } : null,
     };
@@ -76,14 +80,24 @@ export class Navigation {
     }
     if (!current) current = roots.pages[0] ?? null;
     const expanded: string[] = [];
+    const scope = await access.scope(actor, workspace);
+    const favorites = await this.db.query<VisiblePageRow>(
+      `${scope.sql} SELECT p.*,EXISTS(SELECT 1 FROM pages child WHERE child.parent_id=p.id AND child.deleted_at IS NULL AND child.kind<>'record') AS has_children FROM visible p JOIN favorites f ON f.page_id=p.id AND f.user_id=$2`,
+      scope.params,
+    );
+    for (const row of favorites) pages.set(row.id, toVisiblePage(row));
     if (current) {
       const lineage = await this.db.query<PageRow & { depth: number }>(
         `WITH RECURSIVE lineage AS (SELECT p.*,0 AS depth FROM pages p WHERE id=$1 UNION ALL SELECT p.*,l.depth+1 FROM pages p JOIN lineage l ON p.id=l.parent_id) SELECT * FROM lineage ORDER BY depth DESC`,
         [current.id],
       );
       for (const row of lineage) {
-        const page = toPage({ ...row, visibility: current.visibility });
-        pages.set(page.id, page);
+        const page = toPage({
+          ...row,
+          visibility: current.visibility,
+          private_owner_id: current.accessOwnerId,
+        });
+        pages.set(page.id, { ...pages.get(page.id), ...page });
         if (page.id !== current.id) {
           expanded.push(page.id);
           const children = await this.siblings(actor, workspace, page, null);
@@ -110,13 +124,11 @@ export class Navigation {
   ): Promise<NavigationSnapshot> {
     const snapshot = await this.bootstrap(actor, workspace, selected);
     const scope = await new Access(this.db).scope(actor, workspace);
-    const rows = await this.db.query<PageRow & { inherited_visibility: Page['visibility'] }>(
+    const rows = await this.db.query<VisiblePageRow>(
       `${scope.sql} SELECT p.*,EXISTS(SELECT 1 FROM pages child WHERE child.parent_id=p.id AND child.deleted_at IS NULL AND child.kind<>'record') AS has_children FROM visible p WHERE p.id=ANY($3::text[])`,
       [...scope.params, loadedIds.slice(0, 5000)],
     );
-    const pages = new Map(
-      rows.map((row) => [row.id, toPage({ ...row, visibility: row.inherited_visibility })]),
-    );
+    const pages = new Map(rows.map((row) => [row.id, toVisiblePage(row)]));
     for (const page of snapshot.pages) pages.set(page.id, { ...pages.get(page.id), ...page });
     for (const id of expandedIds) {
       const page = pages.get(id);
@@ -128,12 +140,12 @@ export class Navigation {
     }
     return { ...snapshot, pages: [...pages.values()] };
   }
-  async flat(actor: Actor, workspace: string, offset = 0) {
+  async flat(actor: Actor, workspace: string, offset = 0, kind = '', query = '') {
     const scope = await new Access(this.db).scope(actor, workspace);
-    const rows = await this.db.query<PageRow>(
-      `${scope.sql} SELECT * FROM visible ORDER BY updated_at DESC,id LIMIT 51 OFFSET $3`,
-      [...scope.params, Math.max(0, Math.min(100000, offset))],
+    const rows = await this.db.query<VisiblePageRow>(
+      `${scope.sql} SELECT * FROM visible WHERE ($4='' OR kind=$4) AND title ILIKE $5 ORDER BY updated_at DESC,id LIMIT 51 OFFSET $3`,
+      [...scope.params, Math.max(0, Math.min(100000, offset)), kind, `%${query.slice(0, 256)}%`],
     );
-    return { pages: rows.slice(0, 50).map(toPage), more: rows.length > 50 };
+    return { pages: rows.slice(0, 50).map(toVisiblePage), more: rows.length > 50 };
   }
 }

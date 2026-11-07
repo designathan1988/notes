@@ -35,8 +35,8 @@ export class Pages {
       throw new DomainError('INVALID', 'Unknown visibility.');
     return this.db.transaction(async (tx) => {
       const access = new Access(tx);
+      await access.guardWorkspace(workspace);
       await access.requireWorkspace(actor, workspace, 'editor');
-      await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [workspace]);
       const parent = input.parentId
         ? await access.requirePage(actor, input.parentId, 'write')
         : null;
@@ -48,8 +48,8 @@ export class Pages {
         throw new DomainError('CONFLICT', 'Records must belong to a database.');
       const id = internalId ?? randomUUID();
       const [row] = await tx.query<PageRow>(
-        `INSERT INTO pages (id,workspace_id,parent_id,title,description,created_by,visibility,kind,position)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,(SELECT coalesce(max(position),0)+1 FROM pages WHERE workspace_id=$2)) RETURNING *`,
+        `INSERT INTO pages (id,workspace_id,parent_id,title,description,created_by,visibility,kind,private_owner_id,position)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,(SELECT coalesce(max(position),0)+1 FROM pages WHERE workspace_id=$2)) RETURNING *`,
         [
           id,
           workspace,
@@ -59,6 +59,7 @@ export class Pages {
           actor.userId,
           parent?.visibility ?? input.visibility ?? 'workspace',
           input.kind ?? 'document',
+          parent?.accessOwnerId ?? actor.userId,
         ],
       );
       if (input.kind === 'database')
@@ -78,9 +79,9 @@ export class Pages {
     id: string,
     input: { title?: string; description?: string; revision: number },
   ): Promise<Page> {
-    const page = await this.access.requirePage(actor, id, 'write');
-    const title = input.title === undefined ? page.title : validateTitle(input.title);
     const row = await this.db.transaction(async (tx) => {
+      const page = await new Access(tx).lockPage(actor, id);
+      const title = input.title === undefined ? page.title : validateTitle(input.title);
       const [updated] = await tx.query<PageRow>(
         'UPDATE pages SET title=$2,description=$3,revision=revision+1,index_revision=index_revision+1,updated_at=now() WHERE id=$1 AND revision=$4 RETURNING *',
         [id, title, String(input.description ?? page.description).slice(0, 2000), input.revision],
@@ -91,9 +92,8 @@ export class Pages {
         'INSERT INTO outbox (page_id,version) SELECT id,index_revision FROM pages WHERE id=$1',
         [id],
       );
-      return updated;
+      return { ...updated, private_owner_id: page.accessOwnerId, visibility: page.visibility };
     });
-    this.onChanged(page.workspaceId);
     return toPage(row);
   }
   async move(
@@ -102,11 +102,11 @@ export class Pages {
     parentId: string | null,
     revision: number,
     confirmed: boolean,
+    beforeId?: string | null,
   ): Promise<Page> {
     const result = await this.db.transaction(async (tx) => {
       const access = new Access(tx);
-      const page = await access.requirePage(actor, id, 'write');
-      await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [page.workspaceId]);
+      const page = await access.lockPage(actor, id);
       if (page.kind === 'record')
         throw new DomainError('CONFLICT', 'Records remain inside their owning database.');
       const parent = parentId ? await access.requirePage(actor, parentId, 'write') : null;
@@ -118,34 +118,57 @@ export class Pages {
       );
       if (parentId && descendants.some((child) => child.id === parentId))
         throw new DomainError('CONFLICT', 'A page cannot be moved into its own subtree.');
+      const siblings = await tx.query<{ id: string }>(
+        'SELECT id FROM pages WHERE workspace_id=$1 AND parent_id IS NOT DISTINCT FROM $2 AND deleted_at IS NULL AND id<>$3 ORDER BY position,id',
+        [page.workspaceId, parentId, id],
+      );
+      const insertion = beforeId
+        ? siblings.findIndex((sibling) => sibling.id === beforeId)
+        : siblings.length;
+      if (insertion < 0)
+        throw new DomainError(
+          'CONFLICT',
+          'The destination changed. Choose a sibling in the same location.',
+        );
       const visibility = parent?.visibility ?? page.visibility;
-      if (visibility !== page.visibility && !confirmed)
+      const privateOwner = parent?.accessOwnerId ?? page.accessOwnerId;
+      if (
+        (visibility !== page.visibility ||
+          (visibility === 'private' && privateOwner !== page.accessOwnerId)) &&
+        !confirmed
+      )
         throw new DomainError(
           'CONFLICT',
           'This move changes access. Confirm the visibility change.',
         );
       const [row] = await tx.query<PageRow>(
-        'UPDATE pages SET parent_id=$2,visibility=$3,revision=revision+1,updated_at=now() WHERE id=$1 AND revision=$4 RETURNING *',
-        [id, parentId, visibility, revision],
+        'UPDATE pages SET parent_id=$2,visibility=$3,private_owner_id=$5,revision=revision+1,updated_at=now() WHERE id=$1 AND revision=$4 RETURNING *',
+        [id, parentId, visibility, revision, privateOwner],
       );
       if (!row) throw new DomainError('CONFLICT', 'The page changed. Reload before moving it.');
+      siblings.splice(insertion, 0, { id });
+      await tx.query(
+        'UPDATE pages p SET position=s.ordinal FROM unnest($1::text[]) WITH ORDINALITY AS s(id,ordinal) WHERE p.id=s.id',
+        [siblings.map((sibling) => sibling.id)],
+      );
+      row.position = insertion + 1;
       return toPage(row);
     });
     this.onChanged(result.workspaceId);
     return result;
   }
   private async setTrash(actor: Actor, id: string, trash: boolean) {
-    const page = await this.access.requirePage(actor, id, 'write', !trash);
-    await this.db.transaction(async (tx) => {
-      await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [page.workspaceId]);
+    const workspace = await this.db.transaction(async (tx) => {
+      const page = await new Access(tx).lockPage(actor, id, !trash);
       if (!trash && page.parentId) await new Access(tx).requirePage(actor, page.parentId, 'write');
       await tx.query(
         `WITH RECURSIVE branch AS (SELECT id FROM pages WHERE id=$1 UNION ALL SELECT p.id FROM pages p JOIN branch b ON p.parent_id=b.id)
         UPDATE pages SET deleted_at=${trash ? 'now()' : 'NULL'},revision=revision+1,updated_at=now() WHERE id IN (SELECT id FROM branch)`,
         [id],
       );
+      return page.workspaceId;
     });
-    this.onChanged(page.workspaceId);
+    this.onChanged(workspace);
   }
   trash(actor: Actor, id: string) {
     return this.setTrash(actor, id, true);

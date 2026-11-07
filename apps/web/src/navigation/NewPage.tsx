@@ -31,21 +31,14 @@ export function NewPage() {
         </label>
         <label>
           Page type
-          <select name="kind">
+          <select name="kind" defaultValue={state.newPageKind}>
             <option value="document">Document</option>
             <option value="database">Database</option>
           </select>
         </label>
         <label>
           Location
-          <select
-            name="parent"
-            defaultValue={
-              state.pages.find((p) => p.id === state.selectedId)?.kind === 'document'
-                ? (state.selectedId ?? '')
-                : ''
-            }
-          >
+          <select name="parent" defaultValue={state.newPageParentId ?? ''}>
             <option value="">Workspace root</option>
             {state.pages
               .filter((p) => p.kind !== 'database')

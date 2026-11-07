@@ -7,18 +7,24 @@ export function Search() {
   const loading = useWorkspace((state) => state.searchLoading);
   const indexing = useWorkspace((state) => state.indexing);
   const search = useWorkspace((state) => state.search);
+  const version = useWorkspace((state) => state.knowledgeVersion);
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('');
   const [after, setAfter] = useState('');
   const [active, setActive] = useState(0);
   const resultsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    resultsRef.current
+      ?.querySelectorAll('[role=option]')
+      [active]?.scrollIntoView({ block: 'nearest' });
+  }, [active]);
+  useEffect(() => {
     const timer = setTimeout(() => {
       void search(query, { kind, after }).catch(useWorkspace.getState().setError);
       setActive(0);
     }, 120);
     return () => clearTimeout(timer);
-  }, [query, kind, after, search]);
+  }, [query, kind, after, search, version]);
   const open = (index: number) => {
     const result = results[index];
     if (result)
@@ -43,7 +49,7 @@ export function Search() {
           onKeyDown={(event) => {
             if (event.key === 'ArrowDown') {
               event.preventDefault();
-              setActive((value) => Math.min(results.length - 1, value + 1));
+              setActive((value) => Math.max(0, Math.min(results.length - 1, value + 1)));
             }
             if (event.key === 'ArrowUp') {
               event.preventDefault();

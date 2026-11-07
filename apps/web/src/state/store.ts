@@ -9,7 +9,9 @@ import type {
 import { databaseSlice, type DatabaseSlice } from '../databases/state.js';
 import { knowledgeSlice, type KnowledgeSlice } from '../knowledge/state.js';
 import { navigationSlice, type NavigationSlice } from '../navigation/state.js';
+import { openRecovery } from '../documents/recovery.js';
 type User = { id: string; name: string; email: string };
+const pageWrites = new Map<string, Promise<void>>();
 export type View = 'document' | 'database' | 'graph' | 'all';
 export type Dialog = 'search' | 'new-page' | 'page-menu' | 'settings' | 'invite' | 'move' | null;
 export interface WorkspaceState extends DatabaseSlice, KnowledgeSlice, NavigationSlice {
@@ -21,7 +23,11 @@ export interface WorkspaceState extends DatabaseSlice, KnowledgeSlice, Navigatio
   view: View;
   loading: boolean;
   error: string | null;
+  connectionError: boolean;
   dialog: Dialog;
+  newPageParentId: string | null;
+  newPageKind: 'document' | 'database';
+  openCreatePage(parentId?: string | null, kind?: 'document' | 'database'): void;
   sidebarOpen: boolean;
   contextOpen: boolean;
   saveStatus: SaveStatus;
@@ -36,12 +42,15 @@ export interface WorkspaceState extends DatabaseSlice, KnowledgeSlice, Navigatio
   navigate(id: string | null, view?: View, mode?: 'push' | 'replace' | 'none'): void;
   openDialog(dialog: Dialog): void;
   setError(error: unknown): void;
-  createPage(input: {
-    title: string;
-    parentId?: string;
-    kind?: 'document' | 'database';
-    visibility?: 'workspace' | 'private';
-  }): Promise<void>;
+  createPage(
+    input: {
+      title: string;
+      parentId?: string;
+      kind?: 'document' | 'database';
+      visibility?: 'workspace' | 'private';
+    },
+    options?: { navigate?: boolean },
+  ): Promise<Page>;
   updatePage(id: string, patch: { title?: string; description?: string }): Promise<void>;
   trashPage(id: string): Promise<void>;
   toggleExpanded(id: string): void;
@@ -60,7 +69,13 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   view: 'document',
   loading: true,
   error: null,
+  connectionError: false,
   dialog: null,
+  newPageParentId: null,
+  newPageKind: 'document',
+  openCreatePage(parentId = null, kind = 'document') {
+    set({ newPageParentId: parentId, newPageKind: kind, dialog: 'new-page' });
+  },
   sidebarOpen: false,
   contextOpen: false,
   saveStatus: 'connecting',
@@ -70,12 +85,27 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   outline: [],
   linkedPageIds: [],
   async initialize() {
+    set({ loading: true, error: null, connectionError: false });
     try {
-      const session = await api<{ user: User; workspaces: Workspace[] }>('/session');
+      let session: { user: User; workspaces: Workspace[] } | undefined;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          session = await api<{ user: User; workspaces: Workspace[] }>('/session');
+          break;
+        } catch (error) {
+          if (attempt === 2 || !(error instanceof ApiError && error.readFailure)) throw error;
+          await new Promise((resolve) => setTimeout(resolve, 700));
+        }
+      }
+      if (!session) return;
       set({ user: session.user, workspaces: session.workspaces });
       if (session.workspaces.length) await get().chooseWorkspace(session.workspaces[0].id);
     } catch (error) {
-      if (!(error instanceof ApiError && error.status === 401)) get().setError(error);
+      if (error instanceof ApiError && error.status === 401) set({ user: null });
+      else {
+        get().setError(error);
+        set({ connectionError: true });
+      }
     } finally {
       set({ loading: false });
     }
@@ -87,9 +117,12 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       selectedId: null,
       loading: true,
       tables: {},
+      tableQueries: {},
+      recordEntities: {},
       graphs: {},
       mentions: {},
       searchResults: [],
+      knowledgeVersion: get().knowledgeVersion + 1,
     });
     try {
       const fromHash = location.hash.slice(1).split('/');
@@ -103,6 +136,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
         navigationCursors: snapshot.cursors,
         childrenLoaded: snapshot.loaded,
         favorites,
+        ...(get().connectionError ? { error: null, connectionError: false } : {}),
       });
       get().navigate(
         snapshot.selectedId,
@@ -149,15 +183,36 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
           navigationCursors: cursors,
           childrenLoaded: [...new Set([...get().childrenLoaded, ...snapshot.loaded])],
           workspaces: session.workspaces,
+          ...(get().connectionError ? { error: null, connectionError: false } : {}),
         });
+        get().invalidateKnowledge();
+        const selectedPage = snapshot.pages.find((page) => page.id === snapshot.selectedId);
+        if (get().view === 'document' && selectedPage?.kind === 'database')
+          get().navigate(selectedPage.id, 'database', 'replace');
       }
     } catch (error) {
-      if (error instanceof ApiError && [401, 403].includes(error.status))
-        set({ pages: [], selectedId: null });
+      if (error instanceof ApiError && [401, 403].includes(error.status)) {
+        set({
+          pages: [],
+          selectedId: null,
+          tables: {},
+          tableQueries: {},
+          recordEntities: {},
+          outline: [],
+          linkedPageIds: [],
+        });
+        get().invalidateKnowledge();
+      }
       get().setError(error);
     }
   },
-  navigate(id, view = 'document', mode = 'push') {
+  navigate(id, view, mode = 'push') {
+    const kind = get().pages.find((page) => page.id === id)?.kind;
+    view ??= kind === 'database' ? 'database' : 'document';
+    if (view === 'document' && kind === 'database') {
+      view = 'database';
+      if (mode === 'none') mode = 'replace';
+    }
     set({ selectedId: id, view, sidebarOpen: false, dialog: null });
     if (mode !== 'none')
       history[mode === 'replace' ? 'replaceState' : 'pushState'](null, '', `#${id ?? ''}/${view}`);
@@ -166,27 +221,54 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     }
   },
   openDialog(dialog) {
-    set({ dialog });
+    set({ dialog, pendingMove: null });
   },
   setError(error) {
-    set({ error: error instanceof Error ? error.message : String(error) });
+    set({
+      error: error instanceof Error ? error.message : String(error),
+      connectionError: error instanceof ApiError && error.readFailure,
+    });
   },
-  async createPage(input) {
+  async createPage(input, options = {}) {
     const id = get().workspaceId;
-    if (!id) return;
+    if (!id) throw new Error('Choose a workspace first.');
     const page = await api<Page>(`/workspaces/${id}/pages`, { method: 'POST', body: json(input) });
     await get().reload();
-    set({ expanded: [...new Set([...get().expanded, ...(page.parentId ? [page.parentId] : [])])] });
-    get().navigate(page.id, page.kind === 'database' ? 'database' : 'document');
+    set({
+      pages: [
+        ...get()
+          .pages.filter((item) => item.id !== page.id)
+          .map((item) => (item.id === page.parentId ? { ...item, hasChildren: true } : item)),
+        page,
+      ],
+      expanded: [...new Set([...get().expanded, ...(page.parentId ? [page.parentId] : [])])],
+    });
+    if (options.navigate !== false)
+      get().navigate(page.id, page.kind === 'database' ? 'database' : 'document');
+    return page;
   },
   async updatePage(id, patch) {
-    const current = get().pages.find((page) => page.id === id);
-    if (!current) return;
-    const page = await api<Page>(`/pages/${id}`, {
-      method: 'PATCH',
-      body: json({ ...patch, revision: current.revision }),
-    });
-    set({ pages: get().pages.map((item) => (item.id === id ? page : item)) });
+    const user = get().user?.id,
+      workspace = get().workspaceId;
+    const operation = (pageWrites.get(id) ?? Promise.resolve())
+      .catch(() => {})
+      .then(async () => {
+        if (user !== get().user?.id || workspace !== get().workspaceId) return;
+        const current = get().pages.find((page) => page.id === id);
+        if (!current) throw new Error('Reload this page before editing its details.');
+        const page = await api<Page>(`/pages/${id}`, {
+          method: 'PATCH',
+          body: json({ ...patch, revision: current.revision }),
+        });
+        if (user === get().user?.id && workspace === get().workspaceId)
+          set({ pages: get().pages.map((item) => (item.id === id ? { ...item, ...page } : item)) });
+      });
+    pageWrites.set(id, operation);
+    try {
+      await operation;
+    } finally {
+      if (pageWrites.get(id) === operation) pageWrites.delete(id);
+    }
   },
   async trashPage(id) {
     await api(`/pages/${id}`, { method: 'DELETE' });
@@ -214,8 +296,21 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       .catch(get().setError);
   },
   async signOut() {
+    const identity = get().user?.id;
+    if (identity)
+      await (await import('../documents/session.js')).assertIdentityCanSignOut(identity);
     await api('/auth/sign-out', { method: 'POST', body: '{}' });
-    // Recovery sessions clear their IndexedDB cache when the identity disappears.
+    if (identity) {
+      await (await import('../documents/session.js')).closeIdentitySessions(identity);
+      if (globalThis.indexedDB) {
+        const recovery = await openRecovery();
+        try {
+          await recovery.clearIdentity(identity);
+        } finally {
+          recovery.close();
+        }
+      }
+    }
     set({
       user: null,
       pages: [],
@@ -226,6 +321,8 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       favorites: [],
       expanded: [],
       tables: {},
+      tableQueries: {},
+      recordEntities: {},
       graphs: {},
       mentions: {},
       searchResults: [],

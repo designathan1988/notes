@@ -25,7 +25,7 @@ try {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text());
+    if (['error', 'warning'].includes(message.type())) errors.push(message.text());
   });
   await page.goto(`/#${primary.id}/document`);
   await page.locator('.save-status.saved').waitFor();
@@ -49,9 +49,16 @@ try {
   const overflow360 = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   await page.setViewportSize({ width: 1536, height: 1024 });
   await page.getByRole('button', { name: 'Databases', exact: true }).click();
+  await page
+    .getByRole('region', { name: 'Databases', exact: true })
+    .getByRole('button', { name: 'Research database', exact: true })
+    .click();
   await page.getByRole('table', { name: 'Database records' }).getByRole('row').nth(1).waitFor();
   await page.screenshot({ path: resolve(output, 'workspace-database.png') });
   const report = {
+    title: await page.title(),
+    url: page.url(),
+    frameworkOverlay: await page.locator('vite-error-overlay').count(),
     viewports: [
       [1536, 1024],
       [390, 844],

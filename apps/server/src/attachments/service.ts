@@ -75,6 +75,7 @@ export class Attachments {
       ? input.mediaType.toLowerCase()
       : 'application/octet-stream';
     return this.db.transaction(async (tx) => {
+      await new Access(tx).lockPage(actor, pageId);
       await tx.query('SELECT id FROM organization WHERE id=$1 FOR UPDATE', [page.workspaceId]);
       if (internalId) {
         const [existing] = await tx.query<Row>(
@@ -112,15 +113,18 @@ export class Attachments {
         'The uploaded byte count does not match the file. Retry the upload.',
       );
     await this.storage.write(row.object_key, bytes);
-    await new Access(this.db).requirePage(actor, row.page_id, 'write');
     const mediaType =
       /^(image|video|audio)\//.test(row.media_type) && !safeInline(row.media_type, bytes)
         ? 'application/octet-stream'
         : row.media_type;
-    const [ready] = await this.db.query<Row>(
-      "UPDATE attachments SET status='ready',media_type=$2 WHERE id=$1 RETURNING *",
-      [id, mediaType],
-    );
+    const ready = await this.db.transaction(async (tx) => {
+      await new Access(tx).lockPage(actor, row.page_id);
+      const [updated] = await tx.query<Row>(
+        "UPDATE attachments SET status='ready',media_type=$2 WHERE id=$1 RETURNING *",
+        [id, mediaType],
+      );
+      return updated;
+    });
     return map(ready);
   }
   async read(actor: Actor, id: string): Promise<Attachment & { bytes: Buffer; inline: boolean }> {

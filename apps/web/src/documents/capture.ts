@@ -68,8 +68,16 @@ export async function captureClipboard(
 ) {
   if (input.files.length) {
     for (const file of input.files) {
-      const result = await upload(file);
-      editor.chain().focus().insertContent(fileNode(result)).run();
+      try {
+        const result = await upload(file);
+        editor.chain().focus().insertContent(fileNode(result)).run();
+      } catch (error) {
+        notify(
+          error instanceof Error
+            ? error.message
+            : 'A captured file could not be uploaded. Its original is available to retry.',
+        );
+      }
     }
     return;
   }

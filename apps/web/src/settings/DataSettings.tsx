@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Download, Upload, Play, Pause } from 'lucide-react';
 import { api } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
+import { downloadLocalDrafts } from '../documents/recovery-export.js';
 type Report = {
   jobId: string;
   complete: boolean;
@@ -67,6 +68,20 @@ export function DataSettings() {
       >
         <Download />
         Export workspace ZIP
+      </button>
+      <hr />
+      <h3>Local recovery</h3>
+      <p className="muted-text">
+        Download unsynchronized document drafts from this device as structured JSON and
+        collaborative recovery data. This keeps a separate copy; media files stay in workspace
+        storage.
+      </p>
+      <button
+        className="button"
+        onClick={() => void downloadLocalDrafts().catch((error) => setError(error.message))}
+      >
+        <Download />
+        Download local drafts
       </button>
       <hr />
       <h3>Import a workspace</h3>

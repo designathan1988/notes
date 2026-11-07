@@ -8,6 +8,7 @@ import { resolve } from 'node:path';
 import * as schema from '../identity/schema.js';
 
 export interface Database {
+  readonly transactional: boolean;
   query<T = Record<string, unknown>>(text: string, params?: unknown[]): Promise<T[]>;
   exec(text: string): Promise<void>;
   transaction<T>(fn: (tx: Database) => Promise<T>): Promise<T>;
@@ -22,6 +23,7 @@ export async function openDatabase(
     const pool = new pg.Pool({ connectionString: options.url });
     const orm = postgresDrizzle(pool, { schema });
     const make = (client: Pick<pg.Pool, 'query'>, inTransaction = false): Database => ({
+      transactional: inTransaction,
       orm,
       async query<T>(text: string, params: unknown[] = []) {
         return (await client.query(text, params)).rows as T[];
@@ -55,6 +57,7 @@ export async function openDatabase(
   const orm = localDrizzle(client, { schema });
   type LocalQuery = Pick<PGlite, 'query' | 'exec'>;
   const make = (connection: LocalQuery, inTransaction = false): Database => ({
+    transactional: inTransaction,
     orm,
     async query<T>(text: string, params: unknown[] = []) {
       return (await connection.query<T>(text, params)).rows;

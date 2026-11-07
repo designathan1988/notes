@@ -103,6 +103,7 @@ export function Settings() {
                 <span>{page.title}</span>
                 <button
                   className="button"
+                  disabled={workspace?.role === 'viewer'}
                   onClick={async () => {
                     try {
                       await api(`/pages/${page.id}/restore`, { method: 'POST', body: '{}' });
@@ -158,7 +159,10 @@ export function Settings() {
               New workspace
             </button>
           )}
-          <button className="text-button" onClick={() => void state.signOut()}>
+          <button
+            className="text-button"
+            onClick={() => void state.signOut().catch(state.setError)}
+          >
             Sign out
           </button>
         </section>

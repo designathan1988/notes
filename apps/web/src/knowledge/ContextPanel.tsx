@@ -10,6 +10,7 @@ export function ContextPanel() {
   const selectedId = useWorkspace((state) => state.selectedId);
   const mentions = useWorkspace((state) => state.mentions[selectedId ?? '']);
   const load = useWorkspace((state) => state.loadMentions);
+  const version = useWorkspace((state) => state.knowledgeVersion);
   const workspace = useWorkspace((state) => state.workspaceId);
   const graph = useWorkspace((state) => state.graphs[`${workspace}:${selectedId}`]);
   useEffect(() => {
@@ -24,7 +25,7 @@ export function ContextPanel() {
     refresh();
     const timer = setInterval(refresh, 3500);
     return () => clearInterval(timer);
-  }, [selectedId, load]);
+  }, [selectedId, load, version]);
   const connected = links
     .map(
       (id) => graph?.nodes.find((page) => page.id === id) ?? pages.find((page) => page.id === id),

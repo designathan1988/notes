@@ -42,10 +42,19 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
       throw new DomainError('INVALID', 'Invalid page cursor.');
     return navigation.children(request.actor, request.params.workspace, parent || null, cursor);
   });
-  app.get<{ Params: { workspace: string }; Querystring: { offset?: string } }>(
-    '/api/workspaces/:workspace/page-list',
-    (request) =>
-      navigation.flat(request.actor, request.params.workspace, Number(request.query.offset) || 0),
+  app.get<{
+    Params: { workspace: string };
+    Querystring: { offset?: string; kind?: string; q?: string };
+  }>('/api/workspaces/:workspace/page-list', (request) =>
+    navigation.flat(
+      request.actor,
+      request.params.workspace,
+      Number(request.query.offset) || 0,
+      ['document', 'database', 'record'].includes(request.query.kind ?? '')
+        ? request.query.kind!
+        : '',
+      request.query.q ?? '',
+    ),
   );
   app.get<{ Params: { workspace: string } }>(
     '/api/workspaces/:workspace/favorites',
@@ -108,12 +117,15 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
     assertObject(request.body);
     if (request.body.parentId !== null && typeof request.body.parentId !== 'string')
       throw new DomainError('INVALID', 'Choose a destination.');
+    if (request.body.beforeId != null && typeof request.body.beforeId !== 'string')
+      throw new DomainError('INVALID', 'Choose a valid sibling.');
     return pages.move(
       request.actor,
       request.params.id,
       request.body.parentId,
       Number(request.body.revision),
       request.body.confirmed === true,
+      request.body.beforeId as string | null | undefined,
     );
   });
   app.delete<{ Params: { id: string } }>('/api/pages/:id', async (request) => {

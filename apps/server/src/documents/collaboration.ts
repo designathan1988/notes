@@ -1,4 +1,5 @@
 import { Hocuspocus } from '@hocuspocus/server';
+import * as Y from 'yjs';
 import websocket from '@fastify/websocket';
 import type { FastifyInstance } from 'fastify';
 import type { Database } from '../platform/database.js';
@@ -53,31 +54,71 @@ export async function collaborationRoutes(
       connection.readOnly = role === 'viewer';
       if (page.generation !== context.generation) throw new Error('Document generation changed.');
     },
-    async onChange({ context, documentName, update, document }) {
-      if (!context.actor) return;
-      const saving = documents.save(
-        context.actor,
-        documentIdentity(documentName).pageId,
-        update,
-        context.generation,
-      );
+    async beforeSync({ context, documentName, document, connection, type, payload }) {
+      if (type === 0) {
+        const durable = await documents.load(documentIdentity(documentName).pageId);
+        try {
+          Y.applyUpdate(document, Y.encodeStateAsUpdate(durable));
+        } finally {
+          durable.destroy();
+        }
+        return;
+      }
+      if (![1, 2].includes(type) || connection.readOnly) return;
+      // Persist and validate before the hub applies or broadcasts an update. A failed
+      // write stays queued on its connection, so dependent Yjs clocks cannot be lost.
+      const saving = (async () => {
+        for (let attempt = 0; ; attempt++) {
+          try {
+            return await documents.save(
+              context.actor,
+              documentIdentity(documentName).pageId,
+              payload,
+              context.generation,
+            );
+          } catch (error) {
+            if (error instanceof DomainError || attempt >= 2) throw error;
+            await new Promise((resolve) => setTimeout(resolve, 200 * (attempt + 1)));
+          }
+        }
+      })();
       pending.add(saving);
       try {
         const ack = await saving;
         document.broadcastStateless(JSON.stringify(ack));
       } catch (error) {
-        document.broadcastStateless(
+        connection.sendStateless(
           JSON.stringify({
             type: 'save-error',
-            message: error instanceof Error ? error.message : 'Saving failed.',
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Saving failed. Your local copy is retained.',
           }),
         );
+        if (error instanceof DomainError)
+          connection.close({
+            code: 4403,
+            reason: 'The update cannot be accepted. Keep your local recovery copy.',
+          });
+        throw error;
       } finally {
         pending.delete(saving);
       }
     },
-    async onStateless({ connection, documentName, payload }) {
+    async onStateless({ connection, documentName, document, payload }) {
       if (payload === 'checkpoint') {
+        await access.requirePage(
+          connection.context.actor,
+          documentIdentity(documentName).pageId,
+          'read',
+        );
+        const durable = await documents.load(documentIdentity(documentName).pageId);
+        try {
+          Y.applyUpdate(document, Y.encodeStateAsUpdate(durable));
+        } finally {
+          durable.destroy();
+        }
         const ack = await documents.acknowledgement(
           connection.context.actor,
           documentIdentity(documentName).pageId,

@@ -1,0 +1,58 @@
+import * as Y from 'yjs';
+import { yDocToProsemirrorJSON } from 'y-prosemirror';
+import { zipSync, strToU8 } from 'fflate';
+import { openRecovery } from './recovery.js';
+import { useWorkspace } from '../state/store.js';
+
+export async function downloadLocalDrafts() {
+  const identity = useWorkspace.getState().user?.id;
+  if (!identity) throw new Error('Sign in to download your local drafts.');
+  const recovery = await openRecovery();
+  try {
+    const keys = await recovery.pendingIdentity(identity);
+    if (!keys.length) throw new Error('There are no unsynchronized local drafts.');
+    const files: Record<string, Uint8Array> = {};
+    const index: { pageId: string; workspaceId: string; generation: string; title: string }[] = [];
+    for (const key of keys) {
+      const state = await recovery.read(key);
+      if (!state) continue;
+      const [, workspaceId, pageId, generation] = key.split(':');
+      const page = useWorkspace.getState().pages.find((page) => page.id === pageId);
+      const doc = new Y.Doc();
+      try {
+        Y.applyUpdate(doc, state);
+        files[`${pageId}.json`] = strToU8(
+          JSON.stringify(yDocToProsemirrorJSON(doc, 'default'), null, 2),
+        );
+        files[`${pageId}.yjs`] = state;
+        index.push({ pageId, workspaceId, generation, title: page?.title ?? 'Local draft' });
+      } finally {
+        doc.destroy();
+      }
+    }
+    files['recovery.json'] = strToU8(
+      JSON.stringify(
+        {
+          format: 'note-local-recovery',
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          drafts: index,
+        },
+        null,
+        2,
+      ),
+    );
+    files['README.txt'] = strToU8(
+      'Local recovery copy\n\nEach JSON file contains the complete structured document. Each YJS file preserves the collaborative state. This recovery archive is separate from Workspace ZIP import. Media files remain in workspace storage and are not included. Downloading does not erase your local drafts.',
+    );
+    const bytes = zipSync(files),
+      url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'application/zip' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'note-local-drafts.zip';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } finally {
+    recovery.close();
+  }
+}

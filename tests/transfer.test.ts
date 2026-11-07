@@ -14,6 +14,7 @@ import { Documents } from '../apps/server/src/documents/service.js';
 import { documentFromJSON, documentJSON } from '../packages/editor/src/schema.js';
 import { Invitations } from '../apps/server/src/access/invitations.js';
 import { FileMail } from '../apps/server/src/identity/mail.js';
+import { Pages } from '../apps/server/src/pages/service.js';
 let db: Database;
 let directory: string;
 let transfer: Transfer;
@@ -110,3 +111,31 @@ test('invitations are recipient-bound, expiring, and single-use without ownershi
     invitations.create({ userId: 'admin' }, 'studio', 'another@note.test', 'owner'),
   ).rejects.toMatchObject({ code: 'FORBIDDEN' });
 });
+test.each([
+  { count: 5, bytes: 1800000 },
+  { count: 1, bytes: 3400000 },
+])(
+  'own exports restore valid large documents ($count × $bytes bytes)',
+  async ({ count, bytes }) => {
+    const access = new Access(db);
+    const source = await access.createWorkspace(actor, 'Large document backup');
+    for (let index = 0; index < count; index++) {
+      const page = await new Pages(db).create(actor, source.id, { title: `Large ${index}` });
+      const doc = documentFromJSON({
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: 'a'.repeat(bytes) }] }],
+      });
+      await new Documents(db).importContent(actor, page.id, doc, 1);
+      doc.destroy();
+    }
+    const archive = await transfer.exportWorkspace(actor, source.id);
+    const destination = await access.createWorkspace(actor, 'Large backup restore');
+    let report = await transfer.beginImport(actor, destination.id, archive);
+    while (!report.complete) report = await transfer.advance(actor, report.jobId);
+    const restored = await new Pages(db).list(actor, destination.id);
+    expect(restored).toHaveLength(count);
+    const doc = await new Documents(db).load(restored[0].id);
+    expect(documentJSON(doc).content?.[0].content?.[0].text?.length).toBe(bytes);
+    doc.destroy();
+  },
+);

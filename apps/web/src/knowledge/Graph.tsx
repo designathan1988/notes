@@ -6,6 +6,7 @@ export default function Graph() {
   const workspace = useWorkspace((state) => state.workspaceId);
   const selected = useWorkspace((state) => state.selectedId);
   const load = useWorkspace((state) => state.loadGraph);
+  const version = useWorkspace((state) => state.knowledgeVersion);
   const [local, setLocal] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [filter, setFilter] = useState('');
@@ -14,7 +15,7 @@ export default function Graph() {
   const data = useWorkspace((state) => state.graphs[`${workspace}:${center ?? 'all'}`]);
   useEffect(() => {
     void load(center).catch(useWorkspace.getState().setError);
-  }, [workspace, center, load]);
+  }, [workspace, center, load, version]);
   const nodes = useMemo(() => {
     const visible = (data?.nodes ?? []).filter((node) =>
       node.title.toLowerCase().includes(filter.toLowerCase()),
@@ -31,6 +32,7 @@ export default function Graph() {
     });
   }, [data, filter]);
   const map = new Map(nodes.map((node) => [node.id, node]));
+  const edges = data?.edges.filter((edge) => map.has(edge.source) && map.has(edge.target)) ?? [];
   return (
     <section className="graph-screen">
       <header>
@@ -41,6 +43,7 @@ export default function Graph() {
         <label className="graph-mode">
           <input
             type="checkbox"
+            disabled={!selected}
             checked={local}
             onChange={(event) => setLocal(event.target.checked)}
           />
@@ -77,7 +80,7 @@ export default function Graph() {
           <g
             transform={`translate(${pan.x} ${pan.y}) translate(500 350) scale(${zoom}) translate(-500 -350)`}
           >
-            {data?.edges.map((edge, index) => {
+            {edges.map((edge, index) => {
               const source = map.get(edge.source);
               const target = map.get(edge.target);
               return source && target ? (
@@ -106,7 +109,10 @@ export default function Graph() {
                     .navigate(node.id, node.kind === 'database' ? 'database' : 'document')
                 }
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter') useWorkspace.getState().navigate(node.id);
+                  if (event.key === 'Enter')
+                    useWorkspace
+                      .getState()
+                      .navigate(node.id, node.kind === 'database' ? 'database' : 'document');
                 }}
               >
                 <rect x={node.x - 25} y={node.y - 20} width="50" height="55" fill="transparent" />
@@ -149,7 +155,7 @@ export default function Graph() {
         </div>
       </div>
       <footer>
-        {nodes.length} pages · {data?.edges.length ?? 0} connections{' '}
+        {nodes.length} pages · {edges.length} connections{' '}
         <span>Drag to explore · Select a page to open</span>
       </footer>
     </section>

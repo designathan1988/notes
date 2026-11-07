@@ -122,6 +122,30 @@ test('pastes rich content safely and persists original source and uploaded image
   await expect(page.locator('.attachment-block img')).toBeVisible();
   const imageUrl = await page.locator('.attachment-block img').getAttribute('src');
   expect((await (await context.request.get(imageUrl!)).body()).equals(png)).toBe(true);
+  await context.unroute('**/api/attachments/*/content');
+  let interrupted = false;
+  await context.route('**/api/attachments/*/content', async (route) => {
+    if (route.request().method() === 'PUT' && !interrupted) {
+      interrupted = true;
+      await route.fulfill({ status: 503, json: { message: 'Interrupted first clipboard file' } });
+    } else await route.continue();
+  });
+  await page.getByRole('textbox', { name: 'Page content' }).evaluate((element) => {
+    const data = new DataTransfer();
+    data.items.add(new File(['first'], 'clipboard-first.txt', { type: 'text/plain' }));
+    data.items.add(new File(['second'], 'clipboard-second.txt', { type: 'text/plain' }));
+    element.dispatchEvent(
+      new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }),
+    );
+  });
+  await expect(page.locator('.upload-failure')).toContainText('clipboard-first.txt');
+  await expect(
+    page.locator('.attachment-block a').filter({ hasText: 'clipboard-second.txt' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Retry', exact: true }).click();
+  await expect(
+    page.locator('.attachment-block a').filter({ hasText: 'clipboard-first.txt' }),
+  ).toBeVisible();
   await context.request.delete(`/api/pages/${note.id}`, { headers: { 'x-note-request': '1' } });
   await context.close();
 });
@@ -133,6 +157,10 @@ test('creates and edits a structured record, finds its body, and follows its gra
   const page = await context.newPage();
   await page.goto('/');
   await page.getByRole('button', { name: 'Databases', exact: true }).click();
+  await page
+    .getByRole('region', { name: 'Databases', exact: true })
+    .getByRole('button', { name: 'Research database', exact: true })
+    .click();
   await expect(page.getByRole('table', { name: 'Database records' })).toBeVisible();
   await page.locator('.table-actions').getByRole('button', { name: 'New record' }).click();
   const title = `Discovery check ${Date.now()}`;

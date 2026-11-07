@@ -37,7 +37,11 @@ const DocumentEditor = lazy(() =>
 export function Workspace() {
   const state = useWorkspace();
   const page = state.pages.find((item) => item.id === state.selectedId);
+  const readOnly =
+    state.workspaces.find((item) => item.id === state.workspaceId)?.role === 'viewer';
   const parent = state.pages.find((item) => item.id === page?.parentId);
+  const databaseIndex = state.view === 'database' && page?.kind !== 'database';
+  const globalView = state.view === 'all' || state.view === 'graph' || databaseIndex;
   const status = {
     saved: 'Saved',
     saving: 'Saving…',
@@ -77,7 +81,7 @@ export function Workspace() {
   return (
     <div className="app-shell">
       <Sidebar />
-      <main className="workspace-main">
+      <main className="workspace-main" inert={state.sidebarOpen}>
         <header className="topbar">
           <div className="mobile-brand">
             <IconButton
@@ -95,7 +99,7 @@ export function Workspace() {
             <b>Note</b>
           </div>
           <div className="breadcrumb">
-            {parent && (
+            {parent && !globalView && (
               <>
                 <button className="breadcrumb-parent" onClick={() => state.navigate(parent.id)}>
                   {parent.title}
@@ -103,20 +107,30 @@ export function Workspace() {
                 <span>/</span>
               </>
             )}
-            <strong>{page?.title ?? 'Workspace'}</strong>
+            <strong>
+              {state.view === 'all'
+                ? 'All pages'
+                : state.view === 'graph'
+                  ? 'Knowledge graph'
+                  : databaseIndex
+                    ? 'Databases'
+                    : (page?.title ?? 'Workspace')}
+            </strong>
           </div>
           <div className="topbar-actions">
-            <span className={`save-status ${state.saveStatus}`}>
-              {state.saveStatus === 'saved' ? (
-                <Check />
-              ) : state.saveStatus === 'local' || state.saveStatus === 'error' ? (
-                <CloudOff />
-              ) : (
-                <LoaderCircle className={state.saveStatus === 'saving' ? 'spin' : ''} />
-              )}
-              <span>{status}</span>
-            </span>
-            {page && (
+            {page && !globalView && state.view === 'document' && (
+              <span className={`save-status ${state.saveStatus}`}>
+                {state.saveStatus === 'saved' ? (
+                  <Check />
+                ) : state.saveStatus === 'local' || state.saveStatus === 'error' ? (
+                  <CloudOff />
+                ) : (
+                  <LoaderCircle className={state.saveStatus === 'saving' ? 'spin' : ''} />
+                )}
+                <span>{status}</span>
+              </span>
+            )}
+            {page && !globalView && (
               <IconButton
                 label={state.favorites.includes(page.id) ? 'Remove favorite' : 'Add to favorites'}
                 onClick={() => state.toggleFavorite(page.id)}
@@ -132,7 +146,11 @@ export function Workspace() {
                 <PanelRight />
               </IconButton>
             )}
-            <IconButton label="Page actions" onClick={() => state.openDialog('page-menu')}>
+            <IconButton
+              label="Page actions"
+              disabled={!page || globalView}
+              onClick={() => state.openDialog('page-menu')}
+            >
               <MoreHorizontal />
             </IconButton>
             <button
@@ -147,6 +165,11 @@ export function Workspace() {
         {state.error && (
           <div className="error-banner" role="alert">
             <span>{state.error}</span>
+            {state.connectionError && (
+              <button className="text-button" onClick={() => void state.reload()}>
+                Retry connection
+              </button>
+            )}
             <IconButton
               label="Dismiss error"
               onClick={() => useWorkspace.setState({ error: null })}
@@ -162,6 +185,8 @@ export function Workspace() {
             </Suspense>
           ) : state.view === 'all' ? (
             <AllPages />
+          ) : databaseIndex ? (
+            <AllPages kind="database" />
           ) : page ? (
             <>
               <div className="document-scroll">
@@ -208,7 +233,7 @@ export function Workspace() {
               <FileText />
               <h1>A little space to think.</h1>
               <p>Create a page and make it yours.</p>
-              <button className="button primary" onClick={() => state.openDialog('new-page')}>
+              <button className="button primary" onClick={() => state.openCreatePage()}>
                 <Plus />
                 New page
               </button>
@@ -220,7 +245,7 @@ export function Workspace() {
       {state.dialog === 'search' && <Search />}
       {state.dialog === 'settings' && <Settings />}
       {state.dialog === 'invite' && <Invite />}
-      {state.dialog === 'move' && page && <MovePage />}
+      {state.dialog === 'move' && (page || state.pendingMove) && <MovePage />}
       {state.dialog === 'page-menu' && page && (
         <Dialog title="Page actions" onClose={() => state.openDialog(null)}>
           <div className="menu-list">
@@ -233,11 +258,14 @@ export function Workspace() {
               <Star />
               {state.favorites.includes(page.id) ? 'Remove favorite' : 'Add to favorites'}
             </button>
-            <button onClick={() => state.openDialog('new-page')}>
+            <button disabled={readOnly} onClick={() => state.openCreatePage(page.id)}>
               <Plus />
               Add subpage
             </button>
-            <button onClick={() => state.openDialog('move')} disabled={page.kind === 'record'}>
+            <button
+              onClick={() => state.openDialog('move')}
+              disabled={readOnly || page.kind === 'record'}
+            >
               <FolderInput />
               Move page
             </button>
@@ -253,6 +281,7 @@ export function Workspace() {
             </button>
             <button
               className="danger"
+              disabled={readOnly}
               onClick={() => void state.trashPage(page.id).catch(state.setError)}
             >
               <Trash2 />

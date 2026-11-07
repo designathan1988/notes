@@ -7,6 +7,7 @@ import {
   CheckSquare,
   Code2,
   Copy,
+  Database,
   Heading1,
   Heading2,
   Heading3,
@@ -115,7 +116,17 @@ export function insertBlock(editor: Editor, position: number, type: string, leve
             })),
           }
         : { type, attrs: type === 'heading' ? { level } : undefined };
-  editor.chain().focus().insertContentAt(position, node).run();
+  const selected = blockAt(editor.state.doc, editor.state.selection.from);
+  const empty =
+    selected?.node.type.name === 'paragraph' &&
+    !selected.node.content.size &&
+    position === selected.to;
+  if (empty) position = selected.from;
+  editor
+    .chain()
+    .focus()
+    .insertContentAt(empty ? { from: selected.from, to: selected.to } : position, node)
+    .run();
   focusBlockContent(editor, position);
 }
 function focusBlockContent(editor: Editor, position: number) {
@@ -138,6 +149,7 @@ export function BlockMenu({
   attachment,
   embed,
   link,
+  database,
 }: {
   editor: Editor;
   mode: 'insert' | 'actions';
@@ -146,6 +158,7 @@ export function BlockMenu({
   attachment(): void;
   embed(): void;
   link(): void;
+  database(): void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState('');
@@ -331,6 +344,7 @@ export function BlockMenu({
                 insertBlock(editor, selected?.to ?? editor.state.doc.content.size, 'table'),
             },
             { label: 'File or media', Icon: Paperclip, action: attachment },
+            { label: 'Database view', Icon: Database, action: database },
             { label: 'Video embed', Icon: Video, action: embed },
             { label: 'Page connection', Icon: Link, action: link },
           ]

@@ -1,7 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import type { Database } from '../platform/database.js';
 import { Databases } from './service.js';
-import { assertObject, type RecordField } from '../../../../packages/contracts/src/index.js';
+import {
+  assertObject,
+  DomainError,
+  type RecordField,
+} from '../../../../packages/contracts/src/index.js';
 export function databaseRoutes(app: FastifyInstance, db: Database) {
   const databases = new Databases(db);
   app.get<{
@@ -15,18 +19,21 @@ export function databaseRoutes(app: FastifyInstance, db: Database) {
     };
   }>('/api/databases/:id', async (request) => {
     const [fields, rows, views] = await Promise.all([
-      databases.fields(request.actor, request.params.id),
+      databases.definition(request.actor, request.params.id),
       databases.records(request.actor, request.params.id, request.query),
       databases.views(request.actor, request.params.id),
     ]);
-    return { fields, ...rows, views };
+    return { ...fields, ...rows, views };
   });
   app.put<{ Params: { id: string } }>('/api/databases/:id/fields', async (request) => {
     assertObject(request.body);
+    if (!Number.isSafeInteger(request.body.revision) || Number(request.body.revision) < 1)
+      throw new DomainError('INVALID', 'A current schema revision is required.');
     await databases.setFields(
       request.actor,
       request.params.id,
       request.body.fields as RecordField[],
+      Number(request.body.revision),
     );
     return { ok: true };
   });

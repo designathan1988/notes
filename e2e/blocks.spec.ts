@@ -68,6 +68,35 @@ test('edits, transforms, reorders and duplicates real blocks with durable reload
     .getByRole('button', { name: 'Drag or open block actions', exact: true })
     .dragTo(content.locator('[data-content-block]').first(), { targetPosition: { x: 40, y: 1 } });
   await expect(content.locator('[data-content-block]').first()).toHaveText('First block');
+  // Embedded browsers can emit pointer gestures without HTML DragEvents.
+  const target = await content.locator('[data-content-block]').first().boundingBox();
+  await content.locator('h2').hover();
+  const grip = page.getByRole('button', { name: 'Drag or open block actions', exact: true });
+  const handle = await grip.boundingBox();
+  await grip.dispatchEvent('pointerdown', {
+    pointerId: 71,
+    button: 0,
+    clientX: handle!.x + 8,
+    clientY: handle!.y + 8,
+    bubbles: true,
+  });
+  await page
+    .locator('body')
+    .dispatchEvent('pointermove', {
+      pointerId: 71,
+      clientX: target!.x + 80,
+      clientY: target!.y - 2,
+      bubbles: true,
+    });
+  await page
+    .locator('body')
+    .dispatchEvent('pointerup', {
+      pointerId: 71,
+      clientX: target!.x + 80,
+      clientY: target!.y - 2,
+      bubbles: true,
+    });
+  await expect(content.locator('[data-content-block]').first()).toHaveText('Second block');
   await page.setViewportSize({ width: 390, height: 844 });
   await content.locator('h2').click();
   await expect(page.getByRole('button', { name: 'Block actions', exact: true })).toBeVisible();

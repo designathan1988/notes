@@ -23,6 +23,35 @@ export interface DurableAcknowledgement {
 }
 export class Documents {
   constructor(readonly db: Database) {}
+  async importContent(actor: Actor, pageId: string, source: Y.Doc, generation: number) {
+    return this.db.transaction(async (tx) => {
+      await new Access(tx).lockPage(actor, pageId);
+      const current = await new Documents(tx).load(pageId);
+      try {
+        const root = current.getXmlFragment('default');
+        const placeholder = root.length === 1 ? root.get(0) : null;
+        if (
+          placeholder instanceof Y.XmlElement &&
+          placeholder.nodeName === 'paragraph' &&
+          placeholder.length === 0
+        )
+          root.delete(0, 1);
+        root.insert(
+          root.length,
+          source
+            .getXmlFragment('default')
+            .toArray()
+            .map((node) => {
+              if (node instanceof Y.XmlElement || node instanceof Y.XmlText) return node.clone();
+              throw new DomainError('INVALID', 'Unsupported imported document structure.');
+            }),
+        );
+        return new Documents(tx).save(actor, pageId, Y.encodeStateAsUpdate(current), generation);
+      } finally {
+        current.destroy();
+      }
+    });
+  }
   async load(page: string): Promise<Y.Doc> {
     const [row] = await this.db.query<{ state: Uint8Array }>(
       'SELECT state FROM documents WHERE page_id=$1',
@@ -50,7 +79,7 @@ export class Documents {
     if (update.byteLength > MAX_DOCUMENT_BYTES)
       throw new DomainError('LIMIT', 'This document update is too large.');
     return this.db.transaction(async (tx) => {
-      const page = await new Access(tx).requirePage(actor, pageId, 'write');
+      const page = await new Access(tx).lockPage(actor, pageId);
       if (page.generation !== generation)
         throw new DomainError(
           'CONFLICT',

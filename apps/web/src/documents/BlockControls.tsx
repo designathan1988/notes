@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
-import { DragHandle } from '@tiptap/extension-drag-handle-react';
-import { GripVertical, Plus } from 'lucide-react';
+import { BlockGutter } from './BlockGutter.js';
+import { Plus } from 'lucide-react';
 import type { Editor } from '@tiptap/react';
 import { blockAt } from '../../../../packages/editor/src/blocks.js';
 import { BlockMenu, insertBlock } from './BlockMenu.js';
@@ -13,6 +13,7 @@ export function BlockControls({
   attachment,
   embed,
   link,
+  database,
 }: {
   editor: Editor;
   requested: boolean;
@@ -21,10 +22,10 @@ export function BlockControls({
   attachment(): void;
   embed(): void;
   link(): void;
+  database(): void;
 }) {
   const [menu, setMenu] = useState<'insert' | 'actions' | null>(null);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
-  const hovered = useRef(0);
   const button = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (requested || actionsRequested) {
@@ -50,31 +51,17 @@ export function BlockControls({
   };
   return (
     <>
-      <DragHandle
+      <BlockGutter
         editor={editor}
-        className="block-drag-handle"
-        onNodeChange={({ pos }) => {
-          hovered.current = pos;
-        }}
-      >
-        <button
-          aria-label="Insert block here"
-          onClick={(event) => {
-            const block = blockAt(editor.state.doc, hovered.current);
-            if (!block) return;
+        insert={(position, target) => {
+          const block = blockAt(editor.state.doc, position);
+          if (block) {
             insertBlock(editor, block.to, 'paragraph');
-            open('insert', event.currentTarget);
-          }}
-        >
-          <Plus size={16} />
-        </button>
-        <button
-          aria-label="Drag or open block actions"
-          onClick={(event) => open('actions', event.currentTarget, hovered.current)}
-        >
-          <GripVertical size={17} />
-        </button>
-      </DragHandle>
+            open('insert', target);
+          }
+        }}
+        actions={(position, target) => open('actions', target, position)}
+      />
       <button
         ref={button}
         className="add-block-row"
@@ -100,6 +87,7 @@ export function BlockControls({
           attachment={attachment}
           embed={embed}
           link={link}
+          database={database}
         />
       )}
     </>

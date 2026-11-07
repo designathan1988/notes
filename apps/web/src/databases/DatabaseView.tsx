@@ -10,19 +10,35 @@ import {
   ChevronRight,
   Settings2,
   Columns3,
+  Database,
+  ArrowDown,
+  ArrowUp,
 } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
 import { api, json } from '../state/api.js';
 import type { DatabaseRecord, RecordField } from '../../../../packages/contracts/src/index.js';
-import type { TableOptions } from './state.js';
+import { tableQueryKey, type TableOptions } from './state.js';
 import { Dialog } from '../ui/Dialog.js';
 import { IconButton } from '../ui/IconButton.js';
 import { Cell } from './Cell.js';
 const emptyRows: DatabaseRecord[] = [];
 export function DatabaseView({ id, compact = false }: { id: string; compact?: boolean }) {
-  const snapshot = useWorkspace((state) => state.tables[id]);
+  const definition = useWorkspace((state) => state.tables[id]);
   const load = useWorkspace((state) => state.loadTable);
   const [options, setOptions] = useState<TableOptions>({ limit: compact ? 3 : 50 });
+  const query = useWorkspace((state) => state.tableQueries[tableQueryKey(id, options)]);
+  const entities = useWorkspace((state) => state.recordEntities);
+  const snapshot = useMemo(
+    () =>
+      definition && query
+        ? {
+            ...definition,
+            total: query.total,
+            records: query.ids.map((id) => entities[id]).filter(Boolean),
+          }
+        : undefined,
+    [definition, query, entities],
+  );
   const [filterOpen, setFilterOpen] = useState(false);
   const [newRecord, setNewRecord] = useState(false);
   const [newView, setNewView] = useState(false);
@@ -30,6 +46,7 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [selectedView, setSelectedView] = useState('all');
   const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
   const [busy, setBusy] = useState(false);
   const role = useWorkspace(
     (state) => state.workspaces.find((item) => item.id === state.workspaceId)?.role,
@@ -37,12 +54,16 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
   const readOnly = role === 'viewer';
   useEffect(() => {
     let active = true;
-    void load(id, options).catch((error) => {
-      if (active) setError(error.message);
-    });
-    const timer = setInterval(() => {
-      void load(id, options).catch(() => {});
-    }, 3500);
+    const refresh = () =>
+      void load(id, options)
+        .then(() => {
+          if (active) setLoadError('');
+        })
+        .catch((error) => {
+          if (active) setLoadError(error.message);
+        });
+    refresh();
+    const timer = setInterval(refresh, 3500);
     return () => {
       active = false;
       clearInterval(timer);
@@ -69,7 +90,7 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
             </IconButton>
             <Cell
               initial={row.original.title}
-              readOnly={readOnly || compact}
+              readOnly={readOnly}
               label={`Name for ${row.original.title}`}
               save={async (value) => {
                 await useWorkspace
@@ -88,7 +109,7 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
           <Cell
             initial={row.original.values[field.id]}
             field={field}
-            readOnly={readOnly || compact}
+            readOnly={readOnly}
             label={`${field.name} for ${row.original.title}`}
             save={async (value) => {
               await useWorkspace
@@ -144,6 +165,12 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
   }
   return (
     <div className={`database-view ${compact ? 'compact' : ''}`} contentEditable={false}>
+      {compact && (
+        <div className="embedded-table-title">
+          <Database size={15} />
+          <strong>{definition?.title ?? 'Database view'}</strong>
+        </div>
+      )}
       {!compact && (
         <div className="table-toolbar">
           <div className="view-tabs">
@@ -202,6 +229,20 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
                 <option value="updated">Updated</option>
               </select>
             </label>
+            {options.sort && (
+              <IconButton
+                label={options.direction === 'desc' ? 'Sort descending' : 'Sort ascending'}
+                onClick={() =>
+                  setOptions({
+                    ...options,
+                    direction: options.direction === 'desc' ? 'asc' : 'desc',
+                    offset: 0,
+                  })
+                }
+              >
+                {options.direction === 'desc' ? <ArrowDown /> : <ArrowUp />}
+              </IconButton>
+            )}
             {!readOnly && (
               <>
                 <IconButton label="Add property" onClick={() => setProperty(true)}>
@@ -232,6 +273,21 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
           {error}
         </p>
       )}
+      {loadError && (
+        <p className="form-error" role="alert">
+          {loadError}{' '}
+          <button
+            className="text-button"
+            onClick={() =>
+              void load(id, options)
+                .then(() => setLoadError(''))
+                .catch((error) => setLoadError(error.message))
+            }
+          >
+            Retry records
+          </button>
+        </p>
+      )}
       <div className="table-scroll">
         <table aria-label={compact ? 'Related notes' : 'Database records'}>
           <thead>
@@ -259,7 +315,7 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
       {snapshot && !snapshot.records.length && (
         <div className="table-empty">No records match this view.</div>
       )}
-      {!snapshot && (
+      {!snapshot && !loadError && (
         <div className="table-empty" role="status">
           Loading records…
         </div>
@@ -299,13 +355,21 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
         </>
       )}
       {compact && (
-        <button
-          className="open-table"
-          onClick={() => useWorkspace.getState().navigate(id, 'database')}
-        >
-          <ArrowUpRight />
-          Open database
-        </button>
+        <div className="embedded-table-footer">
+          {!readOnly && (
+            <button className="text-button" onClick={() => setNewRecord(true)}>
+              <Plus size={13} />
+              New record
+            </button>
+          )}
+          <button
+            className="open-table"
+            onClick={() => useWorkspace.getState().navigate(id, 'database')}
+          >
+            <ArrowUpRight />
+            Open database
+          </button>
+        </div>
       )}
       {newRecord && (
         <Dialog title="New record" onClose={() => setNewRecord(false)}>
@@ -314,6 +378,11 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
               Name
               <input name="title" autoFocus required maxLength={300} />
             </label>
+            {error && (
+              <p className="form-error" role="alert">
+                {error}
+              </p>
+            )}
             <button disabled={busy} className="button primary">
               Create record
             </button>
@@ -358,6 +427,8 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
             onSubmit={async (event) => {
               event.preventDefault();
               const data = new FormData(event.currentTarget);
+              setBusy(true);
+              setError('');
               try {
                 const view = await api<{ id: string }>(`/databases/${id}/views`, {
                   method: 'POST',
@@ -368,6 +439,8 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
                 setNewView(false);
               } catch (error) {
                 setError((error as Error).message);
+              } finally {
+                setBusy(false);
               }
             }}
           >
@@ -376,7 +449,14 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
               <input name="name" required autoFocus maxLength={100} />
             </label>
             <p className="muted-text">Save the current filter, sort and columns with this view.</p>
-            <button className="button primary">Save view</button>
+            {error && (
+              <p className="form-error" role="alert">
+                {error}
+              </p>
+            )}
+            <button disabled={busy} className="button primary">
+              Save view
+            </button>
           </form>
         </Dialog>
       )}
@@ -386,6 +466,8 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
             onSubmit={async (event) => {
               event.preventDefault();
               const data = new FormData(event.currentTarget);
+              setBusy(true);
+              setError('');
               const field: RecordField = {
                 id: crypto.randomUUID(),
                 name: String(data.get('name')),
@@ -399,12 +481,14 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
               try {
                 await api(`/databases/${id}/fields`, {
                   method: 'PUT',
-                  body: json({ fields: [...fields, field] }),
+                  body: json({ fields: [...fields, field], revision: snapshot?.fieldsRevision }),
                 });
                 await load(id, options);
                 setProperty(false);
               } catch (error) {
                 setError((error as Error).message);
+              } finally {
+                setBusy(false);
               }
             }}
           >
@@ -433,7 +517,14 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
               Select options
               <input name="options" placeholder="First option, Second option" />
             </label>
-            <button className="button primary">Add property</button>
+            <button disabled={busy} className="button primary">
+              Add property
+            </button>
+            {error && (
+              <p className="form-error" role="alert">
+                {error}
+              </p>
+            )}
           </form>
         </Dialog>
       )}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RecordField } from '../../../../packages/contracts/src/index.js';
+import { RelationCell } from './RelationCell.js';
 export function Cell({
   initial,
   field,
@@ -33,6 +34,25 @@ export function Cell({
       setError('Not saved: ' + (error as Error).message);
     }
   }
+  if (field?.type === 'relation')
+    return (
+      <div className="cell-control">
+        <RelationCell
+          value={String(value || '')}
+          label={label}
+          readOnly={readOnly}
+          change={(next) => {
+            setValue(next ?? '');
+            void commit(next);
+          }}
+        />
+        {error && (
+          <span className="cell-error" role="alert">
+            {error}
+          </span>
+        )}
+      </div>
+    );
   if (readOnly)
     return (
       <span className={field?.type === 'select' ? 'status-label' : ''}>
@@ -41,15 +61,22 @@ export function Cell({
     );
   if (field?.type === 'checkbox')
     return (
-      <input
-        type="checkbox"
-        aria-label={label}
-        checked={Boolean(value)}
-        onChange={(event) => {
-          setValue(event.target.checked);
-          void commit(event.target.checked);
-        }}
-      />
+      <div className="cell-control">
+        <input
+          type="checkbox"
+          aria-label={label}
+          checked={Boolean(value)}
+          onChange={(event) => {
+            setValue(event.target.checked);
+            void commit(event.target.checked);
+          }}
+        />
+        {error && (
+          <span className="cell-error" role="alert">
+            {error}
+          </span>
+        )}
+      </div>
     );
   return (
     <div className="cell-control">

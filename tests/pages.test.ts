@@ -12,6 +12,20 @@ beforeAll(async () => {
 afterAll(async () => {
   await db.close();
 });
+test('moves pages before a sibling and preserves explicit order after reload', async () => {
+  const root = await pages.create(actor, 'studio', { title: 'Ordered tree' });
+  const first = await pages.create(actor, 'studio', { title: 'First', parentId: root.id });
+  const second = await pages.create(actor, 'studio', { title: 'Second', parentId: root.id });
+  const third = await pages.create(actor, 'studio', { title: 'Third', parentId: root.id });
+  await pages.move(actor, third.id, root.id, third.revision, false, first.id);
+  const children = (await pages.list(actor, 'studio'))
+    .filter((page) => page.parentId === root.id)
+    .sort((a, b) => a.position - b.position);
+  expect(children.map((page) => page.id)).toEqual([third.id, first.id, second.id]);
+  await expect(
+    pages.move(actor, first.id, root.id, first.revision, false, root.id),
+  ).rejects.toMatchObject({ code: 'CONFLICT' });
+});
 test('rejects a move that would make a parent its own descendant', async () => {
   const parent = await pages.create(actor, 'studio', { title: 'Parent' });
   const child = await pages.create(actor, 'studio', { title: 'Child', parentId: parent.id });

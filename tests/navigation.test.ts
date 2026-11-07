@@ -11,6 +11,27 @@ beforeAll(async () => {
 afterAll(async () => {
   await db.close();
 });
+test('favorite pages remain available when their parent branch is collapsed', async () => {
+  const parent = await rawPage(db, { title: 'Favorite parent' });
+  const child = await rawPage(db, { parent, title: 'Favorite child' });
+  const selected = await rawPage(db, { title: 'Elsewhere' });
+  await db.query('INSERT INTO favorites (user_id,page_id) VALUES ($1,$2)', ['owner', child]);
+  const snapshot = await navigation.bootstrap({ userId: 'owner' }, 'studio', selected);
+  expect(snapshot.pages.some((page) => page.id === child)).toBe(true);
+  expect(snapshot.expanded).not.toContain(parent);
+  await db.query(
+    "UPDATE pages SET visibility='private',created_by='admin',private_owner_id='admin' WHERE id=$1",
+    [parent],
+  );
+  expect(
+    (await navigation.bootstrap({ userId: 'owner' }, 'studio', selected)).pages.some(
+      (page) => page.id === child,
+    ),
+  ).toBe(false);
+  await db.query('UPDATE pages SET deleted_at=now() WHERE id=ANY($1::text[])', [
+    [parent, child, selected],
+  ]);
+});
 test('loads bounded sibling batches without duplicates instead of loading every page', async () => {
   await db.query(
     `INSERT INTO pages (id,workspace_id,title,created_by,position) SELECT 'nav-' || n,'studio','Page ' || n,'owner',n FROM generate_series(1,202) n`,

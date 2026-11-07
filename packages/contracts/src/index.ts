@@ -9,6 +9,7 @@ export interface Workspace {
   role: Role;
 }
 export interface Page {
+  accessOwnerId: string;
   hasChildren?: boolean;
   id: string;
   workspaceId: string;

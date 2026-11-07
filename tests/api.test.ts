@@ -1,6 +1,13 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { api } from '../apps/web/src/state/api.js';
 afterEach(() => vi.unstubAllGlobals());
+test('bodyless commands do not declare an empty JSON body', async () => {
+  vi.stubGlobal('fetch', async (_url: string, options: RequestInit) => {
+    expect(new Headers(options.headers).has('content-type')).toBe(false);
+    return Response.json({ ok: true });
+  });
+  expect(await api('/pages/one', { method: 'DELETE' })).toEqual({ ok: true });
+});
 test('a transient non-JSON gateway failure during a read recovers without exposing parser errors', async () => {
   let attempts = 0;
   vi.stubGlobal('fetch', async () =>

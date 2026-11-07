@@ -1,7 +1,24 @@
 import { Clock3, FileText, Database, Network } from 'lucide-react';
 import type { Page } from '../../../../packages/contracts/src/index.js';
 import { useWorkspace } from '../state/store.js';
+import { useLayoutEffect, useRef } from 'react';
+function fit(element: HTMLTextAreaElement) {
+  element.style.height = 'auto';
+  element.style.height = element.scrollHeight + 'px';
+}
 export function PageHeader({ page, connections = 0 }: { page: Page; connections?: number }) {
+  const title = useRef<HTMLTextAreaElement>(null),
+    description = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const resize = () => {
+      if (title.current) fit(title.current);
+      if (description.current) fit(description.current);
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    if (title.current) observer.observe(title.current.parentElement!);
+    return () => observer.disconnect();
+  }, [page.id, page.title, page.description]);
   const Icon = page.kind === 'database' ? Database : FileText;
   const readOnly = useWorkspace(
     (state) => state.workspaces.find((item) => item.id === state.workspaceId)?.role === 'viewer',
@@ -11,6 +28,8 @@ export function PageHeader({ page, connections = 0 }: { page: Page; connections?
       <div className="title-row">
         <Icon className="page-icon" />
         <textarea
+          ref={title}
+          onInput={(event) => fit(event.currentTarget)}
           key={page.id + page.title}
           readOnly={readOnly}
           aria-label="Page title"
@@ -28,6 +47,8 @@ export function PageHeader({ page, connections = 0 }: { page: Page; connections?
         />
       </div>
       <textarea
+        ref={description}
+        onInput={(event) => fit(event.currentTarget)}
         key={page.id + page.description}
         readOnly={readOnly}
         aria-label="Page description"
