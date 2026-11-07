@@ -19,3 +19,17 @@ test('two independent identities edit, persist, and reopen one shared document',
   await first.request.delete(`/api/pages/${page.id}`,{headers:{'x-note-request':'1'}});
   await first.close();await second.close();
 });
+test('pastes rich content safely and persists original source and uploaded image bytes',async({browser})=>{
+  const context=await browser.newContext({baseURL:'http://127.0.0.1:5173'});await signIn(context);
+  const session=await(await context.request.get('/api/session')).json();const created=await context.request.post(`/api/workspaces/${session.workspaces[0].id}/pages`,{data:{title:`Capture check ${Date.now()}`},headers:{'x-note-request':'1'}});const note=await created.json();
+  const page=await context.newPage();await page.goto(`/#${note.id}/document`);await expect(page.locator('.save-status')).toHaveText('Saved');
+  const original='<h2>Captured heading</h2><p><strong>Keep this formatting</strong></p><button onclick="window.pastedScriptExecuted=true">Interactive source</button>';
+  await page.getByRole('textbox',{name:'Page content'}).evaluate((element,html)=>{const data=new DataTransfer();data.setData('text/html',html);data.setData('text/plain','Captured heading');element.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}));},original);
+  await expect(page.getByRole('textbox',{name:'Page content'})).toContainText('Keep this formatting');await expect(page.locator('.attachment-block a')).toHaveText('Original pasted content.html');
+  expect(await page.evaluate(()=>('pastedScriptExecuted' in window))).toBe(false);
+  const originalUrl=await page.locator('.attachment-block a').getAttribute('href');const download=await context.request.get(originalUrl!);expect(await download.text()).toBe(original);expect(download.headers()['content-disposition']).toContain('attachment');
+  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64');
+  await page.locator('input[type=file]').setInputFiles({name:'sample.png',mimeType:'image/png',buffer:png});await expect(page.locator('.attachment-block img')).toBeVisible();await expect(page.locator('.save-status')).toHaveText('Saved');
+  await page.reload();await expect(page.locator('.attachment-block img')).toBeVisible();const imageUrl=await page.locator('.attachment-block img').getAttribute('src');expect((await(await context.request.get(imageUrl!)).body()).equals(png)).toBe(true);
+  await context.request.delete(`/api/pages/${note.id}`,{headers:{'x-note-request':'1'}});await context.close();
+});

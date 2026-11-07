@@ -5,6 +5,7 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import { prosemirrorJSONToYDoc, yDocToProsemirrorJSON } from 'y-prosemirror';
 import type * as Y from 'yjs';
+import { safeEmbedSource } from './embeds.js';
 
 const pageLink = Node.create({
   name:'pageLink',group:'block',atom:true,selectable:true,
@@ -20,7 +21,7 @@ const wikiLink = Node.create({
 });
 const attachment = Node.create({
   name:'attachment',group:'block',atom:true,draggable:true,
-  addAttributes(){return{id:{default:''},filename:{default:'Attachment'},mediaType:{default:'application/octet-stream'},caption:{default:''}};},
+  addAttributes(){return{id:{default:'',parseHTML:element=>element.getAttribute('data-attachment')},filename:{default:'Attachment',parseHTML:element=>element.getAttribute('data-filename') ?? 'Attachment'},mediaType:{default:'application/octet-stream',parseHTML:element=>element.getAttribute('data-media-type') ?? 'application/octet-stream'},caption:{default:''}};},
   parseHTML(){return[{tag:'figure[data-attachment]'}];},
   renderHTML({node,HTMLAttributes}){
     const url=`/api/attachments/${encodeURIComponent(node.attrs.id)}/content`;const type=String(node.attrs.mediaType);
@@ -29,7 +30,8 @@ const attachment = Node.create({
   },
 });
 const databaseView=Node.create({name:'databaseView',group:'block',atom:true,addAttributes(){return{databaseId:{default:''}};},parseHTML(){return[{tag:'div[data-database-view]'}];},renderHTML({node}){return['div',{'data-database-view':node.attrs.databaseId},['a',{href:`#${encodeURIComponent(node.attrs.databaseId)}/database`},'Open database']];}});
-export const editorExtensions = () => [StarterKit.configure({undoRedo:false,link:{openOnClick:false,defaultProtocol:'https'}}),TableKit.configure({table:{resizable:false}}),TaskList,TaskItem.configure({nested:true}),pageLink,wikiLink,attachment,databaseView];
+const embed=Node.create({name:'embed',group:'block',atom:true,addAttributes(){return{url:{default:''},title:{default:'Embedded video'}};},renderHTML({node}){const source=safeEmbedSource(String(node.attrs.url));return source ? ['figure',{class:'embed-block'},['iframe',{src:source,title:node.attrs.title,sandbox:'allow-scripts allow-presentation',allow:'fullscreen',referrerpolicy:'no-referrer',loading:'lazy'}],['figcaption',{},node.attrs.title]] : ['p',{},'Unsupported embed. The original URL was preserved: '+String(node.attrs.url)];}});
+export const editorExtensions = () => [StarterKit.configure({undoRedo:false,link:{openOnClick:false,defaultProtocol:'https'}}),TableKit.configure({table:{resizable:false}}),TaskList,TaskItem.configure({nested:true}),pageLink,wikiLink,attachment,databaseView,embed];
 export const editorSchema = () => getSchema(editorExtensions());
 export const emptyDocument:JSONContent = {type:'doc',content:[{type:'paragraph'}]};
 export function documentFromJSON(content:JSONContent):Y.Doc { const schema=editorSchema();schema.nodeFromJSON(content).check();return prosemirrorJSONToYDoc(schema,content,'default'); }
