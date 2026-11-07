@@ -11,6 +11,10 @@ import { collaborationRoutes } from './documents/collaboration.js';
 import { attachmentRoutes } from './attachments/routes.js';
 import { databaseRoutes } from './databases/routes.js';
 import { knowledgeRoutes } from './knowledge/routes.js';
+import { storageFromEnvironment } from './attachments/storage.js';
+import { transferRoutes } from './transfer/routes.js';
+import { invitationRoutes } from './access/invitation-routes.js';
+import { workspaceEvents } from './access/events.js';
 
 export async function createApp(options: { db: Database; auth?: Auth }) {
   const app = Fastify({ bodyLimit: 4 * 1024 * 1024, logger: false });
@@ -54,8 +58,9 @@ export async function createApp(options: { db: Database; auth?: Auth }) {
   }});
   accessRoutes(app,access,auth); pageRoutes(app,pages);
   const collaboration=await collaborationRoutes(app,options.db,auth,access);
-  attachmentRoutes(app,options.db);
+  const storage=storageFromEnvironment();attachmentRoutes(app,options.db,storage);
   databaseRoutes(app,options.db);await knowledgeRoutes(app,options.db);
+  transferRoutes(app,options.db,storage);invitationRoutes(app,options.db);workspaceEvents(app,access);
   pages.onChanged=workspace=>{void collaboration.invalidate(workspace);};
   return app;
 }

@@ -35,13 +35,14 @@ export const useWorkspace = create<WorkspaceState>((set,get) => ({
       const pages = await api<Page[]>(`/workspaces/${workspaceId}/pages`);
       const fromHash = location.hash.slice(1).split('/');
       const selected = pages.find(page => page.id === fromHash[0]) ?? pages.find(page => page.title === 'Product direction') ?? pages[0];
-      set({ pages, expanded: pages.filter(page => page.parentId === null).map(page => page.id), favorites: pages.filter(page => page.kind!=='record' && ['Product direction','Design principles'].includes(page.title)).map(page => page.id) });
+      const favorites=await api<string[]>(`/workspaces/${workspaceId}/favorites`);
+      set({ pages, expanded: pages.filter(page => page.parentId === null).map(page => page.id), favorites });
       get().navigate(selected?.id ?? null, (['document','database','graph','all'].includes(fromHash[1]) ? fromHash[1] : 'document') as View);
     } catch (error) { get().setError(error); } finally { set({ loading: false }); }
   },
   async reload() {
     const id = get().workspaceId; if (!id) return;
-    try { const pages = await api<Page[]>(`/workspaces/${id}/pages`); if (get().workspaceId === id) set({ pages }); }
+    try { const [pages,session]=await Promise.all([api<Page[]>(`/workspaces/${id}/pages`),api<{workspaces:Workspace[]}>('/session')]); if (get().workspaceId === id) set({ pages,workspaces:session.workspaces }); }
     catch (error) { if (error instanceof ApiError && [401,403].includes(error.status)) set({ pages: [], selectedId: null }); get().setError(error); }
   },
   navigate(id,view = 'document') { set({ selectedId: id, view, sidebarOpen: false, dialog: null }); history.replaceState(null,'',`#${id ?? ''}/${view}`);if(id && !get().pages.some(page=>page.id===id)){const user=get().user?.id;const workspace=get().workspaceId;void api<Page>(`/pages/${id}`).then(page=>{if(get().user?.id===user && get().workspaceId===workspace && page.workspaceId===workspace)set({pages:[...get().pages.filter(item=>item.id!==id),page]});}).catch(get().setError);} },
@@ -60,7 +61,7 @@ export const useWorkspace = create<WorkspaceState>((set,get) => ({
   },
   async trashPage(id) { await api(`/pages/${id}`,{ method:'DELETE' }); await get().reload(); get().navigate(get().pages[0]?.id ?? null); },
   toggleExpanded(id) { set({ expanded:get().expanded.includes(id) ? get().expanded.filter(item => item !== id) : [...get().expanded,id] }); },
-  toggleFavorite(id) { set({ favorites:get().favorites.includes(id) ? get().favorites.filter(item => item !== id) : [...get().favorites,id] }); },
+  toggleFavorite(id) { const favorite=!get().favorites.includes(id);void api(`/pages/${id}/favorite`,{method:'PUT',body:json({favorite})}).then(()=>set({favorites:favorite?[...get().favorites,id]:get().favorites.filter(item=>item!==id)})).catch(get().setError); },
   async signOut() {
     await api('/auth/sign-out',{ method:'POST',body:'{}' });
     // Recovery sessions clear their IndexedDB cache when the identity disappears.

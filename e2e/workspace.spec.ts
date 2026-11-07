@@ -1,4 +1,6 @@
 import { test,expect,type BrowserContext } from '@playwright/test';
+import { zipSync,strToU8 } from 'fflate';
+test.beforeEach(async({request})=>{await expect.poll(async()=>{try{return(await request.get('/api/health')).status();}catch{return 0;}},{timeout:20000}).toBe(200);});
 async function signIn(context:BrowserContext,email='jonathan@note.test'){
   const response=await context.request.post('/api/auth/sign-in/email',{data:{email,password:'Note-local-demo-2026'},headers:{origin:'http://127.0.0.1:5173'}});expect(response.ok()).toBeTruthy();
 }
@@ -48,4 +50,26 @@ test('creates and edits a structured record, finds its body, and follows its gra
   const session=await(await context.request.get('/api/session')).json();await expect.poll(async()=>{const graph=await(await context.request.get(`/api/workspaces/${session.workspaces[0].id}/graph`)).json();return graph.edges.some((edge:{source:string})=>edge.source===id);}).toBe(true);
   await page.getByRole('button',{name:'Graph',exact:true}).click();await expect(page.getByRole('img',{name:'Workspace knowledge graph'})).toBeVisible();await page.getByRole('link',{name:'Open Product direction',exact:true}).click();await expect(page.getByLabel('Page title',{exact:true})).toHaveValue('Product direction');
   await context.request.delete(`/api/pages/${id}`,{headers:{'x-note-request':'1'}});await context.close();
+});
+test('imports a versioned workspace ZIP through settings and downloads an export',async({browser})=>{
+  const context=await browser.newContext({baseURL:'http://127.0.0.1:5173'});await signIn(context);const page=await context.newPage();await page.goto('/');
+  await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByRole('button',{name:'Data',exact:true}).click();
+  const title=`Imported fixture ${Date.now()}`;const bytes=zipSync({'manifest.json':strToU8(JSON.stringify({schemaVersion:1,workspace:{name:'Fixture'},pages:[{id:'fixture-page',parentId:null,title,description:'A portable document',kind:'document',visibility:'workspace',content:{type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Portable fixture body'}]}]}}],databases:[],records:[],views:[],attachments:[]}))});
+  await page.getByLabel('Choose workspace archive',{exact:true}).setInputFiles({name:'fixture.zip',mimeType:'application/zip',buffer:Buffer.from(bytes)});await expect(page.getByText('Import complete',{exact:true})).toBeVisible();
+  const [download]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export workspace ZIP',exact:true}).click()]);expect(download.suggestedFilename()).toBe('note-workspace.zip');expect(await download.failure()).toBe(null);
+  await page.getByRole('button',{name:'Close dialog',exact:true}).click();await page.locator('.page-tree').getByRole('button',{name:title,exact:true}).click();await expect(page.getByRole('textbox',{name:'Page content'})).toContainText('Portable fixture body');
+  const id=page.url().split('#')[1].split('/')[0];await context.request.delete(`/api/pages/${id}`,{headers:{'x-note-request':'1'}});await context.close();
+});
+test('recipient verifies an invitation and loses access when membership is revoked',async({browser})=>{
+  const owner=await browser.newContext({baseURL:'http://127.0.0.1:5173'});await signIn(owner);const session=await(await owner.request.get('/api/session')).json();const workspace=session.workspaces[0].id;const email=`invite-${Date.now()}@note.test`;
+  const response=await owner.request.post(`/api/workspaces/${workspace}/invitations`,{headers:{'x-note-request':'1'},data:{email,role:'viewer'}});expect(response.ok()).toBeTruthy();const invitation=await response.json();
+  const recipient=await browser.newContext({baseURL:'http://127.0.0.1:5173'});const signup=await recipient.request.post('/api/auth/sign-up/email',{headers:{origin:'http://127.0.0.1:5173'},data:{name:'Invitation fixture',email,password:'Note-local-demo-2026'}});expect(signup.ok()).toBeTruthy();const identity=(await signup.json()).user.id;
+  const page=await recipient.newPage();await page.goto(`/?invite=${invitation.id}`);await page.getByRole('button',{name:'Verify email',exact:true}).click();await page.getByRole('link',{name:'Verify your email for Note',exact:true}).click();await page.getByRole('button',{name:'Accept invitation',exact:true}).click();
+  await expect(page.locator('.save-status')).toHaveText('Read only');await expect(page.getByRole('textbox',{name:'Page content'})).toHaveAttribute('contenteditable','false');
+  const removed=await owner.request.patch(`/api/workspaces/${workspace}/members/${identity}`,{headers:{'x-note-request':'1'},data:{role:null}});expect(removed.ok()).toBeTruthy();
+  await expect(page.getByRole('textbox',{name:'Page content'})).toHaveCount(0);await recipient.close();await owner.close();
+});
+test('keeps disconnected edits in local recovery and synchronizes them after reconnect',async({browser})=>{
+  const context=await browser.newContext({baseURL:'http://127.0.0.1:5173'});await signIn(context);const session=await(await context.request.get('/api/session')).json();const created=await context.request.post(`/api/workspaces/${session.workspaces[0].id}/pages`,{headers:{'x-note-request':'1'},data:{title:`Recovery check ${Date.now()}`}});const note=await created.json();
+  const page=await context.newPage();await page.goto(`/#${note.id}/document`);await expect(page.locator('.save-status')).toHaveText('Saved');await context.setOffline(true);await page.getByRole('textbox',{name:'Page content'}).pressSequentially('Recovered while disconnected');await expect(page.locator('.save-status')).toHaveText('Saved locally');await context.setOffline(false);await expect(page.locator('.save-status')).toHaveText('Saved');await page.reload();await expect(page.getByRole('textbox',{name:'Page content'})).toContainText('Recovered while disconnected');await context.request.delete(`/api/pages/${note.id}`,{headers:{'x-note-request':'1'}});await context.close();
 });

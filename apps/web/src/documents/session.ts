@@ -26,12 +26,15 @@ export class DocumentSession {
     });
     this.provider.setAwarenessField('user',{name:useWorkspace.getState().user!.name,color:'#39745f'});
     window.addEventListener('beforeunload',this.beforeUnload);
+    window.addEventListener('offline',this.onOffline);window.addEventListener('online',this.onOnline);
   }
+  private onOffline=()=>{this.connected=false;this.provider.disconnect();if(this.dirty)this.setStatus(this.locallySaved?'local':'error');};
+  private onOnline=()=>{if(!this.destroyed)void api<{generation:number}>(`/pages/${this.page.id}/document`).then(config=>{if(this.destroyed)return;if(config.generation!==this.page.generation)throw new Error('The document generation changed. Keep your local recovery copy before reopening it.');return this.provider.connect();}).catch(error=>{this.setStatus('error');useWorkspace.getState().setError(error);});};
   private beforeUnload=(event:BeforeUnloadEvent)=>{if(this.dirty){event.preventDefault();event.returnValue='';}};
   private onUpdate=()=>{
     if(this.destroyed)return;this.dirty=!snapshotAcknowledgementCovers(Y.encodeStateAsUpdate(this.doc),this.lastAcknowledgement);this.locallySaved=false;
     if(!this.readOnly)this.setStatus(this.dirty ? this.connected?'saving':'connecting' : 'saved');
     if(this.recovery)void this.recovery.write(this.key,Y.encodeStateAsUpdate(this.doc)).then(()=>{this.locallySaved=true;if(!this.connected && this.dirty)this.setStatus('local');}).catch(()=>{this.locallySaved=false;if(!this.connected)this.setStatus('error');useWorkspace.getState().setError('Local recovery storage is full or unavailable.');});
   };
-  async destroy(){this.destroyed=true;this.doc.off('update',this.onUpdate);window.removeEventListener('beforeunload',this.beforeUnload);this.provider?.destroy();if(this.recovery){if(!useWorkspace.getState().user)await this.recovery.clearIdentity(this.userId);this.recovery.close();}this.doc.destroy();}
+  async destroy(){this.destroyed=true;this.doc.off('update',this.onUpdate);window.removeEventListener('beforeunload',this.beforeUnload);window.removeEventListener('offline',this.onOffline);window.removeEventListener('online',this.onOnline);this.provider?.destroy();if(this.recovery){if(!useWorkspace.getState().user)await this.recovery.clearIdentity(this.userId);this.recovery.close();}this.doc.destroy();}
 }

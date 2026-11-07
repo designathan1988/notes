@@ -7,7 +7,7 @@ type CreatePage = { title: string; parentId?: string | null; visibility?: 'works
 export class Pages {
   onChanged: (workspace: string) => void = () => {};
   constructor(readonly db: Database, readonly access = new Access(db)) {}
-  async create(actor: Actor, workspace: string, input: CreatePage): Promise<Page> {
+  async create(actor: Actor, workspace: string, input: CreatePage, internalId?:string): Promise<Page> {
     const title = validateTitle(input.title);
     if (input.kind && !['document','database','record'].includes(input.kind)) throw new DomainError('INVALID', 'Unknown page type.');
     if (input.visibility && !['workspace','private'].includes(input.visibility)) throw new DomainError('INVALID', 'Unknown visibility.');
@@ -18,7 +18,7 @@ export class Pages {
       if (parent && parent.workspaceId !== workspace) throw new DomainError('FORBIDDEN', 'Parent belongs to another workspace.');
       if (parent?.kind === 'database' && input.kind !== 'record') throw new DomainError('CONFLICT', 'Create database records with the record command.');
       if(input.kind==='record' && parent?.kind!=='database')throw new DomainError('CONFLICT','Records must belong to a database.');
-      const id = randomUUID();
+      const id = internalId ?? randomUUID();
       const [row] = await tx.query<PageRow>(`INSERT INTO pages (id,workspace_id,parent_id,title,description,created_by,visibility,kind,position)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,(SELECT coalesce(max(position),0)+1 FROM pages WHERE workspace_id=$2)) RETURNING *`,
         [id, workspace, parent?.id ?? null, title, String(input.description ?? '').slice(0,2000), actor.userId, parent?.visibility ?? input.visibility ?? 'workspace', input.kind ?? 'document']);

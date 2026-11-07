@@ -28,3 +28,9 @@ test('record relations cannot expose another private root',async()=>{
 test('ordinary page creation cannot manufacture unowned record pages',async()=>{
   await expect(new Pages(db).create(actor,'studio',{title:'Unowned',kind:'record'})).rejects.toMatchObject({code:'CONFLICT'});
 });
+test('a schema change racing record creation cannot commit an invalid typed value',async()=>{
+  const database=(await new Pages(db).create(actor,'studio',{title:'Schema race',kind:'database'})).id;await databases.setFields(actor,database,[{id:'score',name:'Score',type:'number'}]);
+  let release!:()=>void;let entered!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});const ready=new Promise<void>(resolve=>{entered=resolve;});
+  const delayed:Database={...db,transaction:async fn=>{entered();await gate;return db.transaction(fn);}};
+  const creating=new Databases(delayed).createRecord(actor,database,{title:'Racing record',values:{score:42}});await ready;await databases.setFields(actor,database,[{id:'score',name:'Score',type:'text'}]);release();await expect(creating).rejects.toMatchObject({code:'INVALID'});
+});

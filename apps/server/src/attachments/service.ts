@@ -19,7 +19,7 @@ function safeInline(type:string,bytes:Buffer){
 }
 export class Attachments {
   constructor(readonly db:Database,readonly storage:Storage){}
-  async begin(actor:Actor,pageId:string,input:{filename:string;mediaType:string;size:number}):Promise<Attachment>{
+  async begin(actor:Actor,pageId:string,input:{filename:string;mediaType:string;size:number},internalId?:string):Promise<Attachment>{
     const page=await new Access(this.db).requirePage(actor,pageId,'write');
     if(!Number.isSafeInteger(input.size) || input.size<0)throw new DomainError('INVALID','Invalid file size.');
     if(input.size>MAX_FILE_BYTES)throw new DomainError('LIMIT','Files must be 25 MiB or smaller.');
@@ -27,9 +27,10 @@ export class Attachments {
     const mediaType=/^[\w.+-]+\/[\w.+-]+$/.test(input.mediaType) ? input.mediaType.toLowerCase() : 'application/octet-stream';
     return this.db.transaction(async tx=>{
       await tx.query('SELECT id FROM organization WHERE id=$1 FOR UPDATE',[page.workspaceId]);
+      if(internalId){const [existing]=await tx.query<Row>('SELECT * FROM attachments WHERE id=$1 AND page_id=$2',[internalId,pageId]);if(existing)return map(existing);}
       const [usage]=await tx.query<{used:string;limit:string}>(`SELECT coalesce(sum(a.size),0)::text AS used,coalesce((SELECT storage_limit FROM beta_entitlements WHERE workspace_id=$1),1073741824)::text AS limit FROM attachments a JOIN pages p ON p.id=a.page_id WHERE p.workspace_id=$1`,[page.workspaceId]);
       if(Number(usage.used)+input.size>Number(usage.limit))throw new DomainError('LIMIT','This workspace has reached its storage allowance.');
-      const id=randomUUID();const [row]=await tx.query<Row>('INSERT INTO attachments (id,page_id,filename,media_type,size,object_key) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',[id,pageId,filename,mediaType,input.size,`${page.workspaceId}/${id}`]);return map(row);
+      const id=internalId ?? randomUUID();const [row]=await tx.query<Row>('INSERT INTO attachments (id,page_id,filename,media_type,size,object_key) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',[id,pageId,filename,mediaType,input.size,`${page.workspaceId}/${id}`]);return map(row);
     });
   }
   private async get(actor:Actor,id:string,mode:'read'|'write'){

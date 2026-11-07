@@ -1,5 +1,5 @@
 import { Check,CloudOff,LoaderCircle,MoreHorizontal,Menu,Users,X,Plus,FileText,Database,Star,Trash2,FolderInput,PanelRight } from 'lucide-react';
-import { useState,lazy,Suspense,type FormEvent } from 'react';
+import { useState,useEffect,lazy,Suspense,type FormEvent } from 'react';
 import { useWorkspace } from '../state/store.js';
 import { Sidebar } from '../navigation/Sidebar.js';
 import { IconButton } from '../ui/IconButton.js';
@@ -9,10 +9,12 @@ import { DocumentEditor } from '../documents/Editor.js';
 import { ContextPanel } from '../knowledge/ContextPanel.js';
 import { DatabaseView } from '../databases/DatabaseView.js';
 import { Search } from '../knowledge/Search.js';
+import { Settings } from '../settings/Settings.js';import { Invite } from '../settings/Invite.js';import { MovePage } from '../navigation/MovePage.js';import { download } from '../settings/DataSettings.js';
 const Graph=lazy(()=>import('../knowledge/Graph.js'));
 export function Workspace() {
   const state = useWorkspace();const page = state.pages.find(item => item.id === state.selectedId);const parent = state.pages.find(item => item.id === page?.parentId);
   const status = { saved:'Saved',saving:'Saving…',connecting:'Connecting…',local:'Saved locally',error:'Save failed','read-only':'Read only' }[state.saveStatus];
+  useEffect(()=>{if(!state.workspaceId)return;const source=new EventSource(`/api/workspaces/${state.workspaceId}/events`);const refresh=()=>{void useWorkspace.getState().reload();const id=useWorkspace.getState().selectedId;if(id)void useWorkspace.getState().loadMentions(id).catch(()=>{});};source.addEventListener('refresh',refresh);source.addEventListener('access-changed',()=>{source.close();refresh();});return()=>source.close();},[state.workspaceId]);
   return <div className="app-shell"><Sidebar/><main className="workspace-main">
     <header className="topbar"><div className="mobile-brand"><IconButton label="Open navigation" onClick={() => useWorkspace.setState({sidebarOpen:true})}><Menu/></IconButton><span className="brand-mark"><i/><i/><i/><i/></span><b>Note</b></div>
       <div className="breadcrumb">{parent && <><span>{parent.title}</span><span>/</span></>}<strong>{page?.title ?? 'Workspace'}</strong></div>
@@ -24,7 +26,8 @@ export function Workspace() {
   </main>
   {state.dialog === 'new-page' && <NewPage/>}
   {state.dialog === 'search' && <Search/>}
-  {state.dialog === 'page-menu' && page && <Dialog title="Page actions" onClose={() => state.openDialog(null)}><div className="menu-list"><button onClick={() => {state.toggleFavorite(page.id);state.openDialog(null);}}><Star/>Toggle favorite</button><button onClick={() => state.openDialog('new-page')}><Plus/>Add subpage</button><button onClick={() => state.openDialog('move')}><FolderInput/>Move page</button><button className="danger" onClick={() => void state.trashPage(page.id).catch(state.setError)}><Trash2/>Move to trash</button></div></Dialog>}
+  {state.dialog === 'settings' && <Settings/>}{state.dialog === 'invite' && <Invite/>}{state.dialog === 'move' && page && <MovePage/>}
+  {state.dialog === 'page-menu' && page && <Dialog title="Page actions" onClose={() => state.openDialog(null)}><div className="menu-list"><button onClick={() => {state.toggleFavorite(page.id);state.openDialog(null);}}><Star/>{state.favorites.includes(page.id)?'Remove favorite':'Add to favorites'}</button><button onClick={() => state.openDialog('new-page')}><Plus/>Add subpage</button><button onClick={() => state.openDialog('move')} disabled={page.kind==='record'}><FolderInput/>Move page</button><button onClick={()=>void download(`/api/pages/${page.id}/markdown`,page.title+'.md').catch(state.setError)}><FileText/>Export text as Markdown</button><button className="danger" onClick={() => void state.trashPage(page.id).catch(state.setError)}><Trash2/>Move to trash</button></div></Dialog>}
   </div>;
 }
 function AllPages(){const pages=useWorkspace(state=>state.pages);return <section className="all-pages"><h1>All pages</h1><p>Everything you’re thinking about, in one place.</p><div>{pages.map(page=><button key={page.id} onClick={()=>useWorkspace.getState().navigate(page.id,page.kind==='database'?'database':'document')}><FileText/><span>{page.title}</span><small>{page.kind}</small></button>)}</div></section>;}

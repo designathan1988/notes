@@ -35,6 +35,8 @@ function ConnectedEditor({session}:{session:DocumentSession}){
     },
   },[session]);
   useEffect(()=>{if(!editor)return;const update=()=>{const projection=projectDocument(editor.getJSON());useWorkspace.setState({outline:projection.headings,linkedPageIds:projection.links});};update();editor.on('update',update);return()=>{editor.off('update',update);};},[editor]);
+  const role=useWorkspace(state=>state.workspaces.find(item=>item.id===state.workspaceId)?.role);
+  useEffect(()=>{if(editor){session.readOnly=role==='viewer';editor.setEditable(!session.readOnly);if(session.readOnly)useWorkspace.setState({saveStatus:'read-only'});}},[role,editor,session]);
   if(!editor)return null;
   return <div className="editor-wrap"><EditorContent editor={editor}/>{uploading>0 && <p className="upload-status" role="status">Uploading {uploading} {uploading===1 ? 'file' : 'files'}… Keep this tab open.</p>}{failed.map((file,index)=><FailedFile key={index} file={file} retry={()=>{setFailed(files=>files.filter((_,i)=>i!==index));void upload(file).then(result=>editor.chain().focus().insertContent(fileNode(result)).run()).catch(useWorkspace.getState().setError);}}/>)}<input ref={fileInput} type="file" multiple hidden aria-label="Choose attachments" onChange={event=>{for(const file of [...(event.target.files ?? [])])void upload(file).then(result=>editor.chain().focus().insertContent(fileNode(result)).run()).catch(useWorkspace.getState().setError);event.target.value='';}}/>{!session.readOnly && <div className="document-tools" role="toolbar" aria-label="Document formatting">
     <IconButton label="Insert block" onClick={()=>setCommands(true)}><Plus/></IconButton><span className="tool-divider"/>
