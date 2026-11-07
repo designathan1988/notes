@@ -82,7 +82,7 @@ npm run build
 
 Browser tests cover two-identity editing, reload persistence, rich-paste safety and source preservation, exact uploaded bytes, record editing, body search, graph navigation, ZIP transfer, verified invitation acceptance, live access revocation, and disconnected-edit recovery. Behavior tests use an actual PostgreSQL engine rather than a mocked persistence layer.
 
-The visual references are in `docs/design/concepts/`; their tokens, copy inventory, and fidelity evidence are in `docs/design/visual-system.md`.
+The current continuous-block interface and visual evidence are documented in `docs/design/verification.md`. Generated concepts in `docs/design/concepts/` are historical; the user rejected the separated-card directions. The current interface follows the user's explicit Notion-style block interaction requirements.
 
 ## Before commercial launch
 

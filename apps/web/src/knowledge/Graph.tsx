@@ -1,14 +1,157 @@
-import { useEffect,useMemo,useState } from 'react';
-import { ZoomIn,ZoomOut,Focus,Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ZoomIn, ZoomOut, Focus, Search } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
 import { IconButton } from '../ui/IconButton.js';
-export default function Graph(){
-  const workspace=useWorkspace(state=>state.workspaceId);const selected=useWorkspace(state=>state.selectedId);const load=useWorkspace(state=>state.loadGraph);const [local,setLocal]=useState(false);const [zoom,setZoom]=useState(1);const [filter,setFilter]=useState('');const [pan,setPan]=useState({x:0,y:0});
-  const center=local?selected ?? undefined:undefined;const data=useWorkspace(state=>state.graphs[`${workspace}:${center ?? 'all'}`]);
-  useEffect(()=>{void load(center).catch(useWorkspace.getState().setError);},[workspace,center,load]);
-  const nodes=useMemo(()=>{const visible=(data?.nodes ?? []).filter(node=>node.title.toLowerCase().includes(filter.toLowerCase()));const count=visible.length;return visible.map((node,index)=>{const radius=count<9?230:count<35?290:370;const angle=index*2*Math.PI/Math.max(count,1)-Math.PI/2;return{...node,x:500+Math.cos(angle)*radius,y:350+Math.sin(angle)*radius*.76};});},[data,filter]);
-  const map=new Map(nodes.map(node=>[node.id,node]));
-  return <section className="graph-screen"><header><div><h1>Knowledge graph</h1><p>Follow the connections. Find your next idea.</p></div><label className="graph-mode"><input type="checkbox" checked={local} onChange={event=>setLocal(event.target.checked)}/>Local graph</label></header><div className="graph-search"><Search/><input aria-label="Filter graph" placeholder="Find a page in the graph…" value={filter} onChange={event=>setFilter(event.target.value)}/></div><div className="graph-canvas" onPointerDown={event=>{if((event.target as Element).closest('[data-node]'))return;const origin={x:event.clientX-pan.x,y:event.clientY-pan.y};event.currentTarget.setPointerCapture(event.pointerId);const element=event.currentTarget;const move=(next:PointerEvent)=>setPan({x:next.clientX-origin.x,y:next.clientY-origin.y});const end=()=>{element.removeEventListener('pointermove',move);element.removeEventListener('pointerup',end);};element.addEventListener('pointermove',move);element.addEventListener('pointerup',end);}}>
-    <svg viewBox="0 0 1000 700" role="img" aria-label="Workspace knowledge graph"><g transform={`translate(${pan.x} ${pan.y}) translate(500 350) scale(${zoom}) translate(-500 -350)`}>{data?.edges.map((edge,index)=>{const source=map.get(edge.source);const target=map.get(edge.target);return source && target?<line key={index} x1={source.x} y1={source.y} x2={target.x} y2={target.y} stroke="#c1d3c7" strokeWidth="1.5"/>:null;})}{nodes.map(node=><g key={node.id} data-node={node.id} role="link" tabIndex={0} aria-label={`Open ${node.title}`} className="graph-point" onClick={()=>useWorkspace.getState().navigate(node.id,node.kind==='database'?'database':'document')} onKeyDown={event=>{if(event.key==='Enter')useWorkspace.getState().navigate(node.id);}}><rect x={node.x-25} y={node.y-20} width="50" height="55" fill="transparent"/><title>{node.title}</title><circle cx={node.x} cy={node.y} r={node.id===selected?11:7} fill={node.id===selected?'#39745f':'#8eac97'} stroke="white" strokeWidth="3"/><text x={node.x} y={node.y+28} textAnchor="middle">{node.title.length>30?node.title.slice(0,28)+'…':node.title}</text></g>)}</g></svg>{data && !nodes.length && <p className="graph-empty">No pages match this view.</p>}
-    <div className="graph-controls"><IconButton label="Zoom in" onClick={()=>setZoom(value=>Math.min(3,value+.2))}><ZoomIn/></IconButton><IconButton label="Zoom out" onClick={()=>setZoom(value=>Math.max(.3,value-.2))}><ZoomOut/></IconButton><IconButton label="Reset graph view" onClick={()=>{setZoom(1);setPan({x:0,y:0});}}><Focus/></IconButton></div></div><footer>{nodes.length} pages · {data?.edges.length ?? 0} connections <span>Drag to explore · Select a page to open</span></footer></section>;
+export default function Graph() {
+  const workspace = useWorkspace((state) => state.workspaceId);
+  const selected = useWorkspace((state) => state.selectedId);
+  const load = useWorkspace((state) => state.loadGraph);
+  const [local, setLocal] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [filter, setFilter] = useState('');
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const center = local ? (selected ?? undefined) : undefined;
+  const data = useWorkspace((state) => state.graphs[`${workspace}:${center ?? 'all'}`]);
+  useEffect(() => {
+    void load(center).catch(useWorkspace.getState().setError);
+  }, [workspace, center, load]);
+  const nodes = useMemo(() => {
+    const visible = (data?.nodes ?? []).filter((node) =>
+      node.title.toLowerCase().includes(filter.toLowerCase()),
+    );
+    const count = visible.length;
+    return visible.map((node, index) => {
+      const radius = count < 9 ? 230 : count < 35 ? 290 : 370;
+      const angle = (index * 2 * Math.PI) / Math.max(count, 1) - Math.PI / 2;
+      return {
+        ...node,
+        x: 500 + Math.cos(angle) * radius,
+        y: 350 + Math.sin(angle) * radius * 0.76,
+      };
+    });
+  }, [data, filter]);
+  const map = new Map(nodes.map((node) => [node.id, node]));
+  return (
+    <section className="graph-screen">
+      <header>
+        <div>
+          <h1>Knowledge graph</h1>
+          <p>Follow the connections. Find your next idea.</p>
+        </div>
+        <label className="graph-mode">
+          <input
+            type="checkbox"
+            checked={local}
+            onChange={(event) => setLocal(event.target.checked)}
+          />
+          Local graph
+        </label>
+      </header>
+      <div className="graph-search">
+        <Search />
+        <input
+          aria-label="Filter graph"
+          placeholder="Find a page in the graph…"
+          value={filter}
+          onChange={(event) => setFilter(event.target.value)}
+        />
+      </div>
+      <div
+        className="graph-canvas"
+        onPointerDown={(event) => {
+          if ((event.target as Element).closest('[data-node]')) return;
+          const origin = { x: event.clientX - pan.x, y: event.clientY - pan.y };
+          event.currentTarget.setPointerCapture(event.pointerId);
+          const element = event.currentTarget;
+          const move = (next: PointerEvent) =>
+            setPan({ x: next.clientX - origin.x, y: next.clientY - origin.y });
+          const end = () => {
+            element.removeEventListener('pointermove', move);
+            element.removeEventListener('pointerup', end);
+          };
+          element.addEventListener('pointermove', move);
+          element.addEventListener('pointerup', end);
+        }}
+      >
+        <svg viewBox="0 0 1000 700" role="img" aria-label="Workspace knowledge graph">
+          <g
+            transform={`translate(${pan.x} ${pan.y}) translate(500 350) scale(${zoom}) translate(-500 -350)`}
+          >
+            {data?.edges.map((edge, index) => {
+              const source = map.get(edge.source);
+              const target = map.get(edge.target);
+              return source && target ? (
+                <line
+                  key={index}
+                  x1={source.x}
+                  y1={source.y}
+                  x2={target.x}
+                  y2={target.y}
+                  stroke="#d3daeb"
+                  strokeWidth="1.5"
+                />
+              ) : null;
+            })}
+            {nodes.map((node) => (
+              <g
+                key={node.id}
+                data-node={node.id}
+                role="link"
+                tabIndex={0}
+                aria-label={`Open ${node.title}`}
+                className="graph-point"
+                onClick={() =>
+                  useWorkspace
+                    .getState()
+                    .navigate(node.id, node.kind === 'database' ? 'database' : 'document')
+                }
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') useWorkspace.getState().navigate(node.id);
+                }}
+              >
+                <rect x={node.x - 25} y={node.y - 20} width="50" height="55" fill="transparent" />
+                <title>{node.title}</title>
+                <circle
+                  cx={node.x}
+                  cy={node.y}
+                  r={node.id === selected ? 11 : 7}
+                  fill={node.id === selected ? '#5865e8' : '#9aa7d6'}
+                  stroke="white"
+                  strokeWidth="3"
+                />
+                <text x={node.x} y={node.y + 28} textAnchor="middle">
+                  {node.title.length > 30 ? node.title.slice(0, 28) + '…' : node.title}
+                </text>
+              </g>
+            ))}
+          </g>
+        </svg>
+        {data && !nodes.length && <p className="graph-empty">No pages match this view.</p>}
+        <div className="graph-controls">
+          <IconButton label="Zoom in" onClick={() => setZoom((value) => Math.min(3, value + 0.2))}>
+            <ZoomIn />
+          </IconButton>
+          <IconButton
+            label="Zoom out"
+            onClick={() => setZoom((value) => Math.max(0.3, value - 0.2))}
+          >
+            <ZoomOut />
+          </IconButton>
+          <IconButton
+            label="Reset graph view"
+            onClick={() => {
+              setZoom(1);
+              setPan({ x: 0, y: 0 });
+            }}
+          >
+            <Focus />
+          </IconButton>
+        </div>
+      </div>
+      <footer>
+        {nodes.length} pages · {data?.edges.length ?? 0} connections{' '}
+        <span>Drag to explore · Select a page to open</span>
+      </footer>
+    </section>
+  );
 }
