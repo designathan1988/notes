@@ -1,0 +1,31 @@
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE TABLE IF NOT EXISTS "user" (id text PRIMARY KEY, name text NOT NULL, email text UNIQUE NOT NULL, email_verified boolean NOT NULL DEFAULT false, image text, created_at timestamp NOT NULL DEFAULT now(), updated_at timestamp NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS session (id text PRIMARY KEY, token text UNIQUE NOT NULL, expires_at timestamp NOT NULL, user_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE, ip_address text, user_agent text, active_organization_id text, created_at timestamp NOT NULL DEFAULT now(), updated_at timestamp NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS account (id text PRIMARY KEY, account_id text NOT NULL, provider_id text NOT NULL, user_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE, access_token text, refresh_token text, id_token text, access_token_expires_at timestamp, refresh_token_expires_at timestamp, scope text, password text, created_at timestamp NOT NULL DEFAULT now(), updated_at timestamp NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS verification (id text PRIMARY KEY, identifier text NOT NULL, value text NOT NULL, expires_at timestamp NOT NULL, created_at timestamp NOT NULL DEFAULT now(), updated_at timestamp NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS organization (id text PRIMARY KEY, name text NOT NULL, slug text UNIQUE NOT NULL, logo text, metadata text, created_at timestamp NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS member (id text PRIMARY KEY, organization_id text NOT NULL REFERENCES organization(id) ON DELETE CASCADE, user_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE, role text NOT NULL, created_at timestamp NOT NULL DEFAULT now(), UNIQUE(organization_id, user_id));
+CREATE TABLE IF NOT EXISTS invitation (id text PRIMARY KEY, organization_id text NOT NULL REFERENCES organization(id) ON DELETE CASCADE, email text NOT NULL, role text, status text NOT NULL, expires_at timestamp NOT NULL, inviter_id text NOT NULL REFERENCES "user"(id), created_at timestamp NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS pages (
+  id text PRIMARY KEY, workspace_id text NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+  parent_id text, title text NOT NULL, description text NOT NULL DEFAULT '', kind text NOT NULL DEFAULT 'document',
+  visibility text NOT NULL DEFAULT 'workspace', created_by text NOT NULL REFERENCES "user"(id), position integer NOT NULL DEFAULT 0,
+  revision integer NOT NULL DEFAULT 1, generation integer NOT NULL DEFAULT 1, updated_at timestamptz NOT NULL DEFAULT now(), deleted_at timestamptz,
+  UNIQUE(workspace_id,id), FOREIGN KEY(workspace_id,parent_id) REFERENCES pages(workspace_id,id),
+  CHECK(kind IN ('document','database','record')), CHECK(visibility IN ('workspace','private')), CHECK(parent_id IS DISTINCT FROM id)
+);
+CREATE INDEX IF NOT EXISTS pages_parent ON pages(workspace_id,parent_id,position);
+CREATE TABLE IF NOT EXISTS documents (page_id text PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE, state bytea NOT NULL, version bigint NOT NULL DEFAULT 1, updated_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS document_checkpoints (id text PRIMARY KEY, page_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE, state bytea NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS database_definitions (page_id text PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE, fields jsonb NOT NULL DEFAULT '[]');
+CREATE TABLE IF NOT EXISTS records (page_id text PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE, database_id text NOT NULL REFERENCES database_definitions(page_id), values jsonb NOT NULL DEFAULT '{}', revision integer NOT NULL DEFAULT 1);
+CREATE TABLE IF NOT EXISTS table_views (id text PRIMARY KEY, database_id text NOT NULL REFERENCES database_definitions(page_id) ON DELETE CASCADE, name text NOT NULL, config jsonb NOT NULL DEFAULT '{}');
+CREATE TABLE IF NOT EXISTS attachments (id text PRIMARY KEY, page_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE, filename text NOT NULL, media_type text NOT NULL, size integer NOT NULL, object_key text NOT NULL UNIQUE, status text NOT NULL DEFAULT 'pending', created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS search_projection (page_id text PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE, version bigint NOT NULL, body text NOT NULL DEFAULT '', tokens tsvector NOT NULL DEFAULT ''::tsvector);
+CREATE INDEX IF NOT EXISTS search_tokens ON search_projection USING GIN(tokens);
+CREATE INDEX IF NOT EXISTS page_title_trigrams ON pages USING GIN(title gin_trgm_ops);
+CREATE TABLE IF NOT EXISTS link_projection (source_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE, target_id text NOT NULL, excerpt text NOT NULL DEFAULT '', PRIMARY KEY(source_id,target_id));
+CREATE TABLE IF NOT EXISTS outbox (id bigserial PRIMARY KEY, page_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE, version bigint NOT NULL, processed_at timestamptz);
+CREATE TABLE IF NOT EXISTS operation_keys (id text PRIMARY KEY, result jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS favorites (user_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE, page_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE, PRIMARY KEY(user_id,page_id));
+CREATE TABLE IF NOT EXISTS beta_entitlements (workspace_id text PRIMARY KEY REFERENCES organization(id) ON DELETE CASCADE, plan text NOT NULL DEFAULT 'beta', storage_limit bigint NOT NULL DEFAULT 1073741824);
