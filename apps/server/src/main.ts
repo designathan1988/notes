@@ -6,6 +6,7 @@ import { createAuth } from './identity/auth.js';
 import { createApp } from './app.js';
 import { seed } from './seed.js';
 import { seedContent } from './documents/seed-content.js';
+import { seedRecords } from './databases/seed.js';
 const runtime = resolve('.runtime');await mkdir(runtime,{recursive:true});
 const production = process.env.NODE_ENV === 'production';
 if(production && (!process.env.DATABASE_URL || !process.env.AUTH_SECRET || !process.env.APP_ORIGIN)) throw new Error('Production requires DATABASE_URL, AUTH_SECRET and APP_ORIGIN.');
@@ -14,6 +15,7 @@ if(!secret){const path=resolve(runtime,'auth-secret');try{secret=await readFile(
 const db=await openDatabase({directory:resolve(runtime,'postgres'),url:process.env.DATABASE_URL});await migrate(db);
 const auth=createAuth(db,{secret,origin:process.env.APP_ORIGIN});await seed(db,auth);
 await seedContent(db);
+await seedRecords(db);
 const app=await createApp({db,auth});
 await app.listen({host:'127.0.0.1',port:Number(process.env.PORT ?? 3001)});
 console.log('Note API: http://127.0.0.1:3001');

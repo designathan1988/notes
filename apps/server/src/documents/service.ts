@@ -24,7 +24,8 @@ export class Documents {
         Y.applyUpdate(doc,update);editorSchema().nodeFromJSON(documentJSON(doc)).check();
         const state=Y.encodeStateAsUpdate(doc);if(state.length>MAX_DOCUMENT_BYTES)throw new DomainError('LIMIT','This document exceeds the current size limit.');
         const [row]=await tx.query<{version:string|number}>('UPDATE documents SET state=$2,version=version+1,updated_at=now() WHERE page_id=$1 RETURNING version',[pageId,Buffer.from(state)]);
-        await tx.query('INSERT INTO outbox (page_id,version) VALUES ($1,$2)',[pageId,row.version]);
+        await tx.query('UPDATE pages SET index_revision=index_revision+1,updated_at=now() WHERE id=$1',[pageId]);
+        await tx.query('INSERT INTO outbox (page_id,version) SELECT id,index_revision FROM pages WHERE id=$1',[pageId]);
         return{type:'durable',pageId,generation,version:Number(row.version),stateVector:Buffer.from(Y.encodeStateVector(doc)).toString('base64'),snapshot:Buffer.from(Y.encodeSnapshot(Y.snapshot(doc))).toString('base64')};
       }finally{doc.destroy();}
     });

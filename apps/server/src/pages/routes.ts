@@ -5,6 +5,7 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
   app.get<{ Params: { workspace: string }; Querystring: { trash?: string } }>('/api/workspaces/:workspace/pages', request => pages.list(request.actor, request.params.workspace, request.query.trash === 'true'));
   app.post<{ Params: { workspace: string } }>('/api/workspaces/:workspace/pages', async request => {
     assertObject(request.body);
+    if(request.body.kind && !['document','database'].includes(String(request.body.kind)))throw new DomainError('INVALID','Use the database record command for records.');
     return pages.create(request.actor, request.params.workspace, { title: String(request.body.title ?? 'Untitled'), parentId: request.body.parentId as string | undefined, kind: request.body.kind as 'document' | 'database', visibility: request.body.visibility as 'workspace' | 'private' });
   });
   app.get<{ Params: { id: string } }>('/api/pages/:id', request => pages.get(request.actor,request.params.id));

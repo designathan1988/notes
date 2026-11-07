@@ -21,12 +21,16 @@ export class Access {
     return { ...toPage(row), visibility: root.visibility };
   }
   async visiblePages(actor: Actor, workspace: string, trash = false): Promise<Page[]> {
-    await this.requireWorkspace(actor, workspace);
-    const rows = await this.db.query<PageRow>(`WITH RECURSIVE visible AS (
-      SELECT p.* FROM pages p WHERE workspace_id=$1 AND parent_id IS NULL AND (visibility='workspace' OR created_by=$2)
-      UNION ALL SELECT p.* FROM pages p JOIN visible v ON p.parent_id=v.id
-    ) SELECT * FROM visible WHERE ${trash ? 'deleted_at IS NOT NULL' : 'deleted_at IS NULL'} ORDER BY position,title LIMIT 5000`, [workspace, actor.userId]);
+    const scope=await this.scope(actor,workspace,trash);
+    const rows = await this.db.query<PageRow>(`${scope.sql} SELECT * FROM visible ${trash ? 'WHERE deleted_at IS NOT NULL' : ''} ORDER BY position,title LIMIT 5000`,scope.params);
     return rows.map(toPage);
+  }
+  async scope(actor:Actor,workspace:string,trash=false){
+    await this.requireWorkspace(actor,workspace);
+    return{sql:`WITH RECURSIVE visible AS (
+      SELECT p.* FROM pages p WHERE workspace_id=$1 AND parent_id IS NULL AND (visibility='workspace' OR created_by=$2) ${trash ? '' : 'AND deleted_at IS NULL'}
+      UNION ALL SELECT p.* FROM pages p JOIN visible v ON p.parent_id=v.id ${trash ? '' : 'WHERE p.deleted_at IS NULL'}
+    )`,params:[workspace,actor.userId]};
   }
   async workspaces(actor: Actor): Promise<Workspace[]> {
     return this.db.query<Workspace>('SELECT o.id,o.name,m.role FROM organization o JOIN member m ON m.organization_id=o.id WHERE m.user_id=$1 ORDER BY o.created_at', [actor.userId]);

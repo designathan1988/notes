@@ -12,6 +12,8 @@ test('two independent identities edit, persist, and reopen one shared document',
   await Promise.all([a.goto(`/#${page.id}/document`),b.goto(`/#${page.id}/document`)]);
   await expect(a.locator('.save-status')).toHaveText('Saved');await expect(b.locator('.save-status')).toHaveText('Saved');
   const one=a.getByRole('textbox',{name:'Page content'});const two=b.getByRole('textbox',{name:'Page content'});
+  await one.click();await one.press('Control+End');await one.press('Enter');await expect(two.locator('p')).toHaveCount(2);
+  await one.locator('p').first().click();await two.locator('p').last().click();
   await Promise.all([one.pressSequentially('Alpha '),two.pressSequentially('Beta ')]);
   await expect(one).toContainText('Alpha');await expect(one).toContainText('Beta');await expect(two).toContainText('Alpha');await expect(two).toContainText('Beta');
   await expect(a.locator('.save-status')).toHaveText('Saved');await expect(b.locator('.save-status')).toHaveText('Saved');
@@ -32,4 +34,18 @@ test('pastes rich content safely and persists original source and uploaded image
   await page.locator('input[type=file]').setInputFiles({name:'sample.png',mimeType:'image/png',buffer:png});await expect(page.locator('.attachment-block img')).toBeVisible();await expect(page.locator('.save-status')).toHaveText('Saved');
   await page.reload();await expect(page.locator('.attachment-block img')).toBeVisible();const imageUrl=await page.locator('.attachment-block img').getAttribute('src');expect((await(await context.request.get(imageUrl!)).body()).equals(png)).toBe(true);
   await context.request.delete(`/api/pages/${note.id}`,{headers:{'x-note-request':'1'}});await context.close();
+});
+test('creates and edits a structured record, finds its body, and follows its graph connection',async({browser})=>{
+  const context=await browser.newContext({baseURL:'http://127.0.0.1:5173'});await signIn(context);const page=await context.newPage();await page.goto('/');
+  await page.getByRole('button',{name:'Database',exact:true}).click();await expect(page.getByRole('table',{name:'Database records'})).toBeVisible();
+  await page.locator('.table-actions').getByRole('button',{name:'New record'}).click();const title=`Discovery check ${Date.now()}`;
+  await page.getByRole('dialog').getByLabel('Name',{exact:true}).fill(title);await page.getByRole('button',{name:'Create record',exact:true}).click();
+  await page.getByLabel(`Status for ${title}`,{exact:true}).selectOption('Active');await expect(page.getByLabel(`Status for ${title}`,{exact:true})).toHaveValue('Active');
+  await page.getByRole('button',{name:`Open ${title}`,exact:true}).click();await expect(page.getByLabel('Page title',{exact:true})).toHaveValue(title);await expect(page.locator('.save-status')).toHaveText('Saved');
+  const id=page.url().split('#')[1].split('/')[0];await page.getByRole('textbox',{name:'Page content'}).pressSequentially('uniquediscoveryphrase ');
+  await page.getByRole('button',{name:'Insert link',exact:true}).click();await page.getByRole('dialog').getByRole('textbox').fill('Product direction');await page.getByRole('dialog').getByRole('button',{name:'Product direction',exact:true}).click();await expect(page.locator('.save-status')).toHaveText('Saved');
+  await page.getByRole('button',{name:'Search anything Ctrl K'}).click();await page.getByLabel('Search query',{exact:true}).fill('uniquediscoveryphrase');await expect(page.getByRole('option').filter({hasText:title})).toBeVisible();await page.getByRole('option').filter({hasText:title}).click();
+  const session=await(await context.request.get('/api/session')).json();await expect.poll(async()=>{const graph=await(await context.request.get(`/api/workspaces/${session.workspaces[0].id}/graph`)).json();return graph.edges.some((edge:{source:string})=>edge.source===id);}).toBe(true);
+  await page.getByRole('button',{name:'Graph',exact:true}).click();await expect(page.getByRole('img',{name:'Workspace knowledge graph'})).toBeVisible();await page.getByRole('link',{name:'Open Product direction',exact:true}).click();await expect(page.getByLabel('Page title',{exact:true})).toHaveValue('Product direction');
+  await context.request.delete(`/api/pages/${id}`,{headers:{'x-note-request':'1'}});await context.close();
 });

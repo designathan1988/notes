@@ -1,0 +1,13 @@
+import type { FastifyInstance } from 'fastify';
+import { Knowledge } from './service.js';
+import type { Database } from '../platform/database.js';
+export async function knowledgeRoutes(app:FastifyInstance,db:Database){
+  const knowledge=new Knowledge(db);let processing:Promise<void>|null=null;
+  await db.query('INSERT INTO outbox (page_id,version) SELECT id,index_revision FROM pages p WHERE NOT EXISTS (SELECT 1 FROM search_projection s WHERE s.page_id=p.id)');
+  const tick=()=>{if(!processing)processing=knowledge.processOutbox().catch(error=>app.log.error(error)).finally(()=>{processing=null;});};tick();
+  const timer=setInterval(tick,350);timer.unref();app.addHook('onClose',async()=>{clearInterval(timer);await processing;});
+  app.get<{Params:{workspace:string};Querystring:{q?:string;kind?:string;after?:string}}>('/api/workspaces/:workspace/search',request=>knowledge.search(request.actor,request.params.workspace,request.query.q ?? '',request.query));
+  app.get<{Params:{workspace:string};Querystring:{center?:string}}>('/api/workspaces/:workspace/graph',request=>knowledge.graph(request.actor,request.params.workspace,request.query.center));
+  app.get<{Params:{id:string}}>('/api/pages/:id/backlinks',request=>knowledge.backlinks(request.actor,request.params.id));
+  return knowledge;
+}

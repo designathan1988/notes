@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS pages (
   CHECK(kind IN ('document','database','record')), CHECK(visibility IN ('workspace','private')), CHECK(parent_id IS DISTINCT FROM id)
 );
 CREATE INDEX IF NOT EXISTS pages_parent ON pages(workspace_id,parent_id,position);
+ALTER TABLE pages ADD COLUMN IF NOT EXISTS index_revision bigint NOT NULL DEFAULT 1;
 CREATE TABLE IF NOT EXISTS documents (page_id text PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE, state bytea NOT NULL, version bigint NOT NULL DEFAULT 1, updated_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE IF NOT EXISTS document_checkpoints (id text PRIMARY KEY, page_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE, state bytea NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE IF NOT EXISTS database_definitions (page_id text PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE, fields jsonb NOT NULL DEFAULT '[]');
@@ -26,6 +27,7 @@ CREATE INDEX IF NOT EXISTS search_tokens ON search_projection USING GIN(tokens);
 CREATE INDEX IF NOT EXISTS page_title_trigrams ON pages USING GIN(title gin_trgm_ops);
 CREATE TABLE IF NOT EXISTS link_projection (source_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE, target_id text NOT NULL, excerpt text NOT NULL DEFAULT '', PRIMARY KEY(source_id,target_id));
 CREATE TABLE IF NOT EXISTS outbox (id bigserial PRIMARY KEY, page_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE, version bigint NOT NULL, processed_at timestamptz);
+CREATE INDEX IF NOT EXISTS pending_outbox ON outbox(page_id,version) WHERE processed_at IS NULL;
 CREATE TABLE IF NOT EXISTS operation_keys (id text PRIMARY KEY, result jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE IF NOT EXISTS favorites (user_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE, page_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE, PRIMARY KEY(user_id,page_id));
 CREATE TABLE IF NOT EXISTS beta_entitlements (workspace_id text PRIMARY KEY REFERENCES organization(id) ON DELETE CASCADE, plan text NOT NULL DEFAULT 'beta', storage_limit bigint NOT NULL DEFAULT 1073741824);

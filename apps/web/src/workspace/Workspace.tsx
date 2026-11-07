@@ -1,5 +1,5 @@
-import { Check,CloudOff,LoaderCircle,MoreHorizontal,Menu,Users,X,Plus,FileText,Database,Star,Trash2,FolderInput } from 'lucide-react';
-import { useState,type FormEvent } from 'react';
+import { Check,CloudOff,LoaderCircle,MoreHorizontal,Menu,Users,X,Plus,FileText,Database,Star,Trash2,FolderInput,PanelRight } from 'lucide-react';
+import { useState,lazy,Suspense,type FormEvent } from 'react';
 import { useWorkspace } from '../state/store.js';
 import { Sidebar } from '../navigation/Sidebar.js';
 import { IconButton } from '../ui/IconButton.js';
@@ -7,6 +7,9 @@ import { Dialog } from '../ui/Dialog.js';
 import { PageHeader } from './PageHeader.js';
 import { DocumentEditor } from '../documents/Editor.js';
 import { ContextPanel } from '../knowledge/ContextPanel.js';
+import { DatabaseView } from '../databases/DatabaseView.js';
+import { Search } from '../knowledge/Search.js';
+const Graph=lazy(()=>import('../knowledge/Graph.js'));
 export function Workspace() {
   const state = useWorkspace();const page = state.pages.find(item => item.id === state.selectedId);const parent = state.pages.find(item => item.id === page?.parentId);
   const status = { saved:'Saved',saving:'Saving…',connecting:'Connecting…',local:'Saved locally',error:'Save failed','read-only':'Read only' }[state.saveStatus];
@@ -15,14 +18,16 @@ export function Workspace() {
       <div className="breadcrumb">{parent && <><span>{parent.title}</span><span>/</span></>}<strong>{page?.title ?? 'Workspace'}</strong></div>
       <div className="topbar-actions"><span className={`save-status ${state.saveStatus}`}>{state.saveStatus === 'saved' ? <Check/> : state.saveStatus === 'local' || state.saveStatus === 'error' ? <CloudOff/> : <LoaderCircle className={state.saveStatus === 'saving' ? 'spin' : ''}/>}<span>{status}</span></span><span className="avatar small">{state.user?.name[0]}</span><button className="button share-button" onClick={() => state.openDialog('invite')}><Users/>Share</button></div>
     </header>
-    <div className="tabsbar"><nav aria-label="Page views">{(['document','database','graph'] as const).map(view => <button className={state.view===view ? 'active' : ''} key={view} onClick={() => state.navigate(view === 'database' && page?.kind !== 'database' ? state.pages.find(p => p.kind === 'database')?.id ?? state.selectedId : state.selectedId,view)}>{view[0].toUpperCase()+view.slice(1)}</button>)}</nav><IconButton label="Page actions" onClick={() => state.openDialog('page-menu')}><MoreHorizontal/></IconButton></div>
+    <div className="tabsbar"><nav aria-label="Page views">{(['document','database','graph'] as const).map(view => <button className={state.view===view ? 'active' : ''} key={view} onClick={() => state.navigate(view === 'database' && page?.kind !== 'database' ? state.pages.find(p => p.kind === 'database')?.id ?? state.selectedId : state.selectedId,view)}>{view[0].toUpperCase()+view.slice(1)}</button>)}</nav><div>{state.view==='document' && !state.contextOpen && <IconButton label="Open page details" onClick={()=>useWorkspace.setState({contextOpen:true})}><PanelRight/></IconButton>}<IconButton label="Page actions" onClick={() => state.openDialog('page-menu')}><MoreHorizontal/></IconButton></div></div>
     {state.error && <div className="error-banner" role="alert"><span>{state.error}</span><IconButton label="Dismiss error" onClick={() => useWorkspace.setState({error:null})}><X/></IconButton></div>}
-    <div className="workspace-content">{page ? <><div className="document-scroll"><article className="document-canvas"><PageHeader page={page} connections={state.linkedPageIds.length}/><DocumentEditor key={page.id} page={page}/></article></div>{state.contextOpen && <ContextPanel/>}</> : <div className="empty-state"><FileText/><h1>A little space to think.</h1><p>Create a page and make it yours.</p><button className="button primary" onClick={() => state.openDialog('new-page')}><Plus/>New page</button></div>}</div>
+    <div className="workspace-content">{state.view==='graph'?<Suspense fallback={<p className="table-empty">Opening graph…</p>}><Graph/></Suspense>:state.view==='all'?<AllPages/>:page ? <><div className="document-scroll"><article className={`document-canvas ${state.view==='database'?'database-page':''}`}><PageHeader page={page} connections={state.linkedPageIds.length}/>{state.view==='database'?page.kind==='database'?<DatabaseView id={page.id}/>:<div className="empty-state"><Database/><h1>Give your ideas some structure.</h1><p>Create a database to organize records and properties.</p><button className="button primary" onClick={()=>state.openDialog('new-page')}>Create database</button></div>:<DocumentEditor key={page.id} page={page}/>}</article></div>{state.contextOpen && state.view==='document' && <ContextPanel/>}</> : <div className="empty-state"><FileText/><h1>A little space to think.</h1><p>Create a page and make it yours.</p><button className="button primary" onClick={() => state.openDialog('new-page')}><Plus/>New page</button></div>}</div>
   </main>
   {state.dialog === 'new-page' && <NewPage/>}
+  {state.dialog === 'search' && <Search/>}
   {state.dialog === 'page-menu' && page && <Dialog title="Page actions" onClose={() => state.openDialog(null)}><div className="menu-list"><button onClick={() => {state.toggleFavorite(page.id);state.openDialog(null);}}><Star/>Toggle favorite</button><button onClick={() => state.openDialog('new-page')}><Plus/>Add subpage</button><button onClick={() => state.openDialog('move')}><FolderInput/>Move page</button><button className="danger" onClick={() => void state.trashPage(page.id).catch(state.setError)}><Trash2/>Move to trash</button></div></Dialog>}
   </div>;
 }
+function AllPages(){const pages=useWorkspace(state=>state.pages);return <section className="all-pages"><h1>All pages</h1><p>Everything you’re thinking about, in one place.</p><div>{pages.map(page=><button key={page.id} onClick={()=>useWorkspace.getState().navigate(page.id,page.kind==='database'?'database':'document')}><FileText/><span>{page.title}</span><small>{page.kind}</small></button>)}</div></section>;}
 function NewPage() {
   const state = useWorkspace();const [busy,setBusy] = useState(false);const [error,setError] = useState('');
   async function submit(event:FormEvent<HTMLFormElement>) { event.preventDefault();setBusy(true);const data = new FormData(event.currentTarget);

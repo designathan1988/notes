@@ -17,11 +17,13 @@ export class Pages {
       const parent = input.parentId ? await access.requirePage(actor, input.parentId, 'write') : null;
       if (parent && parent.workspaceId !== workspace) throw new DomainError('FORBIDDEN', 'Parent belongs to another workspace.');
       if (parent?.kind === 'database' && input.kind !== 'record') throw new DomainError('CONFLICT', 'Create database records with the record command.');
+      if(input.kind==='record' && parent?.kind!=='database')throw new DomainError('CONFLICT','Records must belong to a database.');
       const id = randomUUID();
       const [row] = await tx.query<PageRow>(`INSERT INTO pages (id,workspace_id,parent_id,title,description,created_by,visibility,kind,position)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,(SELECT coalesce(max(position),0)+1 FROM pages WHERE workspace_id=$2)) RETURNING *`,
         [id, workspace, parent?.id ?? null, title, String(input.description ?? '').slice(0,2000), actor.userId, parent?.visibility ?? input.visibility ?? 'workspace', input.kind ?? 'document']);
       if (input.kind === 'database') await tx.query('INSERT INTO database_definitions (page_id) VALUES ($1)', [id]);
+      await tx.query('INSERT INTO outbox (page_id,version) VALUES ($1,1)',[id]);
       return toPage(row);
     });
   }
@@ -30,9 +32,11 @@ export class Pages {
   async update(actor: Actor, id: string, input: { title?: string; description?: string; revision: number }): Promise<Page> {
     const page = await this.access.requirePage(actor, id, 'write');
     const title = input.title === undefined ? page.title : validateTitle(input.title);
-    const [row] = await this.db.query<PageRow>('UPDATE pages SET title=$2,description=$3,revision=revision+1,updated_at=now() WHERE id=$1 AND revision=$4 RETURNING *', [id,title, String(input.description ?? page.description).slice(0,2000),input.revision]);
-    if (!row) throw new DomainError('CONFLICT', 'The page changed. Reload it before saving again.');
-    await this.db.query('INSERT INTO outbox (page_id,version) SELECT page_id,version FROM documents WHERE page_id=$1', [id]);
+    const row=await this.db.transaction(async tx=>{
+      const [updated]=await tx.query<PageRow>('UPDATE pages SET title=$2,description=$3,revision=revision+1,index_revision=index_revision+1,updated_at=now() WHERE id=$1 AND revision=$4 RETURNING *',[id,title,String(input.description ?? page.description).slice(0,2000),input.revision]);
+      if(!updated)throw new DomainError('CONFLICT','The page changed. Reload it before saving again.');
+      await tx.query('INSERT INTO outbox (page_id,version) SELECT id,index_revision FROM pages WHERE id=$1',[id]);return updated;
+    });
     this.onChanged(page.workspaceId); return toPage(row);
   }
   async move(actor: Actor, id: string, parentId: string | null, revision: number, confirmed: boolean): Promise<Page> {

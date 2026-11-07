@@ -19,13 +19,14 @@ export async function openDatabase(options: { directory?: string; url?: string }
   if (options.url) {
     const pool = new pg.Pool({ connectionString: options.url });
     const orm = postgresDrizzle(pool, { schema });
-    const make = (client: Pick<pg.Pool, 'query'>): Database => ({
+    const make = (client: Pick<pg.Pool, 'query'>,inTransaction=false): Database => ({
       orm,
       async query<T>(text: string, params: unknown[] = []) { return (await client.query(text, params)).rows as T[]; },
       async exec(text) { await client.query(text); },
       async transaction<T>(fn: (tx: Database) => Promise<T>) {
+        if(inTransaction)return fn(make(client,true));
         const connection = await pool.connect();
-        try { await connection.query('BEGIN'); const result = await fn(make(connection)); await connection.query('COMMIT'); return result; }
+        try { await connection.query('BEGIN'); const result = await fn(make(connection,true)); await connection.query('COMMIT'); return result; }
         catch (error) { await connection.query('ROLLBACK'); throw error; }
         finally { connection.release(); }
       },
@@ -37,11 +38,11 @@ export async function openDatabase(options: { directory?: string; url?: string }
   await client.waitReady;
   const orm = localDrizzle(client, { schema });
   type LocalQuery = Pick<PGlite, 'query' | 'exec'>;
-  const make = (connection: LocalQuery): Database => ({
+  const make = (connection: LocalQuery,inTransaction=false): Database => ({
     orm,
     async query<T>(text: string, params: unknown[] = []) { return (await connection.query<T>(text, params)).rows; },
     async exec(text) { await connection.exec(text); },
-    async transaction<T>(fn: (tx: Database) => Promise<T>) { return client.transaction(async tx => fn(make(tx))); },
+    async transaction<T>(fn: (tx: Database) => Promise<T>) { if(inTransaction)return fn(make(connection,true));return client.transaction(async tx => fn(make(tx,true))); },
     async close() { await client.close(); },
   });
   return make(client);

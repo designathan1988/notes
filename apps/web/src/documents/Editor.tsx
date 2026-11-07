@@ -1,10 +1,10 @@
 import { useEffect,useRef,useState } from 'react';
-import { EditorContent,useEditor,type Editor as TiptapEditor } from '@tiptap/react';
+import { EditorContent,useEditor,NodeViewWrapper,ReactNodeViewRenderer,type NodeViewProps,type Editor as TiptapEditor } from '@tiptap/react';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Bold,Italic,Code2,List,CheckSquare,Heading2,Link,Plus,Paperclip,Quote,Undo2,Redo2,Type,Minus,Video,Table2 } from 'lucide-react';
-import { editorExtensions,projectDocument } from '../../../../packages/editor/src/schema.js';
+import { editorExtensions,projectDocument,databaseView } from '../../../../packages/editor/src/schema.js';
 import { DocumentSession } from './session.js';
 import { useWorkspace } from '../state/store.js';
 import { IconButton } from '../ui/IconButton.js';
@@ -12,6 +12,7 @@ import { Dialog } from '../ui/Dialog.js';
 import type { Page } from '../../../../packages/contracts/src/index.js';
 import { captureClipboard,uploadFile,fileNode,type CapturedFile } from './capture.js';
 import { safeEmbedSource } from '../../../../packages/editor/src/embeds.js';
+import { DatabaseView } from '../databases/DatabaseView.js';
 
 export function DocumentEditor({page}: {page:Page}){
   const [session,setSession]=useState<DocumentSession|null>(null);
@@ -23,7 +24,7 @@ function ConnectedEditor({session}:{session:DocumentSession}){
   const [embedOpen,setEmbedOpen]=useState(false);const [pasteMode,setPasteMode]=useState('auto');const [uploading,setUploading]=useState(0);const [failed,setFailed]=useState<File[]>([]);const fileInput=useRef<HTMLInputElement>(null);
   async function upload(file:File):Promise<CapturedFile>{setUploading(count=>count+1);try{return await uploadFile(session.page.id,file);}catch(error){setFailed(files=>[...files,file]);throw error;}finally{setUploading(count=>count-1);}}
   const editor=useEditor({
-    extensions:[...editorExtensions(),Collaboration.configure({document:session.doc}),CollaborationCaret.configure({provider:session.provider,user:{name:useWorkspace.getState().user?.name,color:'#39745f'}}),Placeholder.configure({placeholder:'Write something, or type / for commands…'})],
+    extensions:[...editorExtensions().filter(extension=>extension.name!=='databaseView'),databaseView.extend({addNodeView(){return ReactNodeViewRenderer(EmbeddedDatabase);}}),Collaboration.configure({document:session.doc}),CollaborationCaret.configure({provider:session.provider,user:{name:useWorkspace.getState().user?.name,color:'#39745f'}}),Placeholder.configure({placeholder:'Write something, or type / for commands…'})],
     editable:!session.readOnly,enableContentCheck:true,
     onContentError:()=>useWorkspace.getState().setError('This document contains unsupported content. Export a recovery copy before continuing.'),
     editorProps:{attributes:{class:'note-editor','aria-label':'Page content',role:'textbox','aria-multiline':'true'},
@@ -56,6 +57,7 @@ function ConnectedEditor({session}:{session:DocumentSession}){
   ].map(([Icon,label,action])=>{const Glyph=Icon as typeof Type;return <button key={String(label)} onClick={()=>{(action as ()=>void)();setCommands(false);}}><Glyph/><span>{String(label)}</span></button>;})}</div></Dialog>}
   {linkOpen && <LinkPicker editor={editor} close={()=>setLinkOpen(false)}/>}{embedOpen && <Dialog title="Embed a video" onClose={()=>setEmbedOpen(false)}><form onSubmit={event=>{event.preventDefault();const data=new FormData(event.currentTarget);const url=String(data.get('url'));if(!safeEmbedSource(url)){useWorkspace.getState().setError('Use a YouTube or Vimeo video URL.');return;}editor.chain().focus().insertContent({type:'embed',attrs:{url,title:String(data.get('title') || 'Embedded video')}}).run();setEmbedOpen(false);}}><label>Video URL<input type="url" name="url" required placeholder="https://…"/></label><label>Title<input name="title" placeholder="Embedded video"/></label><button className="button primary">Insert video</button></form></Dialog>}</div>;
 }
+function EmbeddedDatabase({node}:NodeViewProps){return <NodeViewWrapper className="embedded-database"><DatabaseView id={String(node.attrs.databaseId)} compact/></NodeViewWrapper>;}
 function FailedFile({file,retry}:{file:File;retry():void}){const [url,setUrl]=useState('');useEffect(()=>{const next=URL.createObjectURL(file);setUrl(next);return()=>URL.revokeObjectURL(next);},[file]);return <div className="upload-failure"><span>Upload failed: {file.name}</span><button onClick={retry}>Retry</button><a download={file.name} href={url}>Save original</a></div>;}
 function LinkPicker({editor,close}:{editor:TiptapEditor;close():void}){
   const pages=useWorkspace(state=>state.pages);const [query,setQuery]=useState('');
