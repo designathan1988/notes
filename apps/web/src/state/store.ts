@@ -8,6 +8,7 @@ interface State {
   user: User | null; workspaces: Workspace[]; workspaceId: string | null; pages: Page[]; selectedId: string | null;
   view: View; loading: boolean; error: string | null; dialog: Dialog; sidebarOpen: boolean; contextOpen: boolean;
   saveStatus: SaveStatus; expanded: string[]; favorites: string[]; online: boolean;
+  outline:{level:number;text:string}[]; linkedPageIds:string[];
   initialize(): Promise<void>; reload(): Promise<void>; chooseWorkspace(id: string): Promise<void>;
   navigate(id: string | null, view?: View): void; openDialog(dialog: Dialog): void; setError(error: unknown): void;
   createPage(input: { title: string; parentId?: string; kind?: 'document' | 'database'; visibility?: 'workspace' | 'private' }): Promise<void>;
@@ -16,7 +17,7 @@ interface State {
 }
 export const useWorkspace = create<State>((set,get) => ({
   user: null, workspaces: [], workspaceId: null, pages: [], selectedId: null, view: 'document', loading: true, error: null,
-  dialog: null, sidebarOpen: false, contextOpen: true, saveStatus: 'connecting', expanded: [], favorites: [], online: true,
+  dialog: null, sidebarOpen: false, contextOpen: true, saveStatus: 'connecting', expanded: [], favorites: [], online: true,outline:[],linkedPageIds:[],
   async initialize() {
     try {
       const session = await api<{ user: User; workspaces: Workspace[] }>('/session');

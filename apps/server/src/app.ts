@@ -7,6 +7,7 @@ import { Pages } from './pages/service.js';
 import { accessRoutes } from './access/routes.js';
 import { pageRoutes } from './pages/routes.js';
 import { requestHeaders } from './platform/http.js';
+import { collaborationRoutes } from './documents/collaboration.js';
 
 export async function createApp(options: { db: Database; auth?: Auth }) {
   const app = Fastify({ bodyLimit: 4 * 1024 * 1024, logger: false });
@@ -49,5 +50,7 @@ export async function createApp(options: { db: Database; auth?: Auth }) {
     return reply.status(response.status).send(await response.text());
   }});
   accessRoutes(app,access,auth); pageRoutes(app,pages);
+  const collaboration=await collaborationRoutes(app,options.db,auth,access);
+  pages.onChanged=workspace=>{void collaboration.invalidate(workspace);};
   return app;
 }

@@ -5,6 +5,8 @@ import { Sidebar } from '../navigation/Sidebar.js';
 import { IconButton } from '../ui/IconButton.js';
 import { Dialog } from '../ui/Dialog.js';
 import { PageHeader } from './PageHeader.js';
+import { DocumentEditor } from '../documents/Editor.js';
+import { ContextPanel } from '../knowledge/ContextPanel.js';
 export function Workspace() {
   const state = useWorkspace();const page = state.pages.find(item => item.id === state.selectedId);const parent = state.pages.find(item => item.id === page?.parentId);
   const status = { saved:'Saved',saving:'Saving…',connecting:'Connecting…',local:'Saved locally',error:'Save failed','read-only':'Read only' }[state.saveStatus];
@@ -15,7 +17,7 @@ export function Workspace() {
     </header>
     <div className="tabsbar"><nav aria-label="Page views">{(['document','database','graph'] as const).map(view => <button className={state.view===view ? 'active' : ''} key={view} onClick={() => state.navigate(view === 'database' && page?.kind !== 'database' ? state.pages.find(p => p.kind === 'database')?.id ?? state.selectedId : state.selectedId,view)}>{view[0].toUpperCase()+view.slice(1)}</button>)}</nav><IconButton label="Page actions" onClick={() => state.openDialog('page-menu')}><MoreHorizontal/></IconButton></div>
     {state.error && <div className="error-banner" role="alert"><span>{state.error}</span><IconButton label="Dismiss error" onClick={() => useWorkspace.setState({error:null})}><X/></IconButton></div>}
-    <div className="workspace-content">{page ? <article className="document-canvas"><PageHeader page={page}/><p className="editor-prompt">Start writing. Your next idea belongs here.</p></article> : <div className="empty-state"><FileText/><h1>A little space to think.</h1><p>Create a page and make it yours.</p><button className="button primary" onClick={() => state.openDialog('new-page')}><Plus/>New page</button></div>}</div>
+    <div className="workspace-content">{page ? <><div className="document-scroll"><article className="document-canvas"><PageHeader page={page} connections={state.linkedPageIds.length}/><DocumentEditor key={page.id} page={page}/></article></div>{state.contextOpen && <ContextPanel/>}</> : <div className="empty-state"><FileText/><h1>A little space to think.</h1><p>Create a page and make it yours.</p><button className="button primary" onClick={() => state.openDialog('new-page')}><Plus/>New page</button></div>}</div>
   </main>
   {state.dialog === 'new-page' && <NewPage/>}
   {state.dialog === 'page-menu' && page && <Dialog title="Page actions" onClose={() => state.openDialog(null)}><div className="menu-list"><button onClick={() => {state.toggleFavorite(page.id);state.openDialog(null);}}><Star/>Toggle favorite</button><button onClick={() => state.openDialog('new-page')}><Plus/>Add subpage</button><button onClick={() => state.openDialog('move')}><FolderInput/>Move page</button><button className="danger" onClick={() => void state.trashPage(page.id).catch(state.setError)}><Trash2/>Move to trash</button></div></Dialog>}
