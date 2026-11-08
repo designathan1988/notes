@@ -17,6 +17,7 @@ import {
   Command,
   SlidersHorizontal,
   MoreHorizontal,
+  LayoutTemplate,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '../state/store.js';
@@ -171,6 +172,8 @@ export function Sidebar() {
     };
   }, [state.sidebarOpen]);
   const workspace = state.workspaces.find((item) => item.id === state.workspaceId);
+  const templateId = state.pages.find((page) => page.id === state.selectedId)?.templateRootId,
+    template = state.pages.find((page) => page.id === templateId);
   return (
     <>
       <button
@@ -256,6 +259,10 @@ export function Sidebar() {
             <Database />
             Databases
           </button>
+          <button onClick={() => state.navigate(null, 'templates')}>
+            <LayoutTemplate />
+            Templates
+          </button>
         </nav>
         <div className="sidebar-scroll">
           <div
@@ -286,7 +293,7 @@ export function Sidebar() {
           )}
           <div className="page-tree">
             {state.pages
-              .filter((page) => !page.parentId)
+              .filter((page) => !page.parentId && !page.templateRootId)
               .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
               .map((page) => (
                 <PageRow key={page.id} page={page} depth={0} drop={drag.target} />
@@ -300,10 +307,18 @@ export function Sidebar() {
               </button>
             )}
           </div>
+          {template && (
+            <>
+              <div className="section-label">Editing template</div>
+              <div className="page-tree">
+                <PageRow key={template.id} page={template} depth={0} drop={drag.target} />
+              </div>
+            </>
+          )}
           <div className="section-label favorites-label">Favorites</div>
           <div className="favorites">
             {state.pages
-              .filter((page) => state.favorites.includes(page.id))
+              .filter((page) => state.favorites.includes(page.id) && !page.templateRootId)
               .map((page) => (
                 <button
                   key={page.id}

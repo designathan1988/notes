@@ -59,6 +59,20 @@ export class Attachments {
     readonly db: Database,
     readonly storage: Storage,
   ) {}
+  /** Internal publication of bytes staged by an authorized clone; not an upload endpoint. */
+  async publishPrepared(
+    actor: Actor,
+    pageId: string,
+    input: { id: string; filename: string; mediaType: string; size: number },
+  ) {
+    const attachment = await this.begin(actor, pageId, input, input.id);
+    await new Access(this.db).lockPage(actor, pageId);
+    await this.db.query("UPDATE attachments SET status='ready' WHERE id=$1 AND page_id=$2", [
+      attachment.id,
+      pageId,
+    ]);
+    return attachment;
+  }
   async begin(
     actor: Actor,
     pageId: string,

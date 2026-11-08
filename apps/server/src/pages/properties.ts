@@ -67,7 +67,7 @@ export async function changePageProperties(
     (value) => value !== undefined,
   );
   if (!operations.length) return current;
-  if (page.kind !== 'document')
+  if (page.kind !== 'document' || page.templateDatabaseId)
     throw new DomainError('CONFLICT', 'Record properties belong to their database.');
   if (operations.length !== 1)
     throw new DomainError('INVALID', 'Apply one property operation at a time.');

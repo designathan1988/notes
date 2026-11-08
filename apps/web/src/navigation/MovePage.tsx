@@ -50,9 +50,14 @@ export function MovePage() {
             name="parent"
             defaultValue={(state.pendingMove ? state.pendingMove.parentId : page.parentId) ?? ''}
           >
-            <option value="">Workspace root</option>
+            {!page.templateRootId && <option value="">Workspace root</option>}
             {state.pages
-              .filter((item) => item.kind !== 'database' && !descendants.has(item.id))
+              .filter(
+                (item) =>
+                  item.kind !== 'database' &&
+                  !descendants.has(item.id) &&
+                  (item.templateRootId ?? null) === (page.templateRootId ?? null),
+              )
               .map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.title}

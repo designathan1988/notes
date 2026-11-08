@@ -9,6 +9,8 @@ import {
   Type,
   History,
   MessageSquare,
+  LayoutTemplate,
+  Files,
 } from 'lucide-react';
 import type { Page } from '../../../../packages/contracts/src/index.js';
 import { useWorkspace } from '../state/store.js';
@@ -53,14 +55,14 @@ export function PageActions({
           {state.favorites.includes(page.id) ? 'Remove favorite' : 'Add to favorites'}
         </button>
         <button
-          disabled={readOnly || page.kind !== 'document'}
+          disabled={readOnly || page.kind === 'database'}
           onClick={() => run(() => state.createQuickPage(page.id))}
         >
           <Plus />
           Add subpage
         </button>
         <button
-          disabled={readOnly || page.kind === 'record'}
+          disabled={readOnly || page.kind === 'record' || page.templateRootId === page.id}
           onClick={() => {
             close();
             state.navigate(page.id);
@@ -82,6 +84,24 @@ export function PageActions({
           <Copy />
           Copy page link
         </button>
+        <button
+          disabled={readOnly || !!state.copyBusy}
+          onClick={() =>
+            run(() => state.copyPage({ operation: 'duplicate', sourceId: page.id }).then(() => {}))
+          }
+        >
+          <Files />
+          {page.templateRootId === page.id ? 'Duplicate template' : 'Duplicate page'}
+        </button>
+        {!page.templateRootId && (
+          <button
+            disabled={readOnly || !!state.copyBusy}
+            onClick={() => run(() => state.openSaveTemplate(page.id))}
+          >
+            <LayoutTemplate />
+            Save as template
+          </button>
+        )}
         <button
           onClick={() => run(() => download(`/api/pages/${page.id}/markdown`, page.title + '.md'))}
         >

@@ -9,6 +9,7 @@ import {
   Pin,
   PanelLeft,
   RotateCcw,
+  LayoutTemplate,
 } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
 import { tabKey } from './state.js';
@@ -107,21 +108,25 @@ export function TabStrip() {
         {state.tabs.map((tab) => {
           const page = state.pages.find((page) => page.id === tab.pageId),
             label =
-              tab.view === 'all'
-                ? 'All pages'
-                : tab.view === 'graph'
-                  ? 'Knowledge graph'
-                  : tab.view === 'database' && !tab.pageId
-                    ? 'Databases'
-                    : (page?.title ?? 'Page');
+              tab.view === 'templates'
+                ? 'Templates'
+                : tab.view === 'all'
+                  ? 'All pages'
+                  : tab.view === 'graph'
+                    ? 'Knowledge graph'
+                    : tab.view === 'database' && !tab.pageId
+                      ? 'Databases'
+                      : (page?.title ?? 'Page');
           const Icon =
-            tab.view === 'graph'
-              ? Network
-              : tab.view === 'all'
-                ? Files
-                : tab.view === 'database'
-                  ? Database
-                  : FileText;
+            tab.view === 'templates'
+              ? LayoutTemplate
+              : tab.view === 'graph'
+                ? Network
+                : tab.view === 'all'
+                  ? Files
+                  : tab.view === 'database'
+                    ? Database
+                    : FileText;
           return (
             <div
               key={tab.id}

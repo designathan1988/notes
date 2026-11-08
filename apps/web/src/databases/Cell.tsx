@@ -8,6 +8,8 @@ export function Cell({
   label,
   save,
   relationKind = 'record',
+  templateRootId,
+  selfRelation,
 }: {
   initial: unknown;
   field?: RecordField;
@@ -15,9 +17,13 @@ export function Cell({
   label: string;
   save(value: unknown, original: unknown, field?: RecordField): Promise<void>;
   relationKind?: 'record' | 'page';
+  templateRootId?: string | null;
+  selfRelation?: { id: string; title: string };
 }) {
   const [value, setValue] = useState(initial ?? '');
   const [error, setError] = useState('');
+  const [pending, setPending] = useState(false);
+  const submitting = useRef(false);
   const focused = useRef(false);
   const baseline = useRef<{ value: unknown; field?: RecordField }>({
     value: initial ?? null,
@@ -29,11 +35,11 @@ export function Cell({
   };
   const cancelled = useRef(false);
   useEffect(() => {
-    if (!focused.current && !error) {
+    if (!focused.current && !error && !pending && !submitting.current) {
       setValue(initial ?? '');
       baseline.current = { value: initial ?? null, field };
     }
-  }, [JSON.stringify(initial), JSON.stringify(field)]);
+  }, [JSON.stringify(initial), JSON.stringify(field), pending, error]);
   async function commit(next: unknown) {
     if (cancelled.current) {
       cancelled.current = false;
@@ -45,22 +51,44 @@ export function Cell({
       baseline.current = { value: initial ?? null, field };
       return;
     }
+    submitting.current = true;
+    setPending(true);
     try {
       await save(next, original.value, original.field);
       baseline.current = { value: next, field };
       setError('');
     } catch (error) {
       setError('Not saved: ' + (error as Error).message);
+    } finally {
+      submitting.current = false;
+      setPending(false);
     }
   }
+  const feedback = (
+    <>
+      {pending && (
+        <small className="cell-saving" role="status">
+          Saving…
+        </small>
+      )}
+      {error && (
+        <span className="cell-error" role="alert">
+          {error}
+        </span>
+      )}
+    </>
+  );
   if (field?.type === 'relation')
     return (
-      <div className="cell-control">
+      <div className="cell-control" aria-busy={pending}>
         <RelationCell
           kind={relationKind}
+          templateRootId={templateRootId}
+          selfRelation={selfRelation}
           value={String(value || '')}
           label={label}
           readOnly={readOnly}
+          busy={pending}
           begin={begin}
           end={() => {
             focused.current = false;
@@ -74,11 +102,7 @@ export function Cell({
             });
           }}
         />
-        {error && (
-          <span className="cell-error" role="alert">
-            {error}
-          </span>
-        )}
+        {feedback}
       </div>
     );
   if (readOnly)
@@ -89,9 +113,10 @@ export function Cell({
     );
   if (field?.type === 'checkbox')
     return (
-      <div className="cell-control">
+      <div className="cell-control" aria-busy={pending}>
         <input
           type="checkbox"
+          disabled={pending}
           aria-label={label}
           checked={Boolean(value)}
           onFocus={begin}
@@ -103,19 +128,16 @@ export function Cell({
             void commit(event.target.checked);
           }}
         />
-        {error && (
-          <span className="cell-error" role="alert">
-            {error}
-          </span>
-        )}
+        {feedback}
       </div>
     );
   return (
-    <div className="cell-control">
+    <div className="cell-control" aria-busy={pending}>
       {field?.type === 'select' ? (
         <select
           aria-label={label}
           className="status-label"
+          disabled={pending}
           value={String(value)}
           onFocus={begin}
           onBlur={() => {
@@ -135,6 +157,7 @@ export function Cell({
         <input
           aria-label={label}
           type={field?.type === 'number' ? 'number' : field?.type === 'date' ? 'date' : 'text'}
+          disabled={pending}
           value={Array.isArray(value) ? value.join(', ') : String(value)}
           onFocus={() => {
             begin();
@@ -164,11 +187,7 @@ export function Cell({
           }}
         />
       )}{' '}
-      {error && (
-        <span className="cell-error" role="alert">
-          {error}
-        </span>
-      )}
+      {feedback}
     </div>
   );
 }

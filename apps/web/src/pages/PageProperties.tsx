@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, SlidersHorizontal } from 'lucide-react';
 import type { Page, RecordField } from '../../../../packages/contracts/src/index.js';
 import { compileFormulas } from '../../../../packages/data/src/formulas.js';
@@ -7,6 +7,7 @@ import { useWorkspace } from '../state/store.js';
 import { Cell } from '../databases/Cell.js';
 import { PropertyManager } from '../properties/PropertyManager.js';
 import { RecordPageProperties } from '../databases/RecordPageProperties.js';
+import { TemplateDefaults } from '../templates/TemplateDefaults.js';
 
 function PageProperty({
   page,
@@ -64,18 +65,17 @@ function PageProperty({
       field={field}
       readOnly={readOnly}
       relationKind="page"
+      templateRootId={page.templateRootId}
       label={label}
       save={(value, original, originalField) =>
-        useWorkspace
-          .getState()
-          .updatePage(page.id, {
-            property: {
-              id: field.id,
-              value,
-              expectedValue: original,
-              expectedField: originalField ?? field,
-            },
-          })
+        useWorkspace.getState().updatePage(page.id, {
+          property: {
+            id: field.id,
+            value,
+            expectedValue: original,
+            expectedField: originalField ?? field,
+          },
+        })
       }
     />
   );
@@ -84,8 +84,42 @@ function PageProperty({
 function DocumentProperties({ page, readOnly }: { page: Page; readOnly: boolean }) {
   const properties = page.properties ?? { fields: [], values: {} },
     [manager, setManager] = useState<'add' | 'manage' | null>(null),
+    [opening, setOpening] = useState(false),
+    openingRequest = useRef(0),
     calculate = useMemo(() => compileFormulas(properties.fields), [properties.fields]),
     computed = calculate(properties.values);
+  useEffect(
+    () => () => {
+      openingRequest.current++;
+    },
+    [page.id],
+  );
+  async function openManager(mode: 'add' | 'manage') {
+    const state = useWorkspace.getState(),
+      identity = state.user?.id,
+      workspace = state.workspaceId,
+      request = ++openingRequest.current;
+    const current = () => {
+      const state = useWorkspace.getState();
+      return (
+        request === openingRequest.current &&
+        identity === state.user?.id &&
+        workspace === state.workspaceId &&
+        state.selectedId === page.id &&
+        state.pages.some((item) => item.id === page.id) &&
+        state.workspaces.find((item) => item.id === workspace)?.role !== 'viewer'
+      );
+    };
+    setOpening(true);
+    try {
+      await state.settlePageWrites([page.id]);
+      if (current()) setManager(mode);
+    } catch (error) {
+      if (current()) useWorkspace.getState().setError(error);
+    } finally {
+      if (request === openingRequest.current) setOpening(false);
+    }
+  }
   return (
     <section className="page-properties" aria-label="Page properties">
       {!!properties.fields.filter((field) => !field.archived).length && (
@@ -104,15 +138,28 @@ function DocumentProperties({ page, readOnly }: { page: Page; readOnly: boolean 
       )}
       {!readOnly && (
         <div className="page-property-tools">
-          <button aria-label="Add page property" onClick={() => setManager('add')}>
+          <button
+            aria-label="Add page property"
+            disabled={opening}
+            onClick={() => void openManager('add')}
+          >
             <Plus size={12} />
             Add property
           </button>
           {!!properties.fields.length && (
-            <button aria-label="Manage page properties" onClick={() => setManager('manage')}>
+            <button
+              aria-label="Manage page properties"
+              disabled={opening}
+              onClick={() => void openManager('manage')}
+            >
               <SlidersHorizontal size={12} />
               Properties
             </button>
+          )}
+          {opening && (
+            <small className="muted-text" role="status">
+              Saving current edits…
+            </small>
           )}
         </div>
       )}
@@ -133,6 +180,7 @@ function DocumentProperties({ page, readOnly }: { page: Page; readOnly: boolean 
 }
 
 export function PageProperties({ page, readOnly }: { page: Page; readOnly: boolean }) {
+  if (page.templateDatabaseId) return <TemplateDefaults page={page} readOnly={readOnly} />;
   if (page.kind === 'record') return <RecordPageProperties page={page} readOnly={readOnly} />;
   if (page.kind !== 'document') return null;
   return <DocumentProperties page={page} readOnly={readOnly} />;

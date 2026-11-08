@@ -132,7 +132,7 @@ export class Knowledge {
       tagged AS (SELECT id FROM pages WHERE workspace_id=$1 AND tags @> ARRAY[$7]::text[])
       SELECT p.id,p.title,p.kind,left(coalesce(s.body,''),180) AS snippet,parent.title AS "parentTitle" FROM visible p
       LEFT JOIN search_projection s ON s.page_id=p.id LEFT JOIN visible parent ON parent.id=p.parent_id CROSS JOIN search_query
-      WHERE ($3='' OR s.tokens@@search_query.q OR p.title ILIKE $4 OR similarity(p.title,$3)>0.25) AND ($5='' OR p.kind=$5) AND ($6::date IS NULL OR p.updated_at >= $6::date) AND ($7='' OR p.id IN (SELECT id FROM tagged))
+      WHERE p.template_root_id IS NULL AND ($3='' OR s.tokens@@search_query.q OR p.title ILIKE $4 OR similarity(p.title,$3)>0.25) AND ($5='' OR p.kind=$5) AND ($6::date IS NULL OR p.updated_at >= $6::date) AND ($7='' OR p.id IN (SELECT id FROM tagged))
       ORDER BY CASE WHEN lower(p.title)=lower($3) THEN 0 WHEN p.title ILIKE $3 || '%' THEN 1 ELSE 2 END,ts_rank_cd(s.tokens,search_query.q) DESC NULLS LAST,p.updated_at DESC LIMIT 50`,
       [
         ...scope.params,
@@ -154,7 +154,7 @@ export class Knowledge {
     const page = await access.requirePage(actor, pageId, 'read');
     const scope = await access.scope(actor, page.workspaceId);
     return this.db.query<KnowledgeLink>(
-      `${scope.sql} SELECT l.source_id AS "sourceId",l.target_id AS "targetId",p.title,l.excerpt FROM link_projection l JOIN visible p ON p.id=l.source_id WHERE l.target_id=$3 ORDER BY p.title LIMIT 100`,
+      `${scope.sql} SELECT l.source_id AS "sourceId",l.target_id AS "targetId",p.title,l.excerpt FROM link_projection l JOIN visible p ON p.id=l.source_id WHERE l.target_id=$3 AND p.template_root_id IS NULL ORDER BY p.title LIMIT 100`,
       [...scope.params, pageId],
     );
   }
@@ -163,14 +163,14 @@ export class Knowledge {
     const scope = await access.scope(actor, workspace);
     if (center) await access.requirePage(actor, center, 'read');
     const edges = await this.db.query<{ source: string; target: string }>(
-      `${scope.sql} SELECT l.source_id AS source,l.target_id AS target FROM link_projection l JOIN visible s ON s.id=l.source_id JOIN visible t ON t.id=l.target_id ${center ? 'WHERE l.source_id=$3 OR l.target_id=$3' : ''} LIMIT 500`,
+      `${scope.sql} SELECT l.source_id AS source,l.target_id AS target FROM link_projection l JOIN visible s ON s.id=l.source_id JOIN visible t ON t.id=l.target_id WHERE s.template_root_id IS NULL AND t.template_root_id IS NULL ${center ? 'AND (l.source_id=$3 OR l.target_id=$3)' : ''} LIMIT 500`,
       center ? [...scope.params, center] : scope.params,
     );
     const ids = center
       ? [...new Set([center, ...edges.flatMap((edge) => [edge.source, edge.target])])].slice(0, 60)
       : null;
     const nodes = await this.db.query<GraphData['nodes'][number]>(
-      `${scope.sql} SELECT id,title,kind FROM visible ${ids ? 'WHERE id=ANY($3::text[])' : ''} ORDER BY position LIMIT 180`,
+      `${scope.sql} SELECT id,title,kind FROM visible WHERE template_root_id IS NULL ${ids ? 'AND id=ANY($3::text[])' : ''} ORDER BY position LIMIT 180`,
       ids ? [...scope.params, ids] : scope.params,
     );
     const allowed = new Set(nodes.map((node) => node.id));

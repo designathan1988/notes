@@ -71,6 +71,7 @@ export class Databases {
     return {
       ...(await new DatabaseViews(this.db).snapshot(actor, id)),
       title: page.title,
+      templateRootId: page.templateRootId ?? null,
       pageRevision: page.revision,
       fields: row.fields.length || row.revision > 1 ? row.fields : defaultFields,
       fieldsRevision: row.revision,

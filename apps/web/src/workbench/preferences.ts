@@ -42,3 +42,27 @@ export const browserPreferences: PreferenceStorage = {
     }
   },
 };
+/** Unconfirmed commands belong to this window; another window must not borrow its intent. */
+export const commandPreferences: PreferenceStorage = {
+  getItem(key) {
+    try {
+      return globalThis.localStorage?.getItem(windowKey(key)) ?? null;
+    } catch {
+      return null;
+    }
+  },
+  setItem(key, value) {
+    try {
+      globalThis.localStorage?.setItem(windowKey(key), value);
+    } catch {
+      /* Keep the active command in memory. */
+    }
+  },
+  removeItem(key) {
+    try {
+      globalThis.localStorage?.removeItem(windowKey(key));
+    } catch {
+      /* Scoped commands remain isolated. */
+    }
+  },
+};

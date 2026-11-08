@@ -32,6 +32,10 @@ import { AllPages } from '../navigation/AllPages.js';
 import { PageActions } from '../navigation/PageActions.js';
 import { TabStrip } from '../workbench/TabStrip.js';
 import { CommandPalette } from '../workbench/CommandPalette.js';
+import { TemplateBanner } from '../templates/TemplateBanner.js';
+import { TemplateDialog } from '../templates/TemplateDialog.js';
+import { LazyBoundary } from '../ui/LazyBoundary.js';
+const Library = lazy(() => import('../templates/Library.js'));
 const Graph = lazy(() => import('../knowledge/Graph.js'));
 const DocumentEditor = lazy(() =>
   import('../documents/Editor.js').then((module) => ({ default: module.DocumentEditor })),
@@ -41,7 +45,8 @@ export function Workspace() {
   const page = state.pages.find((item) => item.id === state.selectedId);
   const parent = state.pages.find((item) => item.id === page?.parentId);
   const databaseIndex = state.view === 'database' && page?.kind !== 'database';
-  const globalView = state.view === 'all' || state.view === 'graph' || databaseIndex;
+  const globalView =
+    state.view === 'all' || state.view === 'graph' || state.view === 'templates' || databaseIndex;
   const status = {
     saved: 'Saved',
     saving: 'Saving…',
@@ -127,13 +132,15 @@ export function Workspace() {
               </>
             )}
             <strong>
-              {state.view === 'all'
-                ? 'All pages'
-                : state.view === 'graph'
-                  ? 'Knowledge graph'
-                  : databaseIndex
-                    ? 'Databases'
-                    : (page?.title ?? 'Workspace')}
+              {state.view === 'templates'
+                ? 'Templates'
+                : state.view === 'all'
+                  ? 'All pages'
+                  : state.view === 'graph'
+                    ? 'Knowledge graph'
+                    : databaseIndex
+                      ? 'Databases'
+                      : (page?.title ?? 'Workspace')}
             </strong>
           </div>
           <div className="topbar-actions">
@@ -206,10 +213,18 @@ export function Workspace() {
           </div>
         )}
         <div className="workspace-content">
-          {state.view === 'graph' ? (
-            <Suspense fallback={<p className="table-empty">Opening graph…</p>}>
-              <Graph />
-            </Suspense>
+          {state.view === 'templates' ? (
+            <LazyBoundary key={`templates:${state.workspaceId}`} name="Templates">
+              <Suspense fallback={<p className="table-empty">Opening templates…</p>}>
+                <Library key={state.workspaceId} />
+              </Suspense>
+            </LazyBoundary>
+          ) : state.view === 'graph' ? (
+            <LazyBoundary key={`graph:${state.workspaceId}`} name="Knowledge graph">
+              <Suspense fallback={<p className="table-empty">Opening graph…</p>}>
+                <Graph />
+              </Suspense>
+            </LazyBoundary>
           ) : state.view === 'all' ? (
             <AllPages />
           ) : databaseIndex ? (
@@ -217,6 +232,7 @@ export function Workspace() {
           ) : page ? (
             <>
               <div className="document-scroll">
+                <TemplateBanner page={page} />
                 <article
                   className={`document-canvas ${state.view === 'database' ? 'database-page' : ''}`}
                 >
@@ -238,9 +254,11 @@ export function Workspace() {
                       </div>
                     )
                   ) : (
-                    <Suspense fallback={<p className="editor-prompt">Opening editor…</p>}>
-                      <DocumentEditor key={page.id} page={page} />
-                    </Suspense>
+                    <LazyBoundary key={page.id} name="Editor">
+                      <Suspense fallback={<p className="editor-prompt">Opening editor…</p>}>
+                        <DocumentEditor key={page.id} page={page} />
+                      </Suspense>
+                    </LazyBoundary>
                   )}
                 </article>
               </div>
@@ -273,6 +291,11 @@ export function Workspace() {
       </main>
       {state.dialog === 'new-page' && <NewPage />}
       {state.commandOpen && <CommandPalette />}
+      {state.templateDialog && (
+        <TemplateDialog
+          key={`${state.user?.id}:${state.workspaceId}:${state.templateDialog.sourceId}`}
+        />
+      )}
       {state.dialog === 'search' && <Search />}
       {state.dialog === 'settings' && <Settings />}
       {state.dialog === 'invite' && <Invite />}

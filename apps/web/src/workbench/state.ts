@@ -209,7 +209,7 @@ export function workbenchSlice(
             .filter(
               (tab: WorkbenchTab) =>
                 tab &&
-                ['document', 'database', 'graph', 'all'].includes(tab.view) &&
+                ['document', 'database', 'graph', 'all', 'templates'].includes(tab.view) &&
                 (tab.pageId === null || typeof tab.pageId === 'string') &&
                 tab.id === tabKey(tab.pageId, tab.view),
             )
@@ -276,7 +276,7 @@ export function workbenchSlice(
     reconcileTabs(pages) {
       const ids = new Set(pages.map((page) => page.id));
       const visible = (tab: WorkbenchTab) =>
-        !tab.pageId || ids.has(tab.pageId) || ['graph', 'all'].includes(tab.view);
+        !tab.pageId || ids.has(tab.pageId) || ['graph', 'all', 'templates'].includes(tab.view);
       const normalize = (tab: WorkbenchTab): WorkbenchTab => {
         if (tab.pageId && !ids.has(tab.pageId)) return { ...tab, pageId: null };
         if (

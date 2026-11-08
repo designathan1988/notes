@@ -7,6 +7,7 @@ import {
   Plus,
   Settings2,
   SlidersHorizontal,
+  LayoutTemplate,
 } from 'lucide-react';
 import type { TableDefinition, TableOptions } from './state.js';
 import { IconButton } from '../ui/IconButton.js';
@@ -22,6 +23,7 @@ export function DatabaseToolbar({
   property,
   filter,
   view,
+  templates,
 }: {
   definition?: TableDefinition;
   options: TableOptions;
@@ -34,6 +36,7 @@ export function DatabaseToolbar({
   property(add: boolean): void;
   filter(): void;
   view(edit: boolean): void;
+  templates(): void;
 }) {
   const fields = definition?.fields.filter((field) => !field.archived) ?? [];
   return (
@@ -154,6 +157,9 @@ export function DatabaseToolbar({
         )}
         {!readOnly && (
           <>
+            <IconButton label="Record templates" onClick={templates}>
+              <LayoutTemplate />
+            </IconButton>
             <IconButton label="Add property" onClick={() => property(true)}>
               <Settings2 />
             </IconButton>

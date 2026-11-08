@@ -16,6 +16,22 @@ const canWrite = (state: WorkspaceState) => {
 };
 export const commands: AppCommand[] = [
   {
+    id: 'workspace.templates',
+    title: 'Open templates',
+    group: 'Navigate',
+    keywords: 'library reusable starting points',
+    run: (state) => state.navigate(null, 'templates'),
+  },
+  {
+    id: 'page.template',
+    title: 'Save as template',
+    group: 'Page',
+    available: (state) => canWrite(state) && !!page(state),
+    run: (state) => {
+      if (state.selectedId) return state.openSaveTemplate(state.selectedId);
+    },
+  },
+  {
     id: 'editor.focus',
     title: 'Toggle focus mode',
     group: 'Page',

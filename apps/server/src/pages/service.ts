@@ -50,8 +50,8 @@ export class Pages {
         throw new DomainError('CONFLICT', 'Records must belong to a database.');
       const id = internalId ?? randomUUID();
       const [row] = await tx.query<PageRow>(
-        `INSERT INTO pages (id,workspace_id,parent_id,title,description,created_by,visibility,kind,private_owner_id,position)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,(SELECT coalesce(max(position),0)+1 FROM pages WHERE workspace_id=$2)) RETURNING *`,
+        `INSERT INTO pages (id,workspace_id,parent_id,title,description,created_by,visibility,kind,private_owner_id,template_root_id,position)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,(SELECT coalesce(max(position),0)+1 FROM pages WHERE workspace_id=$2)) RETURNING *`,
         [
           id,
           workspace,
@@ -62,6 +62,7 @@ export class Pages {
           parent?.visibility ?? input.visibility ?? 'workspace',
           input.kind ?? 'document',
           parent?.accessOwnerId ?? actor.userId,
+          parent?.templateRootId ?? null,
         ],
       );
       if (input.kind === 'database')
@@ -76,11 +77,7 @@ export class Pages {
   list(actor: Actor, workspace: string, trash = false): Promise<Page[]> {
     return this.access.visiblePages(actor, workspace, trash);
   }
-  async update(
-    actor: Actor,
-    id: string,
-    input: PageUpdate & { revision: number },
-  ): Promise<Page> {
+  async update(actor: Actor, id: string, input: PageUpdate & { revision: number }): Promise<Page> {
     return new PageDetails(this.db).update(actor, id, input);
   }
   async move(
@@ -97,6 +94,14 @@ export class Pages {
       if (page.kind === 'record')
         throw new DomainError('CONFLICT', 'Records remain inside their owning database.');
       const parent = parentId ? await access.requirePage(actor, parentId, 'write') : null;
+      if (
+        page.templateRootId === page.id ||
+        (page.templateRootId ?? null) !== (parent?.templateRootId ?? null)
+      )
+        throw new DomainError(
+          'CONFLICT',
+          'Move pages within their template, or use the template to create independent pages.',
+        );
       if (parent && (parent.workspaceId !== page.workspaceId || parent.kind === 'database'))
         throw new DomainError('CONFLICT', 'Choose a document in the same workspace.');
       const descendants = await tx.query<{ id: string }>(

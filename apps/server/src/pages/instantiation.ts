@@ -5,6 +5,10 @@ import type { Database } from '../platform/database.js';
 import { Access } from '../access/service.js';
 import { Pages } from './service.js';
 import { Documents } from '../documents/service.js';
+import { Databases } from '../databases/service.js';
+import type { Storage } from '../attachments/storage.js';
+import type { Page, PageKind } from '../../../../packages/contracts/src/index.js';
+import type { CloneInput } from '../templates/clone.js';
 import { documentFromJSON, documentJSON } from '../../../../packages/editor/src/schema.js';
 import {
   DomainError,
@@ -28,6 +32,39 @@ export interface ContentInstanceInput {
 /** One transaction owns creation from structured content; callers never write a second body. */
 export class PageInstances {
   constructor(readonly db: Database) {}
+  async copyFrom(
+    actor: Actor,
+    workspace: string,
+    sourceId: string,
+    input: CloneInput,
+    storage: Storage,
+  ) {
+    const { TemplateClone } = await import('../templates/clone.js');
+    return new TemplateClone(this.db, storage).create(actor, workspace, sourceId, input);
+  }
+  /** Internal canonical factory used by content recovery and complete tree instantiation. */
+  async persist(
+    actor: Actor,
+    workspace: string,
+    input: {
+      id?: string;
+      title: string;
+      description?: string;
+      parentId: string | null;
+      visibility: Page['visibility'];
+      kind: PageKind;
+      content: Y.Doc;
+    },
+  ) {
+    const page =
+      input.kind === 'record'
+        ? await new Databases(this.db)
+            .createRecord(actor, input.parentId!, { title: input.title, values: {} }, input.id)
+            .then((record) => new Pages(this.db).get(actor, record.pageId))
+        : await new Pages(this.db).create(actor, workspace, input, input.id);
+    await new Documents(this.db).importContent(actor, page.id, input.content, page.generation);
+    return new Pages(this.db).get(actor, page.id);
+  }
   async create(actor: Actor, workspace: string, input: ContentInstanceInput) {
     const title = validateTitle(input.title),
       purpose = input.purpose ?? 'copy';
@@ -118,13 +155,14 @@ export class PageInstances {
             }
           }
         }
-        const page = await new Pages(tx).create(actor, workspace, {
+        const page = await new PageInstances(tx).persist(actor, workspace, {
           title,
           description,
           parentId: blueprint.parentId as string | null,
           visibility: visibility as 'private' | 'workspace',
+          kind: 'document',
+          content: source,
         });
-        await new Documents(tx).importContent(actor, page.id, source, page.generation);
         await tx.query(
           'INSERT INTO operation_keys (id,result) VALUES ($1,$2) ON CONFLICT (id) DO UPDATE SET result=excluded.result',
           [key, JSON.stringify({ hash, pageId: page.id })],

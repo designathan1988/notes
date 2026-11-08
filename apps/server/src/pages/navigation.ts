@@ -22,9 +22,16 @@ export class Navigation {
   ): Promise<Children> {
     const rows = await this.db.query<PageRow>(
       `SELECT p.*,EXISTS(SELECT 1 FROM pages child WHERE child.parent_id=p.id AND child.deleted_at IS NULL AND child.kind<>'record') AS has_children FROM pages p
-      WHERE p.workspace_id=$1 AND p.parent_id IS NOT DISTINCT FROM $2::text AND p.deleted_at IS NULL AND p.kind<>'record'
+      WHERE p.workspace_id=$1 AND p.parent_id IS NOT DISTINCT FROM $2::text AND p.deleted_at IS NULL AND p.kind<>'record' AND p.template_root_id IS NOT DISTINCT FROM $6::text
       AND ($2::text IS NOT NULL OR p.visibility='workspace' OR coalesce(p.private_owner_id,p.created_by)=$3) AND ($4::integer IS NULL OR (p.position,p.id)>($4::integer,$5::text)) ORDER BY p.position,p.id LIMIT 101`,
-      [workspace, parent?.id ?? null, actor.userId, cursor?.position ?? null, cursor?.id ?? null],
+      [
+        workspace,
+        parent?.id ?? null,
+        actor.userId,
+        cursor?.position ?? null,
+        cursor?.id ?? null,
+        parent?.templateRootId ?? null,
+      ],
     );
     const batch = rows.slice(0, 100);
     const last = batch.at(-1);
@@ -64,7 +71,7 @@ export class Navigation {
     const loaded = ['root'];
     if (!selected) {
       const [favorite] = await this.db.query<{ page_id: string }>(
-        'SELECT f.page_id FROM favorites f JOIN pages p ON p.id=f.page_id WHERE f.user_id=$1 AND p.workspace_id=$2 AND p.deleted_at IS NULL ORDER BY p.position LIMIT 1',
+        'SELECT f.page_id FROM favorites f JOIN pages p ON p.id=f.page_id WHERE f.user_id=$1 AND p.workspace_id=$2 AND p.deleted_at IS NULL AND p.template_root_id IS NULL ORDER BY p.position LIMIT 1',
         [actor.userId, workspace],
       );
       selected = favorite?.page_id ?? roots.pages[0]?.id;
@@ -82,7 +89,7 @@ export class Navigation {
     const expanded: string[] = [];
     const scope = await access.scope(actor, workspace);
     const favorites = await this.db.query<VisiblePageRow>(
-      `${scope.sql} SELECT p.*,EXISTS(SELECT 1 FROM pages child WHERE child.parent_id=p.id AND child.deleted_at IS NULL AND child.kind<>'record') AS has_children FROM visible p JOIN favorites f ON f.page_id=p.id AND f.user_id=$2`,
+      `${scope.sql} SELECT p.*,EXISTS(SELECT 1 FROM pages child WHERE child.parent_id=p.id AND child.deleted_at IS NULL AND child.kind<>'record') AS has_children FROM visible p JOIN favorites f ON f.page_id=p.id AND f.user_id=$2 WHERE p.template_root_id IS NULL`,
       scope.params,
     );
     for (const row of favorites) pages.set(row.id, toVisiblePage(row));
@@ -140,11 +147,24 @@ export class Navigation {
     }
     return { ...snapshot, pages: [...pages.values()] };
   }
-  async flat(actor: Actor, workspace: string, offset = 0, kind = '', query = '') {
+  async flat(
+    actor: Actor,
+    workspace: string,
+    offset = 0,
+    kind = '',
+    query = '',
+    templateRoot: string | null = null,
+  ) {
     const scope = await new Access(this.db).scope(actor, workspace);
     const rows = await this.db.query<VisiblePageRow & { parent_title: string | null }>(
-      `${scope.sql} SELECT p.*,parent.title AS parent_title FROM visible p LEFT JOIN visible parent ON parent.id=p.parent_id WHERE ($4='' OR p.kind=$4) AND p.title ILIKE $5 ORDER BY p.updated_at DESC,p.id LIMIT 51 OFFSET $3`,
-      [...scope.params, Math.max(0, Math.min(100000, offset)), kind, `%${query.slice(0, 256)}%`],
+      `${scope.sql} SELECT p.*,parent.title AS parent_title FROM visible p LEFT JOIN visible parent ON parent.id=p.parent_id WHERE (p.template_root_id IS NULL OR p.template_root_id=$6) AND ($4='' OR p.kind=$4) AND p.title ILIKE $5 ORDER BY p.updated_at DESC,p.id LIMIT 51 OFFSET $3`,
+      [
+        ...scope.params,
+        Math.max(0, Math.min(100000, offset)),
+        kind,
+        `%${query.slice(0, 256)}%`,
+        templateRoot,
+      ],
     );
     return {
       pages: rows

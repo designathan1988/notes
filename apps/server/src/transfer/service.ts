@@ -19,6 +19,7 @@ import * as Y from 'yjs';
 import { randomUUID } from 'node:crypto';
 import { pack, unpack, orderedPages, rewriteContent, type Manifest } from './archive.js';
 import { PageDetails } from '../pages/details.js';
+import { markTemplate } from '../templates/metadata.js';
 export interface ImportReport {
   jobId: string;
   complete: boolean;
@@ -78,6 +79,9 @@ export class Transfer {
         icon: page.icon ?? null,
         cover: page.cover ?? null,
         tags: page.tags ?? [],
+        templateRootId: page.templateRootId ?? null,
+        templateDatabaseId: page.templateDatabaseId ?? null,
+        ...(page.templateDatabaseId ? { templateValues: page.templateValues ?? {} } : {}),
         ...(page.properties ? { properties: page.properties } : {}),
         kind: page.kind,
         visibility: page.visibility,
@@ -325,6 +329,37 @@ export class Transfer {
                 await databases.setFields(actor, newId, fields);
               }
             }
+            if (page.templateRootId) {
+              const values = structuredClone(page.templateValues ?? {}),
+                definition = manifest.databases.find(
+                  (database) => database.pageId === page.templateDatabaseId,
+                );
+              for (const field of definition?.fields.filter((field) => field.type === 'relation') ??
+                [])
+                if (values[field.id]) {
+                  const previous = String(values[field.id]);
+                  values[field.id] = job.mapping.pages[previous] ?? null;
+                  if (!values[field.id])
+                    warnings.push(
+                      `An unavailable record default relation was omitted from ${page.title}.`,
+                    );
+                }
+              const databaseId = page.templateDatabaseId
+                ? (job.mapping.pages[page.templateDatabaseId] ?? page.templateDatabaseId)
+                : null;
+              if (page.templateDatabaseId && !job.mapping.pages[page.templateDatabaseId])
+                warnings.push(
+                  `The database for ${page.title} was unavailable. Its content and defaults were retained for review.`,
+                );
+              await markTemplate(
+                tx,
+                actor,
+                newId,
+                job.mapping.pages[page.templateRootId],
+                databaseId,
+                values,
+              );
+            }
           } else if (job.stage === 'documents') {
             const page = pages[i];
             const created = await service.get(actor, job.mapping.pages[page.id]);
@@ -340,7 +375,7 @@ export class Transfer {
                     }
                   : (page.cover ?? null),
             });
-            if (page.properties) {
+            if (page.properties && !page.templateDatabaseId) {
               const properties = structuredClone(page.properties);
               for (const field of properties.fields.filter((field) => field.type === 'relation')) {
                 const previous = properties.values[field.id];

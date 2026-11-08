@@ -6,6 +6,204 @@ async function signIn(context: BrowserContext, email = 'jonathan@note.test') {
     headers: { origin: 'http://127.0.0.1:5173' },
   });
 }
+test('a pending property write retains its draft when a newer navigation reply arrives before rejection', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
+    colleague = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  await signIn(context);
+  await signIn(colleague, 'amelia@note.test');
+  const session = await (await context.request.get('/api/session')).json(),
+    topicField = { id: 'topic', name: 'Topic', type: 'text' },
+    hoursField = { id: 'hours', name: 'Hours', type: 'number' };
+  let note = await (
+    await context.request.post(`/api/workspaces/${session.workspaces[0].id}/pages`, {
+      headers,
+      data: { title: `Pending property draft ${Date.now()}` },
+    })
+  ).json();
+  note = await (
+    await context.request.patch(`/api/pages/${note.id}`, {
+      headers,
+      data: { revision: note.revision, fields: [topicField, hoursField] },
+    })
+  ).json();
+  for (const [field, value] of [
+    [topicField, 'Original choice'],
+    [hoursField, 1],
+  ] as const)
+    note = await (
+      await context.request.patch(`/api/pages/${note.id}`, {
+        headers,
+        data: {
+          revision: note.revision,
+          property: { id: field.id, value, expectedValue: null, expectedField: field },
+        },
+      })
+    ).json();
+  const page = await context.newPage();
+  let releaseNavigation!: () => void,
+    releaseRejection!: () => void,
+    latestReady!: () => void,
+    rejectedReady!: () => void;
+  const navigationGate = new Promise<void>((resolve) => {
+      releaseNavigation = resolve;
+    }),
+    rejectionGate = new Promise<void>((resolve) => {
+      releaseRejection = resolve;
+    }),
+    latest = new Promise<void>((resolve) => {
+      latestReady = resolve;
+    }),
+    rejected = new Promise<void>((resolve) => {
+      rejectedReady = resolve;
+    });
+  try {
+    await page.goto(`/#${note.id}/document`);
+    const topic = page.getByRole('textbox', { name: `Topic for ${note.title}`, exact: true }),
+      hours = page.getByRole('spinbutton', { name: `Hours for ${note.title}`, exact: true });
+    await expect(hours).toHaveValue('1');
+    await topic.fill('Local draft kept');
+    await page.route('**/api/workspaces/*/navigation', async (route) => {
+      const response = await route.fetch(),
+        snapshot = await response.json(),
+        current = snapshot.pages?.find((item: { id: string }) => item.id === note.id);
+      if (current?.properties?.values.topic === 'Remote choice') {
+        if (current.properties.values.hours === 2) latestReady();
+        await navigationGate;
+      }
+      await route.fulfill({ response });
+    });
+    await page.route(`**/api/pages/${note.id}`, async (route) => {
+      if (route.request().method() !== 'PATCH') {
+        await route.continue();
+        return;
+      }
+      const response = await route.fetch();
+      expect(response.status()).toBe(409);
+      rejectedReady();
+      await rejectionGate;
+      await route.fulfill({ response });
+    });
+    let remote = await (
+      await colleague.request.patch(`/api/pages/${note.id}`, {
+        headers,
+        data: {
+          revision: note.revision,
+          property: {
+            id: 'topic',
+            value: 'Remote choice',
+            expectedValue: 'Original choice',
+            expectedField: topicField,
+          },
+        },
+      })
+    ).json();
+    expect(
+      (
+        await colleague.request.patch(`/api/pages/${note.id}`, {
+          headers,
+          data: {
+            revision: remote.revision,
+            property: { id: 'hours', value: 2, expectedValue: 1, expectedField: hoursField },
+          },
+        })
+      ).ok(),
+    ).toBe(true);
+    await latest;
+    await topic.press('Enter');
+    await rejected;
+    releaseNavigation();
+    await expect(hours).toHaveValue('2');
+    await expect(topic).toHaveValue('Local draft kept');
+    releaseRejection();
+    await expect(page.getByRole('alert')).toContainText('Not saved:');
+    await expect(topic).toHaveValue('Local draft kept');
+    expect(
+      (await (await context.request.get(`/api/pages/${note.id}`)).json()).properties.values.topic,
+    ).toBe('Remote choice');
+  } finally {
+    releaseNavigation();
+    releaseRejection();
+    await context.request.delete(`/api/pages/${note.id}`, { headers }).catch(() => {});
+    await context.close().catch(() => {});
+    await colleague.close().catch(() => {});
+  }
+});
+test('opening a property editor waits for this page’s own pending value write', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  await signIn(context);
+  const session = await (await context.request.get('/api/session')).json(),
+    field = { id: 'hours', name: 'Hours', type: 'number' };
+  let note = await (
+    await context.request.post(`/api/workspaces/${session.workspaces[0].id}/pages`, {
+      headers,
+      data: { title: `Queued property editor ${Date.now()}` },
+    })
+  ).json();
+  note = await (
+    await context.request.patch(`/api/pages/${note.id}`, {
+      headers,
+      data: { revision: note.revision, fields: [field] },
+    })
+  ).json();
+  note = await (
+    await context.request.patch(`/api/pages/${note.id}`, {
+      headers,
+      data: {
+        revision: note.revision,
+        property: { id: field.id, value: 1, expectedValue: null, expectedField: field },
+      },
+    })
+  ).json();
+  const page = await context.newPage();
+  let release!: () => void, started!: () => void;
+  const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    }),
+    pending = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+  try {
+    await page.goto(`/#${note.id}/document`);
+    const hours = page.getByRole('spinbutton', { name: `Hours for ${note.title}`, exact: true });
+    await expect(hours).toHaveValue('1');
+    await page.route(`**/api/pages/${note.id}`, async (route) => {
+      if (
+        route.request().method() === 'PATCH' &&
+        route.request().postDataJSON().property?.id === 'hours'
+      ) {
+        started();
+        await gate;
+      }
+      await route.continue();
+    });
+    await hours.fill('2');
+    await hours.press('Enter');
+    await pending;
+    const add = page.getByRole('button', { name: 'Add page property', exact: true });
+    await add.click();
+    await expect(add).toBeDisabled();
+    const dialog = page.getByRole('dialog', { name: 'Add a property', exact: true });
+    await expect(dialog).toBeHidden();
+    release();
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill('Cost');
+    await dialog.getByRole('combobox', { name: 'Type', exact: true }).selectOption('formula');
+    await dialog.getByRole('textbox', { name: 'Formula', exact: true }).fill('prop("Hours") * 15');
+    await dialog.getByRole('button', { name: 'Add property', exact: true }).click();
+    await expect(page.getByLabel(`Cost for ${note.title}`, { exact: true })).toHaveText('30');
+    await page.reload();
+    await expect(hours).toHaveValue('2');
+    await expect(page.getByLabel(`Cost for ${note.title}`, { exact: true })).toHaveText('30');
+  } finally {
+    release();
+    await context.request.delete(`/api/pages/${note.id}`, { headers }).catch(() => {});
+    await context.close().catch(() => {});
+  }
+});
 
 test('ordinary-page properties edit inline, calculate, retain conflicts and archive without losing values', async ({
   browser,
@@ -68,10 +266,20 @@ test('ordinary-page properties edit inline, calculate, retain conflicts and arch
     await other.fill('Colleague decision');
     await other.press('Enter');
     await refreshed;
+    const conflict = first.waitForResponse(
+      (response) =>
+        response.url().endsWith(`/api/pages/${note.id}`) && response.request().method() === 'PATCH',
+    );
     await topic.press('Enter');
-    await expect(
-      first.getByRole('alert').filter({ hasText: 'This property changed while you were editing' }),
-    ).toBeVisible();
+    const rejected = await conflict;
+    expect(rejected.status()).toBe(409);
+    expect((await rejected.json()).code).toBe('CONFLICT');
+    // Receiving navigation data does not mean React has applied its revision yet.
+    // Either revision or value comparison must reject the stale draft and retain it.
+    await expect(first.getByRole('alert')).toContainText(
+      /Not saved: (This property changed while you were editing|The page changed)/,
+    );
+    await expect(topic).toHaveValue('Unsubmitted local edit');
     expect(
       JSON.stringify(
         (await (await firstContext.request.get(`/api/pages/${note.id}`)).json()).properties.values,
@@ -105,8 +313,14 @@ test('ordinary-page properties edit inline, calculate, retain conflicts and arch
     await schemaRefresh;
     await manager.getByRole('button', { name: 'Save property', exact: true }).click();
     await expect(manager.getByRole('alert')).toContainText(
-      'The properties changed while you were editing',
+      /The properties changed while you were editing|The page changed/,
     );
+    await expect(manager.getByRole('textbox', { name: 'Name', exact: true })).toHaveValue('Effort');
+    const preservedSchema = await (await firstContext.request.get(`/api/pages/${note.id}`)).json();
+    expect(
+      preservedSchema.properties.fields.find((field: { id: string }) => field.id === hoursId).name,
+    ).toBe('Hours');
+    expect(preservedSchema.properties.values[hoursId]).toBe(6);
     await manager.getByRole('button', { name: 'Close dialog', exact: true }).click();
     await expect(hours).toHaveValue('6');
     await first.getByRole('button', { name: 'Manage page properties', exact: true }).click();
@@ -185,6 +399,8 @@ test('opening a record directly edits the canonical properties and updates its t
     const done = page.getByRole('checkbox', { name: 'Done for Interview analysis', exact: true });
     await done.check();
     await expect(done).toBeChecked();
+    // A checked value is optimistic; wait for its owning save to settle before reload.
+    await expect(done).toBeEnabled();
     await page.reload();
     await expect(hours).toHaveValue('5');
     const saved = await (

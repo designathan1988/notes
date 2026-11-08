@@ -9,11 +9,15 @@ import {
 import { validateFields, validateValues } from '../databases/values.js';
 import { validatePresentation } from '../pages/details.js';
 import { validatePageProperties } from '../pages/properties.js';
+import { templateValues } from '../templates/metadata.js';
 export const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024;
 export const MAX_MANIFEST_BYTES = 32 * 1024 * 1024;
 export const MAX_ARCHIVED_PAGE_BYTES = 8 * 1024 * 1024;
 const MAX_EXPANDED_BYTES = 128 * 1024 * 1024;
 export interface ArchivePage {
+  templateRootId?: Page['templateRootId'];
+  templateDatabaseId?: Page['templateDatabaseId'];
+  templateValues?: Page['templateValues'];
   properties?: Page['properties'];
   icon?: Page['icon'];
   cover?: Page['cover'];
@@ -193,6 +197,51 @@ function validateManifest(manifest: Manifest, files: Record<string, Uint8Array>)
     }
   }
   orderedPages(manifest.pages);
+  for (const page of manifest.pages) {
+    const marker = page.templateRootId,
+      database = page.templateDatabaseId;
+    if (marker != null) {
+      const root = manifest.pages.find((root) => root.id === marker);
+      if (
+        typeof marker !== 'string' ||
+        !root ||
+        root.templateRootId !== root.id ||
+        root.parentId !== null ||
+        root.kind === 'record' ||
+        (page.id !== marker &&
+          manifest.pages.find((parent) => parent.id === page.parentId)?.templateRootId !== marker)
+      )
+        throw new DomainError(
+          'INVALID',
+          'An archived template must have one root and an owned page tree.',
+        );
+    }
+    if (
+      page.parentId &&
+      manifest.pages.find((parent) => parent.id === page.parentId)?.templateRootId != null &&
+      page.templateRootId !==
+        manifest.pages.find((parent) => parent.id === page.parentId)?.templateRootId
+    )
+      throw new DomainError('INVALID', 'Template descendants must share their root.');
+    if (database != null) {
+      const referenced = manifest.pages.find((item) => item.id === database);
+      if (
+        typeof database !== 'string' ||
+        !/^[\w-]{1,128}$/.test(database) ||
+        marker !== page.id ||
+        page.kind !== 'document' ||
+        (referenced && referenced.kind !== 'database') ||
+        page.properties?.fields.length ||
+        Object.keys(page.properties?.values ?? {}).length
+      )
+        throw new DomainError(
+          'INVALID',
+          'An archived record template must reference its database schema.',
+        );
+      templateValues(page.templateValues ?? {});
+    } else if (Object.keys(page.templateValues ?? {}).length)
+      throw new DomainError('INVALID', 'Template defaults require a database reference.');
+  }
   const databases = new Set<string>();
   for (const database of manifest.databases) {
     if (
@@ -278,20 +327,29 @@ export function rewriteContent(
   content: JSONContent,
   pages: Record<string, string>,
   attachments: Record<string, string>,
+  preserveExternal = false,
 ): JSONContent {
   const copy = structuredClone(content);
   const queue = [copy];
   let nodes = 0;
+  const reference = (map: Record<string, string>, id: unknown) =>
+    map[String(id)] ?? (preserveExternal ? String(id) : 'unavailable');
   for (let i = 0; i < queue.length; i++) {
     const node = queue[i];
     if (++nodes > 100000) throw new DomainError('LIMIT', 'The document contains too many nodes.');
     if (node.attrs) {
       if (node.type === 'pageLink' || node.type === 'wikiLink')
-        node.attrs.targetId = pages[String(node.attrs.targetId)] ?? 'unavailable';
+        node.attrs.targetId = reference(pages, node.attrs.targetId);
       if (node.type === 'databaseView')
-        node.attrs.databaseId = pages[String(node.attrs.databaseId)] ?? 'unavailable';
-      if (node.type === 'attachment')
-        node.attrs.id = attachments[String(node.attrs.id)] ?? 'unavailable';
+        node.attrs.databaseId = reference(pages, node.attrs.databaseId);
+      if (node.type === 'attachment') node.attrs.id = reference(attachments, node.attrs.id);
+    }
+    for (const mark of node.marks ?? []) {
+      const match =
+        mark.type === 'link' && typeof mark.attrs?.href === 'string'
+          ? /^#([\w-]{1,128})(\/(?:document|database))?$/.exec(mark.attrs.href)
+          : null;
+      if (match) mark.attrs!.href = `#${reference(pages, match[1])}${match[2] ?? '/document'}`;
     }
     queue.push(...(node.content ?? []));
   }

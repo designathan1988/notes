@@ -11,14 +11,15 @@ import { collaborationRoutes } from './documents/collaboration.js';
 import { attachmentRoutes } from './attachments/routes.js';
 import { databaseRoutes } from './databases/routes.js';
 import { knowledgeRoutes } from './knowledge/routes.js';
-import { storageFromEnvironment } from './attachments/storage.js';
+import { storageFromEnvironment, type Storage } from './attachments/storage.js';
+import { templateRoutes } from './templates/routes.js';
 import { transferRoutes } from './transfer/routes.js';
 import { invitationRoutes } from './access/invitation-routes.js';
 import { workspaceEvents } from './access/events.js';
 import { discussionRoutes } from './discussion/routes.js';
 import { historyRoutes } from './history/routes.js';
 
-export async function createApp(options: { db: Database; auth?: Auth }) {
+export async function createApp(options: { db: Database; auth?: Auth; storage?: Storage }) {
   const app = Fastify({ bodyLimit: 4 * 1024 * 1024, logger: false });
   const auth = options.auth ?? createAuth(options.db);
   const access = new Access(options.db);
@@ -93,7 +94,8 @@ export async function createApp(options: { db: Database; auth?: Auth }) {
   const collaboration = await collaborationRoutes(app, options.db, auth, access);
   discussionRoutes(app, options.db);
   historyRoutes(app, options.db, collaboration.publish);
-  const storage = storageFromEnvironment();
+  const storage = options.storage ?? storageFromEnvironment();
+  templateRoutes(app, options.db, storage);
   attachmentRoutes(app, options.db, storage);
   databaseRoutes(app, options.db);
   await knowledgeRoutes(app, options.db);

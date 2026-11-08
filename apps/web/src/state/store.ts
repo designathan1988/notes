@@ -14,13 +14,23 @@ import { navigationSlice, type NavigationSlice } from '../navigation/state.js';
 import { openRecovery } from '../documents/recovery.js';
 import { workbenchSlice, type WorkbenchSlice } from '../workbench/state.js';
 import { activitySlice, type ActivitySlice } from '../activity/state.js';
+import { templateSlice, type TemplateSlice } from '../templates/state.js';
 type User = { id: string; name: string; email: string };
 const pageWrites = new Map<string, Promise<void>>();
+async function settlePageWrites(ids: string[]) {
+  await Promise.all(ids.flatMap((id) => (pageWrites.get(id) ? [pageWrites.get(id)!] : [])));
+}
 let navigationSequence = 0;
-export type View = 'document' | 'database' | 'graph' | 'all';
+export type View = 'document' | 'database' | 'graph' | 'all' | 'templates';
 export type Dialog = 'search' | 'new-page' | 'page-menu' | 'settings' | 'invite' | 'move' | null;
 export interface WorkspaceState
-  extends DatabaseSlice, KnowledgeSlice, NavigationSlice, WorkbenchSlice, ActivitySlice {
+  extends
+    DatabaseSlice,
+    KnowledgeSlice,
+    NavigationSlice,
+    WorkbenchSlice,
+    ActivitySlice,
+    TemplateSlice {
   user: User | null;
   workspaces: Workspace[];
   workspaceId: string | null;
@@ -68,6 +78,7 @@ export interface WorkspaceState
     options?: { navigate?: boolean },
   ): Promise<Page>;
   updatePage(id: string, patch: PageUpdate, expectedRevision?: number): Promise<void>;
+  settlePageWrites(ids: string[]): Promise<void>;
   trashPage(id: string): Promise<void>;
   toggleExpanded(id: string): void;
   toggleFavorite(id: string): void;
@@ -79,6 +90,8 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   ...navigationSlice(set, get),
   ...workbenchSlice(set, get),
   ...activitySlice(set, get),
+  ...templateSlice(set, get),
+  settlePageWrites,
   user: null,
   workspaces: [],
   workspaceId: null,
@@ -146,6 +159,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       knowledgeVersion: get().knowledgeVersion + 1,
     });
     get().restoreWorkbench();
+    get().restoreTemplateCommands();
     try {
       const fromHash = location.hash.slice(1).split('/');
       const snapshot = await api<NavigationSnapshot>(
@@ -161,8 +175,8 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
         ...(get().connectionError ? { error: null, connectionError: false } : {}),
       });
       get().navigate(
-        snapshot.selectedId,
-        (['document', 'database', 'graph', 'all'].includes(fromHash[1])
+        fromHash[1] === 'templates' ? null : snapshot.selectedId,
+        (['document', 'database', 'graph', 'all', 'templates'].includes(fromHash[1])
           ? fromHash[1]
           : 'document') as View,
         'replace',
@@ -407,5 +421,6 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       outline: [],
       linkedPageIds: [],
     });
+    get().restoreTemplateCommands();
   },
 }));

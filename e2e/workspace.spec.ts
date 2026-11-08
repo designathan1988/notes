@@ -37,39 +37,46 @@ test('two independent identities edit, persist, and reopen one shared document',
   const page = await response.json();
   const a = await first.newPage();
   const b = await second.newPage();
-  await Promise.all([a.goto(`/#${page.id}/document`), b.goto(`/#${page.id}/document`)]);
-  await expect(a.locator('.save-status')).toHaveText('Saved');
-  await expect(b.locator('.save-status')).toHaveText('Saved');
-  const one = a.getByRole('textbox', { name: 'Page content' });
-  const two = b.getByRole('textbox', { name: 'Page content' });
-  await one.click();
-  await one.press('Control+End');
-  await one.press('Enter');
-  await expect(two.locator('p')).toHaveCount(2);
-  await one.locator('p').first().click();
-  await two.locator('p').last().click();
-  // Keep each explicitly positioned caret: typing through the root locator can
-  // refocus a background contenteditable and reset it to the first paragraph.
-  const caretParagraph = (root: Element) => {
-    const anchor = window.getSelection()?.anchorNode;
-    const element = anchor instanceof Element ? anchor : anchor?.parentElement;
-    return [...root.querySelectorAll('p')].indexOf(element?.closest('p') as HTMLParagraphElement);
-  };
-  expect(await one.evaluate(caretParagraph)).toBe(0);
-  expect(await two.evaluate(caretParagraph)).toBe(1);
-  await Promise.all([a.keyboard.type('Alpha '), b.keyboard.type('Beta ')]);
-  await expect(one).toContainText('Alpha');
-  await expect(one).toContainText('Beta');
-  await expect(two).toContainText('Alpha');
-  await expect(two).toContainText('Beta');
-  await expect(a.locator('.save-status')).toHaveText('Saved');
-  await expect(b.locator('.save-status')).toHaveText('Saved');
-  await a.reload();
-  await expect(a.getByRole('textbox', { name: 'Page content' })).toContainText('Alpha');
-  await expect(a.getByRole('textbox', { name: 'Page content' })).toContainText('Beta');
-  await first.request.delete(`/api/pages/${page.id}`, { headers: { 'x-note-request': '1' } });
-  await first.close();
-  await second.close();
+  try {
+    await Promise.all([a.goto(`/#${page.id}/document`), b.goto(`/#${page.id}/document`)]);
+    await expect(a.locator('.save-status')).toHaveText('Saved');
+    await expect(b.locator('.save-status')).toHaveText('Saved');
+    const one = a.getByRole('textbox', { name: 'Page content' });
+    const two = b.getByRole('textbox', { name: 'Page content' });
+    await one.click();
+    await one.press('Control+End');
+    await one.press('Enter');
+    await expect(two.locator('p')).toHaveCount(2);
+    await one.click();
+    await a.keyboard.press('Control+Home');
+    await two.click();
+    await b.keyboard.press('Control+End');
+    // Keep each explicitly positioned caret: typing through the root locator can
+    // refocus a background contenteditable and reset it to the first paragraph.
+    const caretParagraph = (root: Element) => {
+      const anchor = window.getSelection()?.anchorNode;
+      const element = anchor instanceof Element ? anchor : anchor?.parentElement;
+      return [...root.querySelectorAll('p')].indexOf(element?.closest('p') as HTMLParagraphElement);
+    };
+    expect(await one.evaluate(caretParagraph)).toBe(0);
+    expect(await two.evaluate(caretParagraph)).toBe(1);
+    await Promise.all([a.keyboard.type('Alpha '), b.keyboard.type('Beta ')]);
+    await expect(one).toContainText('Alpha');
+    await expect(one).toContainText('Beta');
+    await expect(two).toContainText('Alpha');
+    await expect(two).toContainText('Beta');
+    await expect(a.locator('.save-status')).toHaveText('Saved');
+    await expect(b.locator('.save-status')).toHaveText('Saved');
+    await a.reload();
+    await expect(a.getByRole('textbox', { name: 'Page content' })).toContainText('Alpha');
+    await expect(a.getByRole('textbox', { name: 'Page content' })).toContainText('Beta');
+  } finally {
+    await first.request
+      .delete(`/api/pages/${page.id}`, { headers: { 'x-note-request': '1' } })
+      .catch(() => {});
+    await first.close().catch(() => {});
+    await second.close().catch(() => {});
+  }
 });
 test('pastes rich content safely and persists original source and uploaded image bytes', async ({
   browser,

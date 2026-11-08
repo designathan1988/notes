@@ -6,6 +6,38 @@ import { snapshotAcknowledgementCovers } from './durability.js';
 import { openRecovery, type Recovery } from './recovery.js';
 import type { Page, SaveStatus } from '../../../../packages/contracts/src/index.js';
 const activeSessions = new Set<DocumentSession>();
+/** Copy only acknowledged content; retained drafts are never silently omitted or discarded. */
+export async function ensureCopySourcesSaved(
+  identity: string,
+  workspace: string,
+  pages: { id: string; generation: number; title: string }[],
+) {
+  const ids = new Set(pages.map((page) => page.id));
+  await Promise.all(
+    [...activeSessions]
+      .filter(
+        (session) =>
+          session.identity === identity &&
+          session.page.workspaceId === workspace &&
+          ids.has(session.page.id),
+      )
+      .map((session) => session.whenDurable()),
+  );
+  if (!globalThis.indexedDB) return;
+  const recovery = await openRecovery();
+  try {
+    const pending = new Set(await recovery.pendingIdentity(identity));
+    const page = pages.find((page) =>
+      pending.has(`${identity}:${workspace}:${page.id}:${page.generation}`),
+    );
+    if (page)
+      throw new Error(
+        `Open “${page.title}” to synchronize its local draft before copying. Your local content has been kept.`,
+      );
+  } finally {
+    recovery.close();
+  }
+}
 export async function assertIdentityCanSignOut(identity: string) {
   if ([...activeSessions].some((session) => session.identity === identity && session.dirty))
     throw new Error(
@@ -39,6 +71,41 @@ export class DocumentSession {
       this.observers.delete(listener);
     };
   };
+  async whenDurable() {
+    if (!this.dirty && ['saved', 'read-only'].includes(this.status)) {
+      await Promise.allSettled(this.recoveryWrites);
+      return;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const cleanup = () => {
+        clearTimeout(timeout);
+        unsubscribe();
+      };
+      const check = () => {
+        if (this.destroyed || this.status === 'error' || this.status === 'local') {
+          cleanup();
+          reject(
+            new Error(
+              'Save or recover the source page before copying it. Your local content has been kept.',
+            ),
+          );
+        } else if (!this.dirty && ['saved', 'read-only'].includes(this.status)) {
+          cleanup();
+          resolve();
+        }
+      };
+      const unsubscribe = this.subscribeStatus(check),
+        timeout = setTimeout(() => {
+          cleanup();
+          reject(
+            new Error('The source has not finished saving. Keep it open, then retry the copy.'),
+          );
+        }, 15000);
+      if (this.connected) this.provider?.sendStateless('checkpoint');
+      check();
+    });
+    await Promise.allSettled(this.recoveryWrites);
+  }
   get identity() {
     return this.userId;
   }

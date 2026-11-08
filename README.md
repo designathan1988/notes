@@ -64,7 +64,15 @@ The documents service records recovery checkpoints at most once per ten-minute i
 
 ## Development limits
 
+Templates are available from the sidebar and command palette. Page actions → Save as template copies a page, database or record into the library; New template opens a blank definition directly for writing. Definitions use the normal editor and keep their own subpages and media. Use template creates a separate private page tree or database immediately and focuses its title. Internal references remap; links to external pages and databases stay connected. Editing a linked external database still changes that existing database.
+
+Record templates create records in their original database and follow its access settings. They keep starting values outside its live records; property definitions come from that database. Changed or archived properties can make a saved default invalid; the application keeps that value for review and requires an explicit reset before use. Workspace ZIP carries template definitions, media and defaults.
+
+Copying waits for pending page, record and document writes. A closed source with unsynchronized local text must be reopened and synchronized first. An unknown copy result is retained in Templates → Check your recent copies for the current account, workspace and browser window. Retry uses the same request identity; a confirmed copy with a later opening failure is not offered as an unconfirmed creation.
+
 Files: 25 MiB each. Document state: 4 MiB. ZIP input: 64 MiB compressed, 128 MiB expanded, at most 5,000 pages and 1,000 exported attachments. Imports process up to 50 metadata/document records or one attachment per batch. A workspace may have up to three unfinished imports. The beta attachment allowance is 1 GiB per workspace. These engineering safeguards are not commercial plan pricing.
+
+A single template/copy operation supports up to 200 owned pages, 16 MiB of structured content and 500 files totaling 64 MiB. These bounded operations do not impose a stored page-hierarchy depth rule.
 
 Page storage has no fixed hierarchy-depth rule. Navigation responses and graph queries are bounded; global indexed search can open a page outside the initial navigation window. The graph renders bounded node/edge sets rather than loading an unlimited workspace into the browser.
 

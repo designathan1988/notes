@@ -12,6 +12,9 @@ export function RelationCell({
   kind = 'record',
   begin,
   end,
+  templateRootId,
+  selfRelation,
+  busy = false,
 }: {
   value: string;
   label: string;
@@ -20,6 +23,9 @@ export function RelationCell({
   kind?: 'record' | 'page';
   begin?(): void;
   end?(): void;
+  templateRootId?: string | null;
+  selfRelation?: { id: string; title: string };
+  busy?: boolean;
 }) {
   const [open, setOpen] = useState(false),
     [query, setQuery] = useState(''),
@@ -30,6 +36,10 @@ export function RelationCell({
   useEffect(() => {
     let active = true;
     setTitle('');
+    if (value === selfRelation?.id) {
+      setTitle(selfRelation.title);
+      return;
+    }
     if (value)
       void api<Page>(`/pages/${value}`)
         .then((page) => {
@@ -41,14 +51,14 @@ export function RelationCell({
     return () => {
       active = false;
     };
-  }, [value, kind]);
+  }, [value, kind, selfRelation?.id, selfRelation?.title]);
   useEffect(() => {
     if (!open) return;
     let active = true;
     const timer = setTimeout(
       () =>
         void api<{ pages: PageLookup[] }>(
-          `/workspaces/${workspace}/page-list?kind=${kind === 'record' ? 'record' : ''}&q=${encodeURIComponent(query)}`,
+          `/workspaces/${workspace}/page-list?kind=${kind === 'record' ? 'record' : ''}&q=${encodeURIComponent(query)}${templateRootId ? '&template=' + encodeURIComponent(templateRootId) : ''}`,
         )
           .then((result) => {
             if (active) {
@@ -65,13 +75,13 @@ export function RelationCell({
       active = false;
       clearTimeout(timer);
     };
-  }, [open, query, workspace]);
+  }, [open, query, workspace, kind, templateRootId]);
   return (
     <>
       <button
         className="relation-cell"
         aria-label={label}
-        disabled={readOnly && !value}
+        disabled={busy || (readOnly && !value)}
         onClick={() => {
           if (readOnly && value) useWorkspace.getState().navigate(value);
           else setOpen(true);
@@ -99,6 +109,18 @@ export function RelationCell({
             />
           </label>
           <div className="link-results">
+            {selfRelation && (
+              <button
+                onClick={() => {
+                  change(selfRelation.id);
+                  setTitle(selfRelation.title);
+                  setOpen(false);
+                }}
+              >
+                <Link2 size={15} />
+                {selfRelation.title}
+              </button>
+            )}
             {results.map((page) => (
               <button
                 key={page.id}

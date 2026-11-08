@@ -28,6 +28,7 @@ export function knowledgeSlice(
     knowledgeVersion: 0,
     invalidateKnowledge() {
       searchSequence++;
+      get().invalidateTemplateReads?.();
       set({
         knowledgeVersion: get().knowledgeVersion + 1,
         graphs: {},

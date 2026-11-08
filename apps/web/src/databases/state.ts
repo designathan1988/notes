@@ -9,6 +9,7 @@ import { api, ApiError, json } from '../state/api.js';
 import type { WorkspaceState } from '../state/store.js';
 export interface TableOptions extends DatabaseViewConfig, RecordQuery {}
 export interface TableDefinition {
+  templateRootId?: string | null;
   title: string;
   pageRevision: number;
   fieldsRevision: number;
@@ -20,11 +21,15 @@ export interface TableSnapshot extends TableDefinition {
   records: DatabaseRecord[];
   total: number;
 }
-function mergeDefinition(
+export function mergeDefinition(
   previous: TableDefinition | undefined,
   result: TableDefinition,
 ): TableDefinition {
   return {
+    templateRootId:
+      !previous || result.pageRevision >= previous.pageRevision
+        ? (result.templateRootId ?? null)
+        : (previous.templateRootId ?? null),
     title:
       !previous || result.pageRevision >= previous.pageRevision ? result.title : previous.title,
     pageRevision: Math.max(previous?.pageRevision ?? 0, result.pageRevision),
@@ -69,6 +74,7 @@ export const tableQueryKey = (id: string, options: TableOptions = {}) =>
     options.undated ?? false,
   ]);
 export interface DatabaseSlice {
+  settleRecordWrites(ids: string[]): Promise<void>;
   tables: Record<string, TableDefinition>;
   tableQueries: Record<string, { databaseId: string; ids: string[]; total: number }>;
   recordEntities: Record<string, DatabaseRecord>;
@@ -122,6 +128,9 @@ export function databaseSlice(
     }
   };
   return {
+    async settleRecordWrites(ids) {
+      await Promise.all(ids.flatMap((id) => (writes.get(id) ? [writes.get(id)!] : [])));
+    },
     tables: {},
     tableQueries: {},
     recordEntities: {},

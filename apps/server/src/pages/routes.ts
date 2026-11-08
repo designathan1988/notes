@@ -49,7 +49,7 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
   });
   app.get<{
     Params: { workspace: string };
-    Querystring: { offset?: string; kind?: string; q?: string };
+    Querystring: { offset?: string; kind?: string; q?: string; template?: string };
   }>('/api/workspaces/:workspace/page-list', (request) =>
     navigation.flat(
       request.actor,
@@ -59,6 +59,9 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
         ? request.query.kind!
         : '',
       request.query.q ?? '',
+      typeof request.query.template === 'string' && /^[\w-]{1,128}$/.test(request.query.template)
+        ? request.query.template
+        : null,
     ),
   );
   app.get<{ Params: { workspace: string } }>(
@@ -133,6 +136,7 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
       fields: request.body.fields as PageUpdate['fields'],
       property: request.body.property as PageUpdate['property'],
       propertyAction: request.body.propertyAction as PageUpdate['propertyAction'],
+      templateDefaults: request.body.templateDefaults as PageUpdate['templateDefaults'],
       revision: Number(request.body.revision),
     });
   });

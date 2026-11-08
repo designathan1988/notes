@@ -9,6 +9,9 @@ export interface Workspace {
   role: Role;
 }
 export interface Page {
+  templateRootId?: string | null;
+  templateDatabaseId?: string | null;
+  templateValues?: Record<string, unknown>;
   properties?: PageProperties;
   icon?: string | null;
   cover?: PageCover | null;
@@ -32,6 +35,11 @@ export interface Page {
 export type PageCover =
   { type: 'color'; color: string } | { type: 'image'; attachmentId: string; positionY: number };
 export interface PageUpdate {
+  templateDefaults?: {
+    fieldsRevision: number;
+    property?: NonNullable<PageUpdate['property']>;
+    resetInvalid?: boolean;
+  };
   fields?: RecordField[];
   property?: { id: string; value: unknown; expectedValue: unknown; expectedField: RecordField };
   propertyAction?: string;

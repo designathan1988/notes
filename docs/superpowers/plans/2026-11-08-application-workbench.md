@@ -23,6 +23,7 @@ English UI/code/docs, Brazilian Portuguese chat. Continuous blocks. No user data
 
 **Files:** `apps/web/src/workbench/{state,preferences,commands,TabStrip,CommandPalette}.ts/tsx`; store, App, Workspace, Sidebar, Editor link handling and CSS. Tests: `tests/workbench.test.ts`, `e2e/workbench.spec.ts`.
 **Interfaces:** Workbench IDs/view/pinned state and scoped preference gateway, store `createQuickPage`, command definitions, title focus request.
+
 - [x] RED: open/activate/close/reopen/reorder tabs, scope isolation and removed references; browser Ctrl Alt N creates directly and focuses title, modifier-click opens a tab, palette navigates by keyboard.
 - [x] Implement scoped tabs and one command registry; integrate direct create, context menus, back/forward and recent working context. Keep advanced creation optional.
 - [x] Verify focused tests plus full behavior suite and browser flows; commit verified milestone.
@@ -30,6 +31,7 @@ English UI/code/docs, Brazilian Portuguese chat. Continuous blocks. No user data
 ### Task 2: Editor depth
 
 **Files:** Shared editor schema/block helpers; `apps/web/src/documents/{SelectionToolbar,FindInPage,Templates,ToggleSection}.tsx`; block menu and formatting owner. Tests: rich schema/blocks and editor E2E.
+
 - [x] RED: collapse/reopen toggles, template insertion, selection formatting, in-page find and keyboard insertion, durable rich-node round-trip.
 - [x] Implement contextual formatting, highlights/strike/code/link, searchable command keys, templates, toggles, statistics and focus modes without a competing body source.
 - [x] Verify real pointer/keyboard editing, collaboration and recovery plus full suite; commit.
@@ -37,6 +39,7 @@ English UI/code/docs, Brazilian Portuguese chat. Continuous blocks. No user data
 ### Task 3: Connected data application
 
 **Files:** Databases UI/state/service view configuration and computed values; `BoardView`, `ListView`, `CalendarView`, `RecordInspector`, property management. Tests: schema/value/view invariants and data-layout E2E.
+
 - [x] RED: record changes propagate across table/board/list/calendar, drag updates group field, saved layouts persist, field editing preserves valid data and computed values never execute code.
 - [x] Implement layouts, inline record creation, record inspector, property editing, saved-view management and safe data actions/computed fields.
 - [x] Verify multiple views and identities, stale schema/record conflicts, permissions and pagination; commit.
@@ -44,6 +47,7 @@ English UI/code/docs, Brazilian Portuguese chat. Continuous blocks. No user data
 ### Task 4: Discussion and revision history
 
 **Files:** Server `discussion` and `history` owners/routes/migrations; client capability slices and docked panels; access and document service integration. Tests: real database and collaboration E2E.
+
 - [x] RED: threaded replies/resolution persist, unauthorized reads/writes denied, history previews immutable, restore retains pre-restore state and is a new authorized durable edit.
 - [x] Implement discussions, history browse/preview/restore and contextual page discussion entry points with reliable error handling.
 - [x] Verify two identities, revocation, reload and failed restore behavior; commit.
@@ -51,14 +55,16 @@ English UI/code/docs, Brazilian Portuguese chat. Continuous blocks. No user data
 ### Task 5: Page identity and reusable knowledge
 
 **Files:** Page metadata/contracts/service, templates/properties UI and indexed tag filters; record-page property surface. Tests: metadata concurrency, permissions, transfer and UI.
-- [ ] RED: icons/covers/tags survive reload/export/import, record properties edit the canonical record, templates instantiate independent content and internal links.
-- [ ] Implement page presentation, structured page properties/tags, reusable templates and record metadata editing directly in the inspector/page.
-- [ ] Reuse canonical page instantiation to recover obsolete local drafts as private pages. Verify exact-state acknowledgement, idempotency, newer-draft preservation, current permissions, durable content and successful sign-out after recovery. Exporting alone must not silently discard drafts.
-- [ ] Verify all shared schema and transfer paths and browser workflows; commit.
+
+- [x] RED: icons/covers/tags survive reload/export/import, record properties edit the canonical record, templates instantiate independent content and internal links.
+- [x] Implement page presentation, structured page properties/tags, reusable templates and record metadata editing directly in the inspector/page.
+- [x] Reuse canonical page instantiation to recover obsolete local drafts as private pages. Verify exact-state acknowledgement, idempotency, newer-draft preservation, current permissions, durable content and successful sign-out after recovery. Exporting alone must not silently discard drafts.
+- [x] Verify all shared schema and transfer paths and browser workflows; commit.
 
 ### Task 6: Spatial knowledge tools
 
 **Files:** Graph layout/interaction owner and persistent canvas owner/schema/UI; shared references and interchange. Tests: layout safety, canvas persistence/ACL and pointer E2E.
+
 - [ ] RED: graph nodes can be moved without editing page data; canvas note/media cards and connections persist, obey ACL and round-trip; touch/pointer pan and zoom remain correct.
 - [ ] Implement readable graph discovery and a separate persisted spatial canvas with note links, grouping, connections and export.
 - [ ] Verify actual native/browser pointer gestures, keyboard access and live permission changes; commit.
@@ -70,6 +76,10 @@ English UI/code/docs, Brazilian Portuguese chat. Continuous blocks. No user data
 - [ ] Obtain one independent final whole-change review; fix material findings with regressions and rerun checks. Keep the goal active while any required matrix item remains incomplete.
 
 ## Execution ledger
+
+- Task 5 reusable-template gate: 149/149 behavior tests across 29 files in 64.30 seconds, 43/43 browser scenarios in 3.4 minutes, typecheck/build and diff checks passed. The four property scenarios also passed three repetitions (12/12, 47.0 seconds). Six new template browser workflows exercise independent trees/media, direct private creation/title focus, native database copies/relations, record defaults and invalid-schema review, scoped unknown-result retry, blank duplication and unsynchronized closed-source draft protection. Server tests cover asset rollback/quota/permissions/proof races/idempotency and ZIP remapping. The library keeps canonical IDs; definitions and instances use the canonical page/document/database owners.
+- Task 5 visual gate: final 1536/390/360 captures and verification JSON are under `template-library/` in the session visualization directory. The reference and latest implementation were inspected. Repaired one-line search alignment, nested preview scrolling, clipped list markers/quote indentation and mobile preview density. Native title focus after immediate use is captured. No app console warnings/errors, framework overlay or horizontal page overflow occurred. Initial bundle is 590.05 kB minified / 181.13 kB gzip; its warning remains an open Task 7 performance item. Whole-product visual acceptance and the independent review are not claimed here.
+- Task 5 concurrency findings: Cell preserves pending/failed drafts while newer metadata arrives, indicates saving and prevents overlapping submissions. Opening the ordinary-page schema editor waits for its owner's existing write queue before freezing a revision. Both ordering failures were reproduced with held real browser requests before their fixes. Property conflict assertions now cover client/server rejection messages while requiring retained drafts and unchanged saved data. Persistence reload checks wait for the actual cell command to settle, rather than treating optimistic checkbox state as a durable acknowledgement.
 
 - Task 5 properties checkpoint (not Task 5 completion): ordinary-page typed properties, safe formulas/actions, page relations, schema editing/archiving and exact original-value/field comparisons are implemented. PageDetails owns the bounded aggregate; indexed text and links are derived. Workspace ZIP v2 retains definitions/values and remaps relation targets. Full record pages load the exact normalized record and owning database definition, reuse the table/inspector controls and schema editor, and edit the same canonical record.
 - Properties checkpoint verification: 126/126 behavior tests across 27 files in 81.32 seconds; 35/35 full browser scenarios in 3.0 minutes; final page/record chooser wording also passed the focused two-scenario suite. Typecheck, web/server build and diff checks passed. New browser coverage includes two-editor value conflicts, schema changes while a draft is open, archive/restore retention, page relations, reload, direct record-page editing, table propagation and mobile checkbox bounds. State regressions protect independent record/page revisions, late metadata responses, superseded access refreshes and record-scope invalidation. No test timeout was increased.

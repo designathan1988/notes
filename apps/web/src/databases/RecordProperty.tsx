@@ -21,6 +21,7 @@ export function RecordProperty({
     [error, setError] = useState('');
   const label = `${field.name} for ${record.title}`;
   const fields = useWorkspace((state) => state.tables[databaseId]?.fields);
+  const templateRootId = useWorkspace((state) => state.tables[databaseId]?.templateRootId);
   if (field.type === 'formula')
     return (
       <output
@@ -59,6 +60,7 @@ export function RecordProperty({
   return (
     <Cell
       initial={record.values[field.id]}
+      templateRootId={templateRootId}
       field={field}
       readOnly={readOnly}
       label={label}

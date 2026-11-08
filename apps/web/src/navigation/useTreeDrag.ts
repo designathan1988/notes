@@ -26,6 +26,7 @@ export function useTreeDrag() {
     if (
       !source ||
       source.kind === 'record' ||
+      source.templateRootId === source.id ||
       state.workspaces.find((item) => item.id === state.workspaceId)?.role === 'viewer'
     )
       return;
@@ -84,6 +85,13 @@ export function useTreeDrag() {
             };
           }
         }
+      }
+      if (destination) {
+        const parent = useWorkspace
+          .getState()
+          .pages.find((page) => page.id === destination!.parentId);
+        if ((source.templateRootId ?? null) !== (parent?.templateRootId ?? null))
+          destination = null;
       }
       setTarget(destination);
       const scroller = element?.closest('.sidebar-scroll');
