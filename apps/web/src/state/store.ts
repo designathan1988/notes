@@ -231,7 +231,14 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     }
     if (mode === 'push' && get().selectedId === id && get().view === view) mode = 'replace';
     get().trackNavigation(id, view, mode);
-    set({ selectedId: id, view, sidebarOpen: false, dialog: null, commandOpen: false });
+    set({
+      selectedId: id,
+      view,
+      sidebarOpen: false,
+      dialog: null,
+      commandOpen: false,
+      ...(get().selectedId !== id ? { outline: [], linkedPageIds: [], editorRequest: null } : {}),
+    });
     if (mode !== 'none')
       history[mode === 'replace' ? 'replaceState' : 'pushState'](
         { noteWorkbench: { workspaceId: get().workspaceId, index: get().navigationHistory.index } },

@@ -16,6 +16,36 @@ const canWrite = (state: WorkspaceState) => {
 };
 export const commands: AppCommand[] = [
   {
+    id: 'editor.focus',
+    title: 'Toggle focus mode',
+    group: 'Page',
+    keywords: 'writing distraction sidebar',
+    available: (state) => state.view === 'document' && !!page(state),
+    run: (state) => state.toggleFocusMode(),
+  },
+  {
+    id: 'editor.find',
+    title: 'Find in current page',
+    group: 'Page',
+    keywords: 'search replace document text',
+    shortcut: { key: 'f', alt: true, label: 'Ctrl Alt F' },
+    available: (state) =>
+      state.view === 'document' && !!page(state) && page(state)?.kind !== 'database',
+    run: (state) => state.requestEditor('find'),
+  },
+  {
+    id: 'editor.templates',
+    title: 'Insert document template',
+    group: 'Page',
+    keywords: 'meeting project decision research',
+    available: (state) =>
+      canWrite(state) &&
+      state.view === 'document' &&
+      !!page(state) &&
+      page(state)?.kind !== 'database',
+    run: (state) => state.requestEditor('templates'),
+  },
+  {
     id: 'page.new',
     title: 'New page',
     group: 'Create',

@@ -17,6 +17,10 @@ export interface WorkbenchSlice {
   focusTitleId: string | null;
   commandOpen: boolean;
   sidebarCollapsed: boolean;
+  focusMode: boolean;
+  toggleFocusMode(): void;
+  editorRequest: { pageId: string; command: 'find' | 'templates'; serial: number } | null;
+  requestEditor(command: 'find' | 'templates'): void;
   navigationHistory: WorkbenchHistory;
   goBack(): void;
   goForward(): void;
@@ -65,6 +69,21 @@ export function workbenchSlice(
     focusTitleId: null,
     commandOpen: false,
     sidebarCollapsed: false,
+    focusMode: false,
+    toggleFocusMode() {
+      set({ focusMode: !get().focusMode });
+    },
+    editorRequest: null,
+    requestEditor(command) {
+      if (get().selectedId && get().view === 'document')
+        set({
+          editorRequest: {
+            pageId: get().selectedId!,
+            command,
+            serial: (get().editorRequest?.serial ?? 0) + 1,
+          },
+        });
+    },
     navigationHistory: { entries: [], index: -1 },
     goBack() {
       if (get().navigationHistory.index > 0) globalThis.history?.back();
@@ -208,6 +227,8 @@ export function workbenchSlice(
         closedTabs: [],
         commandOpen: false,
         focusTitleId: null,
+        editorRequest: null,
+        focusMode: false,
         navigationHistory: { entries: [], index: -1 },
       });
     },
@@ -221,6 +242,8 @@ export function workbenchSlice(
         focusTitleId: null,
         commandOpen: false,
         sidebarCollapsed: false,
+        focusMode: false,
+        editorRequest: null,
         navigationHistory: { entries: [], index: -1 },
       });
     },

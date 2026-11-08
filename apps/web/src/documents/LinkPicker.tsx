@@ -53,6 +53,11 @@ export function LinkPicker({ editor, close }: { editor: TiptapEditor; close(): v
         {/^https?:\/\//i.test(query) && (
           <button
             onClick={() => {
+              if (!editor.state.selection.empty || editor.isActive('link')) {
+                editor.chain().focus().extendMarkRange('link').setLink({ href: query }).run();
+                close();
+                return;
+              }
               editor
                 .chain()
                 .focus()

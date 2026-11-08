@@ -3,6 +3,213 @@
 @import '@fontsource/inter/latin-600.css';
 @import '@fontsource/inter/latin-700.css';
 @layer tokens, base, layout, components, editor, responsive;
+
+@layer editor {
+  .document-utilities {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 32px;
+    margin: -8px 0 12px;
+    color: var(--muted);
+  }
+  .document-utilities > [role='status'] {
+    margin-right: auto;
+    font-size: 11px;
+  }
+  .document-utilities .icon-button {
+    width: 30px;
+    height: 30px;
+  }
+  .document-utilities svg {
+    width: 15px;
+    height: 15px;
+  }
+  .toggle-block {
+    position: relative;
+    padding-left: 24px;
+    margin: 0;
+  }
+  .toggle-disclosure {
+    position: absolute;
+    left: 0;
+    top: 1px;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    color: var(--muted);
+    background: transparent;
+    cursor: pointer;
+  }
+  .toggle-disclosure:hover {
+    background: var(--soft);
+    color: var(--ink);
+  }
+  .toggle-disclosure[aria-expanded='true'] svg {
+    transform: rotate(90deg);
+  }
+  .toggle-title {
+    min-height: 24px;
+    font-weight: 550;
+  }
+  .toggle-content {
+    padding: 2px 0 2px 0;
+  }
+  .toggle-block[data-collapsed='true'] .toggle-content {
+    display: none;
+  }
+  .toggle-block[data-collapsed='true']:has(.text-search-match.is-current) .toggle-content {
+    display: block;
+  }
+  .text-highlight {
+    background: #fff0a8;
+    color: inherit;
+    border-radius: 2px;
+    padding: 0;
+  }
+  .text-search-match {
+    background: #fce8a2;
+    border-radius: 2px;
+  }
+  .text-search-match.is-current {
+    background: #ffd674;
+    box-shadow: 0 0 0 1px #be790b;
+  }
+  .selection-toolbar {
+    position: fixed;
+    z-index: 75;
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    padding: 4px;
+    border: 1px solid var(--rule);
+    border-radius: 7px;
+    background: #fff;
+    box-shadow: 0 5px 20px #1820351f;
+  }
+  .selection-toolbar button {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .selection-toolbar button:hover {
+    background: var(--soft);
+  }
+  .selection-toolbar button[aria-pressed='true'] {
+    color: var(--accent);
+    background: var(--selected);
+  }
+  .document-find {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    width: min(100%, 460px);
+    margin: 0 0 12px auto;
+    padding: 5px;
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 7px;
+    box-shadow: 0 3px 12px #18203512;
+  }
+  .find-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .find-row + .find-row {
+    border-top: 1px solid var(--rule);
+    margin-top: 4px;
+    padding-top: 4px;
+  }
+  .find-row input {
+    min-width: 40px;
+    flex: 1;
+    width: 0;
+    border: 0;
+    padding: 5px 7px;
+    font-size: 12px;
+    background: transparent;
+  }
+  .find-row > span {
+    font-size: 11px;
+    white-space: nowrap;
+    color: var(--muted);
+    padding: 0 4px;
+  }
+  .find-row button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 3px 6px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--ink);
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .find-row button:hover,
+  .find-row button[aria-pressed='true'] {
+    background: var(--selected);
+  }
+  .find-row button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .document-find > small {
+    display: block;
+    color: var(--muted);
+    padding: 5px;
+    font-size: 11px;
+  }
+  .template-choice {
+    align-items: flex-start !important;
+  }
+  .template-choice span {
+    display: grid;
+    gap: 3px;
+  }
+  .template-choice strong {
+    font-weight: 550;
+  }
+  .template-choice small,
+  .template-hint {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .template-hint {
+    margin: 5px 8px;
+  }
+}
+@layer layout {
+  .app-shell.focus-mode > .sidebar,
+  .app-shell.focus-mode .context-panel {
+    display: none;
+  }
+}
+@layer responsive {
+  @media (max-width: 600px) {
+    .statistics-reading {
+      display: none;
+    }
+    .selection-toolbar button {
+      width: 32px;
+    }
+  }
+}
 @layer components {
   .workbench-strip {
     height: 37px;

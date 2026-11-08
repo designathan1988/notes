@@ -9,6 +9,7 @@ export type BlockKind =
   | 'taskList'
   | 'codeBlock'
   | 'blockquote'
+  | 'toggleBlock'
   | 'callout';
 export function blockAt(doc: ProseMirrorNode, position: number) {
   if (position < 0 || position >= doc.content.size) return null;
@@ -80,24 +81,29 @@ export function changeBlock(
   const content = source.content;
   const paragraph = schema.nodes.paragraph.create(null, content);
   const replacement =
-    kind === 'heading'
-      ? schema.nodes.heading.create({ level }, content)
-      : kind === 'codeBlock'
-        ? schema.nodes.codeBlock.create(
-            null,
-            source.textContent ? schema.text(source.textContent) : null,
-          )
-        : ['callout', 'blockquote'].includes(kind)
-          ? schema.nodes[kind].create(null, paragraph)
-          : ['bulletList', 'orderedList', 'taskList'].includes(kind)
-            ? schema.nodes[kind].create(
-                null,
-                schema.nodes[kind === 'taskList' ? 'taskItem' : 'listItem'].create(
-                  kind === 'taskList' ? { checked: false } : null,
-                  paragraph,
-                ),
-              )
-            : paragraph;
+    kind === 'toggleBlock'
+      ? schema.nodes.toggleBlock.create(null, [
+          schema.nodes.toggleTitle.create(null, content),
+          schema.nodes.toggleContent.create(null, schema.nodes.paragraph.create()),
+        ])
+      : kind === 'heading'
+        ? schema.nodes.heading.create({ level }, content)
+        : kind === 'codeBlock'
+          ? schema.nodes.codeBlock.create(
+              null,
+              source.textContent ? schema.text(source.textContent) : null,
+            )
+          : ['callout', 'blockquote'].includes(kind)
+            ? schema.nodes[kind].create(null, paragraph)
+            : ['bulletList', 'orderedList', 'taskList'].includes(kind)
+              ? schema.nodes[kind].create(
+                  null,
+                  schema.nodes[kind === 'taskList' ? 'taskItem' : 'listItem'].create(
+                    kind === 'taskList' ? { checked: false } : null,
+                    paragraph,
+                  ),
+                )
+              : paragraph;
   const tr = state.tr.replaceWith(block.from, block.to, replacement);
   return tr.setSelection(NodeSelection.create(tr.doc, block.from)).scrollIntoView();
 }

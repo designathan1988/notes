@@ -24,6 +24,7 @@ import {
   Type,
   Video,
   Link,
+  ChevronRight,
 } from 'lucide-react';
 import {
   blockAt,
@@ -35,6 +36,12 @@ import {
 } from '../../../../packages/editor/src/blocks.js';
 
 const choices = [
+  {
+    type: 'toggleBlock',
+    label: 'Toggle section',
+    description: 'A heading with collapsible content',
+    Icon: ChevronRight,
+  },
   { type: 'paragraph', label: 'Text', description: 'A clear place for your thoughts', Icon: Type },
   {
     type: 'heading',
@@ -91,31 +98,37 @@ const choices = [
 ] as const;
 export function insertBlock(editor: Editor, position: number, type: string, level = 2) {
   const paragraph = { type: 'paragraph' };
-  const node = ['callout', 'blockquote'].includes(type)
-    ? { type, content: [paragraph] }
-    : ['bulletList', 'orderedList', 'taskList'].includes(type)
+  const node =
+    type === 'toggleBlock'
       ? {
           type,
-          content: [
-            {
-              type: type === 'taskList' ? 'taskItem' : 'listItem',
-              attrs: type === 'taskList' ? { checked: false } : undefined,
-              content: [paragraph],
-            },
-          ],
+          content: [{ type: 'toggleTitle' }, { type: 'toggleContent', content: [paragraph] }],
         }
-      : type === 'table'
-        ? {
-            type,
-            content: Array.from({ length: 3 }, (_, row) => ({
-              type: 'tableRow',
-              content: Array.from({ length: 3 }, () => ({
-                type: row === 0 ? 'tableHeader' : 'tableCell',
-                content: [paragraph],
-              })),
-            })),
-          }
-        : { type, attrs: type === 'heading' ? { level } : undefined };
+      : ['callout', 'blockquote'].includes(type)
+        ? { type, content: [paragraph] }
+        : ['bulletList', 'orderedList', 'taskList'].includes(type)
+          ? {
+              type,
+              content: [
+                {
+                  type: type === 'taskList' ? 'taskItem' : 'listItem',
+                  attrs: type === 'taskList' ? { checked: false } : undefined,
+                  content: [paragraph],
+                },
+              ],
+            }
+          : type === 'table'
+            ? {
+                type,
+                content: Array.from({ length: 3 }, (_, row) => ({
+                  type: 'tableRow',
+                  content: Array.from({ length: 3 }, () => ({
+                    type: row === 0 ? 'tableHeader' : 'tableCell',
+                    content: [paragraph],
+                  })),
+                })),
+              }
+            : { type, attrs: type === 'heading' ? { level } : undefined };
   const selected = blockAt(editor.state.doc, editor.state.selection.from);
   const empty =
     selected?.node.type.name === 'paragraph' &&
@@ -194,6 +207,12 @@ export function BlockMenu({
       role="menu"
       aria-label={mode === 'insert' ? 'Add a block' : 'Block actions'}
       onKeyDown={(event) => {
+        if (event.key === 'Enter' && event.target instanceof HTMLInputElement) {
+          event.preventDefault();
+          ref.current
+            ?.querySelector<HTMLButtonElement>('button[role=menuitem]:not(:disabled)')
+            ?.click();
+        }
         if (event.key === 'Escape') {
           event.preventDefault();
           close();

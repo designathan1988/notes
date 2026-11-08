@@ -78,7 +78,9 @@ export function Workspace() {
     return () => source.close();
   }, [state.workspaceId]);
   return (
-    <div className={`app-shell ${state.sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+    <div
+      className={`app-shell ${state.sidebarCollapsed ? 'sidebar-collapsed' : ''} ${state.focusMode ? 'focus-mode' : ''}`}
+    >
       <Sidebar />
       <main className="workspace-main" inert={state.sidebarOpen}>
         <TabStrip />

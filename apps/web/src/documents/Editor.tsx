@@ -10,12 +10,21 @@ import {
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Placeholder from '@tiptap/extension-placeholder';
-import { Bold, Italic, Link, Plus, Paperclip, Undo2, Redo2, GripVertical } from 'lucide-react';
 import {
-  editorExtensions,
-  projectDocument,
-  databaseView,
-} from '../../../../packages/editor/src/schema.js';
+  Bold,
+  Italic,
+  Link,
+  Plus,
+  Paperclip,
+  Undo2,
+  Redo2,
+  GripVertical,
+  Search,
+  LayoutTemplate,
+  Maximize2,
+  Minimize2,
+} from 'lucide-react';
+import { editorExtensions, databaseView } from '../../../../packages/editor/src/schema.js';
 import { DocumentSession } from './session.js';
 import { useWorkspace } from '../state/store.js';
 import { IconButton } from '../ui/IconButton.js';
@@ -35,6 +44,12 @@ import { BlockSurface } from './BlockSurface.js';
 import { BlockControls } from './BlockControls.js';
 import { TableTools } from './TableTools.js';
 import { DatabasePicker } from './DatabasePicker.js';
+import { toggleBlock } from '../../../../packages/editor/src/structure.js';
+import { ToggleSection } from './ToggleSection.js';
+import { SelectionToolbar } from './SelectionToolbar.js';
+import { Templates } from './Templates.js';
+import { DocumentFind, FindInPage } from './FindInPage.js';
+import { useDocumentProjection } from './useDocumentProjection.js';
 
 export function DocumentEditor({ page }: { page: Page }) {
   const [session, setSession] = useState<DocumentSession | null>(null);
@@ -83,6 +98,11 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
   const [linkOpen, setLinkOpen] = useState(false);
   const [embedOpen, setEmbedOpen] = useState(false);
   const [databaseOpen, setDatabaseOpen] = useState(false);
+  const [findOpen, setFindOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const templateAnchor = useRef<HTMLButtonElement>(null);
+  const request = useWorkspace((state) => state.editorRequest);
+  const focusMode = useWorkspace((state) => state.focusMode);
   const [pasteMode, setPasteMode] = useState('auto');
   const [uploading, setUploading] = useState(0);
   const [failed, setFailed] = useState<{ file: File; id?: string }[]>([]);
@@ -104,8 +124,16 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
   const editor = useEditor(
     {
       extensions: [
-        ...editorExtensions().filter((extension) => extension.name !== 'databaseView'),
+        ...editorExtensions().filter(
+          (extension) => !['databaseView', 'toggleBlock'].includes(extension.name),
+        ),
         BlockSurface,
+        DocumentFind,
+        toggleBlock.extend({
+          addNodeView() {
+            return ReactNodeViewRenderer(ToggleSection);
+          },
+        }),
         databaseView.extend({
           addNodeView() {
             return ReactNodeViewRenderer(EmbeddedDatabase);
@@ -116,7 +144,12 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
           provider: session.provider,
           user: { name: useWorkspace.getState().user?.name, color: '#5865e8' },
         }),
-        Placeholder.configure({ placeholder: 'Write something, or type / for commands…' }),
+        Placeholder.configure({
+          placeholder: ({ node }) =>
+            node.type.name === 'toggleTitle'
+              ? 'Toggle heading'
+              : 'Write something, or type / for commands…',
+        }),
       ],
       editable: !session.readOnly,
       enableContentCheck: true,
@@ -148,6 +181,16 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
           return false;
         },
         handleKeyDown: (view, event) => {
+          if (
+            (event.ctrlKey || event.metaKey) &&
+            !event.altKey &&
+            !event.shiftKey &&
+            event.key.toLowerCase() === 'f'
+          ) {
+            event.preventDefault();
+            setFindOpen(true);
+            return true;
+          }
           if (
             event.key === '/' &&
             view.state.selection.$from.parent.type.name === 'paragraph' &&
@@ -188,18 +231,13 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
     },
     [session],
   );
+  const statistics = useDocumentProjection(editor);
   useEffect(() => {
-    if (!editor) return;
-    const update = () => {
-      const projection = projectDocument(editor.getJSON());
-      useWorkspace.setState({ outline: projection.headings, linkedPageIds: projection.links });
-    };
-    update();
-    editor.on('update', update);
-    return () => {
-      editor.off('update', update);
-    };
-  }, [editor]);
+    if (!editor || request?.pageId !== session.page.id) return;
+    if (request.command === 'find') setFindOpen(true);
+    else if (editor.isEditable) setTemplatesOpen(true);
+    useWorkspace.setState({ editorRequest: null });
+  }, [request, editor, session]);
   const role = useWorkspace(
     (state) => state.workspaces.find((item) => item.id === state.workspaceId)?.role,
   );
@@ -225,7 +263,46 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
   if (!editor) return null;
   return (
     <div className="editor-wrap">
+      <div className="document-utilities">
+        <span
+          role="status"
+          aria-label="Document statistics"
+          title={`${statistics.characters.toLocaleString()} characters · ${statistics.minutes} min read`}
+        >
+          {statistics.words.toLocaleString()} words
+          <span className="statistics-reading"> · {statistics.minutes} min read</span>
+        </span>
+        <IconButton label="Find in page" onClick={() => setFindOpen(true)}>
+          <Search />
+        </IconButton>
+        {!session.readOnly && (
+          <button
+            ref={templateAnchor}
+            className="icon-button"
+            aria-label="Insert template"
+            title="Insert template"
+            onClick={() => setTemplatesOpen((value) => !value)}
+          >
+            <LayoutTemplate />
+          </button>
+        )}
+        <IconButton
+          label={focusMode ? 'Leave focus mode' : 'Enter focus mode'}
+          onClick={() => useWorkspace.getState().toggleFocusMode()}
+        >
+          {focusMode ? <Minimize2 /> : <Maximize2 />}
+        </IconButton>
+      </div>
+      {findOpen && <FindInPage editor={editor} close={() => setFindOpen(false)} />}
+      {templatesOpen && !session.readOnly && (
+        <Templates
+          editor={editor}
+          anchor={templateAnchor.current}
+          close={() => setTemplatesOpen(false)}
+        />
+      )}
       <EditorContent editor={editor} />
+      {!session.readOnly && <SelectionToolbar editor={editor} link={() => setLinkOpen(true)} />}
       {!session.readOnly && (
         <BlockControls
           editor={editor}

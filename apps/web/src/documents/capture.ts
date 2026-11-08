@@ -126,6 +126,8 @@ export async function captureClipboard(
     'BR',
     'DIV',
     'SPAN',
+    'SECTION',
+    'MARK',
     'STRONG',
     'B',
     'EM',
@@ -196,6 +198,10 @@ export async function captureClipboard(
           'data-attachment',
           'data-media-type',
           'data-filename',
+          'data-toggle-block',
+          'data-toggle-title',
+          'data-toggle-content',
+          'data-collapsed',
         ].includes(attribute.name)
       ) {
         element.removeAttribute(attribute.name);

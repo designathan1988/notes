@@ -6,6 +6,7 @@ import TaskItem from '@tiptap/extension-task-item';
 import { prosemirrorJSONToYDoc, yDocToProsemirrorJSON } from 'y-prosemirror';
 import type * as Y from 'yjs';
 import { safeEmbedSource } from './embeds.js';
+import { toggleBlock, toggleTitle, toggleContent, highlight } from './structure.js';
 
 const pageLink = Node.create({
   name: 'pageLink',
@@ -196,6 +197,10 @@ export const editorExtensions = () => [
   databaseView,
   embed,
   callout,
+  toggleBlock,
+  toggleTitle,
+  toggleContent,
+  highlight,
 ];
 export const editorSchema = () => getSchema(editorExtensions());
 export const emptyDocument: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] };
@@ -223,7 +228,11 @@ export function projectDocument(content: JSONContent) {
         text: (node.content ?? []).map((child) => child.text ?? '').join(''),
       });
     for (const child of node.content ?? []) visit(child);
-    if (['paragraph', 'heading', 'listItem', 'taskItem', 'codeBlock'].includes(node.type ?? ''))
+    if (
+      ['paragraph', 'heading', 'listItem', 'taskItem', 'codeBlock', 'toggleTitle'].includes(
+        node.type ?? '',
+      )
+    )
       text.push('\n');
   }
   visit(content);
