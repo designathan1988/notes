@@ -43,6 +43,7 @@ interface Context extends CanvasApi {
   items: CanvasItem[];
   selected: string[];
   select(id: string, extend?: boolean): void;
+  focusStage(): void;
   clear(): void;
   tool: 'select' | 'hand' | 'connect';
   setTool(tool: Context['tool']): void;
@@ -115,6 +116,11 @@ export function CanvasProvider({
   function select(id: string, extend = false) {
     setSelected((ids) => (extend ? [...new Set([...ids, id])] : [id]));
     setInspector(true);
+  }
+  function focusStage() {
+    view.ref.current
+      ?.querySelector<HTMLElement>('[data-canvas-focus]')
+      ?.focus({ preventScroll: true });
   }
   const view = useSpatialView({
     saved: saved ?? (!items.length ? { x: 0, y: 0, zoom: 1 } : undefined),
@@ -317,12 +323,30 @@ export function CanvasProvider({
     run((tr) => groupCanvas(tr, selected, id, 'Untitled group'));
     select(id);
   }
+  function currentTextSelection() {
+    const { view, state } = editor,
+      native = view.dom.ownerDocument.getSelection();
+    // A click can move the native caret before its selectionchange event reaches
+    // ProseMirror. Resolve this shortcut from that caret, not the previous note.
+    if (
+      !native?.anchorNode ||
+      !native.focusNode ||
+      !view.dom.contains(native.anchorNode) ||
+      !view.dom.contains(native.focusNode)
+    )
+      return state.selection;
+    return TextSelection.between(
+      state.doc.resolve(view.posAtDOM(native.anchorNode, native.anchorOffset)),
+      state.doc.resolve(view.posAtDOM(native.focusNode, native.focusOffset)),
+    );
+  }
   function key(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
     if (target?.closest('input,textarea,select')) return false;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
       if (target === editor.view.dom || target?.closest('[data-canvas-rich]')) {
-        const { doc, selection } = editor.state;
+        const { doc } = editor.state,
+          selection = currentTextSelection();
         for (let depth = selection.$from.depth; depth > 0; depth--) {
           if (
             !['canvasCard', 'canvasGroup', 'canvasEdge'].includes(
@@ -338,6 +362,16 @@ export function CanvasProvider({
               ),
             ),
           );
+          if (readOnly) {
+            const surface = target.closest<HTMLElement>('[data-canvas-rich]');
+            if (surface) {
+              const range = surface.ownerDocument.createRange();
+              range.selectNodeContents(surface);
+              const selection = surface.ownerDocument.getSelection();
+              selection?.removeAllRanges();
+              selection?.addRange(range);
+            }
+          }
           return true;
         }
       }
@@ -348,13 +382,55 @@ export function CanvasProvider({
     const typing =
       !!target?.closest('input,textarea,[data-canvas-rich]') ||
       (target === editor.view.dom && editor.state.selection.$from.parent.isTextblock);
+    const boundary =
+      (event.ctrlKey || event.metaKey) &&
+      (event.key === 'Home' || (event.metaKey && event.key === 'ArrowUp'))
+        ? 'start'
+        : (event.ctrlKey || event.metaKey) &&
+            (event.key === 'End' || (event.metaKey && event.key === 'ArrowDown'))
+          ? 'end'
+          : null;
+    if (!readOnly && typing && boundary) {
+      const { doc } = editor.state,
+        selection = currentTextSelection();
+      for (let depth = selection.$from.depth; depth > 0; depth--) {
+        if (
+          !['canvasCard', 'canvasGroup', 'canvasEdge'].includes(
+            selection.$from.node(depth).type.name,
+          )
+        )
+          continue;
+        const position = selection.$from.before(depth),
+          range = TextSelection.between(
+            doc.resolve(position + 1),
+            doc.resolve(selection.$from.after(depth) - 1),
+          ),
+          endpoint = boundary === 'start' ? range.from : range.to,
+          anchor = event.shiftKey
+            ? Math.max(range.from, Math.min(range.to, selection.anchor))
+            : endpoint;
+        editor.view.dispatch(
+          editor.state.tr.setSelection(
+            TextSelection.between(doc.resolve(anchor), doc.resolve(endpoint)),
+          ),
+        );
+        editor.view.focus();
+        const wrapper = editor.view.nodeDOM(position),
+          surface =
+            wrapper instanceof HTMLElement
+              ? wrapper.querySelector<HTMLElement>('[data-canvas-rich]')
+              : null;
+        if (surface) surface.scrollTop = boundary === 'start' ? 0 : surface.scrollHeight;
+        return true;
+      }
+    }
     if (event.key === 'Escape') {
       cleanup.current?.();
       setSelected([]);
       setInspector(false);
       setTool('select');
       setSpace(false);
-      view.ref.current?.focus({ preventScroll: true });
+      focusStage();
       return true;
     }
     if (typing) return false;
@@ -498,7 +574,10 @@ export function CanvasProvider({
       useWorkspace.getState().setCanvasCamera(page.id, view.camera);
   }, [saved, view.size.width, view.size.height, page.id]);
   useEffect(() => {
-    if (readOnly) cleanup.current?.();
+    if (readOnly) {
+      cleanup.current?.();
+      view.cancelItem();
+    }
   }, [readOnly]);
   useEffect(() => {
     setSelected((ids) =>
@@ -512,6 +591,7 @@ export function CanvasProvider({
     items,
     selected,
     select,
+    focusStage,
     clear: () => {
       setSelected([]);
       setInspector(false);

@@ -266,7 +266,7 @@ test('a failed layout worker keeps navigation available and retries without relo
     await expect(
       page.getByText('Graph layout could not be loaded.', { exact: true }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Command palette', exact: true }).click();
+    await page.keyboard.press('Control+Shift+p');
     await expect(page.getByRole('dialog', { name: 'Command palette', exact: true })).toBeVisible();
     await page.keyboard.press('Escape');
     await page.unroute(workerPath);
@@ -299,7 +299,7 @@ test('pending graph physics leaves application commands responsive until the rea
     await page.reload({ waitUntil: 'domcontentloaded' });
     await requested;
     await expect(page.getByText('Loading graph…', { exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Command palette', exact: true }).click();
+    await page.keyboard.press('Control+Shift+p');
     await expect(page.getByRole('dialog', { name: 'Command palette', exact: true })).toBeVisible();
     await page.keyboard.press('Escape');
     release();

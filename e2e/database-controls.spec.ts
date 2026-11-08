@@ -85,7 +85,9 @@ test('database controls save typed values, relations, filtered views, sorting, f
     .getByRole('menu', { name: 'Page actions' })
     .getByRole('menuitem', { name: 'Move to trash', exact: true })
     .click();
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Account menu', exact: true }).click();
+
+  await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
   await dialog.getByRole('button', { name: 'Trash', exact: true }).click();
   await dialog
     .locator('.trash-row')

@@ -6,7 +6,11 @@ import type { Database } from '../platform/database.js';
 import type { Auth } from '../identity/auth.js';
 import { Access } from '../access/service.js';
 import { Documents, type DurableAcknowledgement } from './service.js';
-import { DomainError, type Actor } from '../../../../packages/contracts/src/index.js';
+import {
+  DOCUMENT_ACCESS_CHANGED,
+  DomainError,
+  type Actor,
+} from '../../../../packages/contracts/src/index.js';
 import { requestHeaders } from '../platform/http.js';
 type Context = { actor: Actor; generation: number };
 function documentIdentity(name: string) {
@@ -149,7 +153,11 @@ export async function collaborationRoutes(
         : 'SELECT id,generation FROM pages WHERE workspace_id=$1',
       pageId ? [workspace, pageId] : [workspace],
     );
-    for (const page of pages) hub.closeConnections(`${page.id}:${page.generation}`);
+    for (const page of pages)
+      for (const connection of hub.documents
+        .get(`${page.id}:${page.generation}`)
+        ?.getConnections() ?? [])
+        connection.close({ code: 1000, reason: DOCUMENT_ACCESS_CHANGED });
   };
   access.onChanged = (workspace) => {
     void invalidate(workspace);

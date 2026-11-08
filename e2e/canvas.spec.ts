@@ -251,7 +251,7 @@ test('a fresh canvas client waits for the canonical document before exposing edi
     });
     await delayed.goto(`/#${source.id}/canvas`);
     await expect.poll(() => pending.length).toBeGreaterThan(0);
-    await delayed.getByRole('button', { name: 'Command palette', exact: true }).click();
+    await delayed.keyboard.press('Control+Shift+p');
     await expect(delayed.getByRole('dialog')).toBeVisible();
     await delayed.keyboard.press('Escape');
     await delayed.evaluate(
@@ -480,12 +480,12 @@ test('temporary space panning releases even when a dialog takes keyboard focus',
     const stage = page.getByRole('application', { name: 'Canvas stage', exact: true });
     await stage.focus();
     await page.keyboard.down('Space');
-    await expect(stage).toHaveAttribute('data-tool', 'hand');
-    await page.getByRole('button', { name: 'Command palette', exact: true }).click();
+    await expect(page.locator('.canvas-stage')).toHaveAttribute('data-tool', 'hand');
+    await page.keyboard.press('Control+Shift+p');
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.keyboard.up('Space');
     await page.keyboard.press('Escape');
-    await expect(stage).toHaveAttribute('data-tool', 'select');
+    await expect(page.locator('.canvas-stage')).toHaveAttribute('data-tool', 'select');
   } finally {
     await page.request
       .delete(`/api/pages/${source.id}`, { headers: { 'x-note-request': '1' } })

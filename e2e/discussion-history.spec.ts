@@ -142,7 +142,8 @@ test('two editors discuss, resolve and reopen; saved history previews and restor
     await expect(first.getByRole('button', { name: /Reviewed evidence/ })).toBeVisible();
     for (const width of [390, 360]) {
       await first.setViewportSize({ width, height: 844 });
-      await first.getByRole('button', { name: 'Open comments', exact: true }).click();
+      await first.getByRole('button', { name: 'Page actions', exact: true }).click();
+      await first.getByRole('menuitem', { name: 'Comments', exact: true }).click();
       await first.getByRole('button', { name: 'Version history', exact: true }).click();
       await first.getByRole('button', { name: /Reviewed evidence/ }).click();
       await expect(preview).toContainText('Original evidence');
@@ -247,7 +248,9 @@ test('a disconnected collaborator recovers retained drafts as private pages and 
     await expect(
       second.getByRole('alert').filter({ hasText: /local draft|local recovery/i }),
     ).toBeVisible();
-    await second.getByRole('button', { name: 'Settings', exact: true }).click();
+    await second.getByRole('button', { name: 'Account menu', exact: true }).click();
+
+    await second.getByRole('menuitem', { name: 'Settings', exact: true }).click();
     await second.getByRole('dialog').getByRole('button', { name: 'Data', exact: true }).click();
     const downloading = second.waitForEvent('download');
     await second.getByRole('button', { name: 'Download local drafts', exact: true }).click();
@@ -371,7 +374,9 @@ test('a disconnected collaborator recovers retained drafts as private pages and 
         'private',
       );
       expect((await firstContext.request.get(`/api/pages/${id}`)).status()).toBe(403);
-      await second.getByRole('button', { name: 'Settings', exact: true }).click();
+      await second.getByRole('button', { name: 'Account menu', exact: true }).click();
+
+      await second.getByRole('menuitem', { name: 'Settings', exact: true }).click();
       await second.getByRole('dialog').getByRole('button', { name: 'Data', exact: true }).click();
     }
     await expect(
@@ -382,7 +387,9 @@ test('a disconnected collaborator recovers retained drafts as private pages and 
       .getByRole('button', { name: 'Close dialog', exact: true })
       .click();
     await second.getByRole('button', { name: 'All pages', exact: true }).click();
-    await second.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await second.getByRole('button', { name: 'Account menu', exact: true }).click();
+
+    await second.getByRole('menuitem', { name: 'Sign out', exact: true }).click();
     await expect(
       second.getByRole('button', { name: 'Open demo workspace', exact: true }),
     ).toBeVisible();

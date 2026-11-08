@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useEditorState, type Editor } from '@tiptap/react';
 import { Table2 } from 'lucide-react';
-import { Dialog } from '../ui/Dialog.js';
+import { Popover } from '../ui/Popover.js';
 import { IconButton } from '../ui/IconButton.js';
 export function TableTools({ editor }: { editor: Editor }) {
   const active = useEditorState({ editor, selector: ({ editor }) => editor.isActive('table') });
-  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   if (!active) return null;
   const actions = [
     ['Add row above', 'addRowBefore'],
@@ -21,11 +21,11 @@ export function TableTools({ editor }: { editor: Editor }) {
   ] as const;
   return (
     <>
-      <IconButton label="Table actions" onClick={() => setOpen(true)}>
+      <IconButton label="Table actions" onClick={(event) => setAnchor(event.currentTarget)}>
         <Table2 />
       </IconButton>
-      {open && (
-        <Dialog title="Table actions" onClose={() => setOpen(false)}>
+      {anchor && (
+        <Popover anchor={anchor} label="Table actions" close={() => setAnchor(null)}>
           <div className="menu-list">
             {actions.map(([label, command]) => (
               <button
@@ -34,14 +34,14 @@ export function TableTools({ editor }: { editor: Editor }) {
                 className={command.startsWith('delete') ? 'danger' : ''}
                 onClick={() => {
                   editor.chain().focus()[command]().run();
-                  setOpen(false);
+                  setAnchor(null);
                 }}
               >
                 {label}
               </button>
             ))}
           </div>
-        </Dialog>
+        </Popover>
       )}
     </>
   );

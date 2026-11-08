@@ -74,10 +74,10 @@ test('creates pages through the UI, edits table structure, embeds an editable da
   await content.locator('th').first().click();
   await page.keyboard.type('Topic');
   await page.getByRole('button', { name: 'Table actions', exact: true }).click();
-  await dialog.getByRole('button', { name: 'Add row below', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Add row below', exact: true }).click();
   await expect(content.locator('table tr')).toHaveCount(4);
   await page.getByRole('button', { name: 'Table actions', exact: true }).click();
-  await dialog.getByRole('button', { name: 'Add column after', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Add column after', exact: true }).click();
   await expect(content.locator('tr').first().locator('th,td')).toHaveCount(4);
   await page.getByRole('button', { name: 'Add a block', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Database view', exact: true }).click();

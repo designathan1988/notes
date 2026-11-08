@@ -87,8 +87,8 @@ test('mobile reading prioritizes content while editing, customization and workin
     await page.getByRole('menuitem', { name: 'Compass', exact: true }).click();
     await expect(page.locator('.page-icon')).toHaveText('🧭');
     const properties = page.getByRole('button', { name: 'Page properties', exact: true });
-    await expect(properties).toHaveAttribute('aria-expanded', 'false');
-    await properties.click();
+    await page.getByRole('button', { name: 'Customize page', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Page properties', exact: true }).click();
     await expect(properties).toHaveAttribute('aria-expanded', 'true');
     await expect(
       page.getByRole('button', { name: 'Add page property', exact: true }),
@@ -119,7 +119,9 @@ test('desktop tools have their own compact navigation without displacing the pag
     await expect(page.getByRole('textbox', { name: 'Page content', exact: true })).toBeVisible();
     const tools = page.getByRole('navigation', { name: 'Workspace tools', exact: true });
     await expect(tools).toBeVisible();
-    expect((await tools.boundingBox())!.width).toBeLessThan(80);
+    expect((await tools.boundingBox())!.width).toBeLessThan(270);
+    expect((await page.locator('.topbar').boundingBox())!.height).toBeLessThanOrEqual(50);
+    expect((await page.locator('.document-scroll').boundingBox())!.width).toBeGreaterThan(1200);
     expect((await page.locator('.sidebar-scroll').boundingBox())!.height).toBeGreaterThan(400);
     for (const name of ['Databases', 'Templates', 'Canvases', 'All pages']) {
       await tools.getByRole('button', { name, exact: true }).click();

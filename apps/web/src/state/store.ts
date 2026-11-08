@@ -16,6 +16,7 @@ import { workbenchSlice, type WorkbenchSlice } from '../workbench/state.js';
 import { activitySlice, type ActivitySlice } from '../activity/state.js';
 import { templateSlice, type TemplateSlice } from '../templates/state.js';
 import { pageView } from '../workbench/route.js';
+import { appearanceSlice, type AppearanceSlice } from '../appearance/state.js';
 type User = { id: string; name: string; email: string };
 const pageWrites = new Map<string, Promise<void>>();
 async function settlePageWrites(ids: string[]) {
@@ -31,6 +32,7 @@ export interface WorkspaceState
     NavigationSlice,
     WorkbenchSlice,
     ActivitySlice,
+    AppearanceSlice,
     TemplateSlice {
   user: User | null;
   workspaces: Workspace[];
@@ -92,6 +94,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   ...workbenchSlice(set, get),
   ...activitySlice(set, get),
   ...templateSlice(set, get),
+  ...appearanceSlice(set, get),
   settlePageWrites,
   user: null,
   workspaces: [],
@@ -131,6 +134,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       }
       if (!session) return;
       set({ user: session.user, workspaces: session.workspaces });
+      void get().loadAppearance(session.user.id);
       if (session.workspaces.length) await get().chooseWorkspace(session.workspaces[0].id);
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) set({ user: null });
@@ -413,6 +417,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       }
     }
     get().clearWorkbench();
+    get().clearAppearance();
     get().clearActivity();
     set({
       user: null,

@@ -175,6 +175,16 @@ export function TabStrip() {
             >
               <X size={13} />
             </button>
+            {mobileAnchor && (
+              <button
+                className="tab-keep"
+                aria-label={`${tab.pinned ? 'Kept open' : 'Keep open'} ${label}`}
+                disabled={tab.pinned}
+                onClick={() => state.pinTab(tab.id)}
+              >
+                <Pin size={14} />
+              </button>
+            )}
           </div>
         );
       })}
@@ -204,6 +214,7 @@ export function TabStrip() {
         onClick={(event) => setMobileAnchor(mobileAnchor ? null : event.currentTarget)}
       >
         <PanelsTopLeft />
+        <span className="mobile-tab-count">{state.tabs.length}</span>
       </button>
       {mobileAnchor && (
         <Popover
@@ -218,6 +229,14 @@ export function TabStrip() {
             <button className="mobile-new-tab" onClick={newTab}>
               <Plus size={17} />
               New tab
+            </button>
+            <button
+              className="mobile-new-tab"
+              disabled={!state.closedTabs.length}
+              onClick={() => state.reopenTab()}
+            >
+              <RotateCcw size={16} />
+              Reopen closed tab
             </button>
           </div>
         </Popover>

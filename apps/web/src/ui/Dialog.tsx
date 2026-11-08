@@ -1,5 +1,6 @@
 import { useEffect, useRef, useId, type ReactNode } from 'react';
 import { X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { IconButton } from './IconButton.js';
 export function Dialog({
   title,
@@ -18,7 +19,7 @@ export function Dialog({
     ref.current?.showModal();
     ref.current?.querySelector<HTMLElement>('input:not([type=hidden]),textarea,select')?.focus();
   }, []);
-  return (
+  return createPortal(
     <dialog
       ref={ref}
       aria-labelledby={id}
@@ -35,6 +36,7 @@ export function Dialog({
         </IconButton>
       </header>
       {children}
-    </dialog>
+    </dialog>,
+    document.body,
   );
 }

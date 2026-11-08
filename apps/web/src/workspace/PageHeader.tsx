@@ -1,7 +1,7 @@
 import { Clock3, FileText, Database, Network, SquareDashed, ChevronDown } from 'lucide-react';
 import type { Page } from '../../../../packages/contracts/src/index.js';
 import { useWorkspace } from '../state/store.js';
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { PagePresentation, PageTags } from '../pages/PagePresentation.js';
 import { PageProperties } from '../pages/PageProperties.js';
 function fit(element: HTMLTextAreaElement) {
@@ -20,6 +20,7 @@ export function PageHeader({
   const title = useRef<HTMLTextAreaElement>(null),
     description = useRef<HTMLTextAreaElement>(null),
     metadata = useRef<HTMLDetailsElement>(null);
+  const [editingDescription, setEditingDescription] = useState(false);
   useLayoutEffect(() => {
     if (metadata.current) {
       metadata.current.open =
@@ -50,18 +51,25 @@ export function PageHeader({
     if (title.current) observer.observe(title.current.parentElement!);
     return () => observer.disconnect();
   }, [page.id, page.title, page.description]);
+  const parent = useWorkspace((state) => state.pages.find((item) => item.id === page.parentId));
   const Icon =
     page.kind === 'canvas' ? SquareDashed : page.kind === 'database' ? Database : FileText;
   const readOnly = useWorkspace(
     (state) => state.workspaces.find((item) => item.id === state.workspaceId)?.role === 'viewer',
   );
   return (
-    <header className={`page-heading${compact ? ' page-heading-compact' : ''}`}>
+    <header
+      className={`page-heading${compact ? ' page-heading-compact' : ''}${editingDescription ? ' description-visible' : ''}`}
+    >
       {!compact && (
         <PagePresentation
           key={`presentation-${page.id}`}
           page={page}
           readOnly={readOnly}
+          showDescription={() => {
+            setEditingDescription(true);
+            requestAnimationFrame(() => description.current?.focus());
+          }}
           showProperties={() => {
             if (metadata.current) {
               metadata.current.open = true;
@@ -70,11 +78,19 @@ export function PageHeader({
           }}
         />
       )}
+      {parent && !compact && (
+        <nav className="page-ancestry" aria-label="Page ancestry">
+          <button onClick={() => useWorkspace.getState().navigate(parent.id)}>
+            {parent.title}
+          </button>
+          <span>/</span>
+        </nav>
+      )}
       <div className="title-row">
         {page.icon ? (
           <span className="page-icon page-emoji">{page.icon}</span>
         ) : (
-          <Icon className="page-icon" />
+          <Icon className="page-icon default-page-icon" />
         )}
         <textarea
           ref={title}
@@ -116,6 +132,7 @@ export function PageHeader({
             defaultValue={page.description}
             maxLength={2000}
             onBlur={(event) => {
+              setEditingDescription(false);
               if (event.target.value !== page.description)
                 void useWorkspace
                   .getState()

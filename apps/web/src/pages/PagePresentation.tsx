@@ -32,10 +32,12 @@ export function PagePresentation({
   page,
   readOnly,
   showProperties,
+  showDescription,
 }: {
   page: Page;
   readOnly: boolean;
   showProperties?: () => void;
+  showDescription?: () => void;
 }) {
   const [menu, setMenu] = useState<'appearance' | 'icon' | 'cover' | null>(null),
     [anchor, setAnchor] = useState<HTMLElement | null>(null),
@@ -185,6 +187,26 @@ export function PagePresentation({
         >
           {menu === 'appearance' ? (
             <div className="menu-list">
+              <button
+                onClick={() => {
+                  setMenu(null);
+                  useWorkspace.getState().openAppearance('page');
+                }}
+              >
+                <SlidersHorizontal />
+                Fonts and style
+              </button>
+              {showDescription && (
+                <button
+                  onClick={() => {
+                    setMenu(null);
+                    showDescription();
+                  }}
+                >
+                  <Tag />
+                  {page.description ? 'Edit description' : 'Add description'}
+                </button>
+              )}
               <button onClick={() => setMenu('icon')}>
                 <Smile />
                 {page.icon ? 'Change icon' : 'Add icon'}

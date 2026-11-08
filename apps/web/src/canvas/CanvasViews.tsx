@@ -64,6 +64,7 @@ export function CanvasRootView() {
     <NodeViewWrapper
       className="canvas-document"
       onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (event.defaultPrevented) return;
         if (c.key(event.nativeEvent)) {
           event.preventDefault();
           event.stopPropagation();
@@ -122,14 +123,10 @@ export function CanvasRootView() {
         className="canvas-stage"
         data-tool={c.space ? 'hand' : c.tool}
         ref={c.view.attach}
-        tabIndex={0}
-        aria-label="Canvas stage"
-        role="application"
         onPointerDown={(event) => {
           if (!(event.target as Element).closest('[data-spatial-control],button,input,textarea')) {
             event.preventDefault();
-            if (!(event.target as Element).closest('[data-canvas-element]'))
-              event.currentTarget.focus();
+            if (!(event.target as Element).closest('[data-canvas-element]')) c.focusStage();
           }
           c.view.handlers.onPointerDown(event);
         }}
@@ -145,7 +142,17 @@ export function CanvasRootView() {
         }}
       >
         <div
+          className="canvas-keyboard-target"
+          data-canvas-focus
+          tabIndex={0}
+          aria-label="Canvas stage"
+          role="application"
+          aria-owns={`canvas-world-${c.page.id}`}
+          contentEditable={false}
+        />
+        <div
           className="canvas-world"
+          id={`canvas-world-${c.page.id}`}
           style={
             {
               transform: `translate(${size.width / 2 - camera.x * camera.zoom}px,${size.height / 2 - camera.y * camera.zoom}px) scale(${camera.zoom})`,
@@ -302,8 +309,9 @@ export function CanvasCardView({ node }: NodeViewProps) {
       <span
         className="canvas-move"
         role="button"
-        tabIndex={0}
+        tabIndex={c.readOnly ? -1 : 0}
         aria-label="Move note"
+        aria-disabled={c.readOnly}
         contentEditable={false}
         data-spatial-item={!c.readOnly && c.tool === 'select' && !c.space ? id : undefined}
         onPointerDown={(event) => {
@@ -315,10 +323,13 @@ export function CanvasCardView({ node }: NodeViewProps) {
       </span>
       <NodeViewContent
         className="canvas-card-rich note-editor"
+        tabIndex={c.readOnly ? 0 : undefined}
         data-canvas-rich
         data-spatial-control
         role="textbox"
         aria-label="Note content"
+        contentEditable={c.readOnly ? false : undefined}
+        aria-readonly={c.readOnly}
         aria-multiline="true"
         onPointerDown={() => c.select(id)}
       />
@@ -352,8 +363,9 @@ export function CanvasGroupView({ node }: NodeViewProps) {
       <div className="canvas-group-heading">
         <span
           role="button"
-          tabIndex={0}
+          tabIndex={c.readOnly ? -1 : 0}
           aria-label="Move group"
+          aria-disabled={c.readOnly}
           contentEditable={false}
           className="canvas-group-move"
           data-spatial-item={!c.readOnly && c.tool === 'select' && !c.space ? id : undefined}
@@ -366,9 +378,12 @@ export function CanvasGroupView({ node }: NodeViewProps) {
         </span>
         <NodeViewContent
           data-canvas-rich
+          tabIndex={c.readOnly ? 0 : undefined}
           data-spatial-control
           role="textbox"
           aria-label="Group name"
+          contentEditable={c.readOnly ? false : undefined}
+          aria-readonly={c.readOnly}
         />
       </div>
     </NodeViewWrapper>
@@ -388,9 +403,12 @@ export function CanvasEdgeView({ node }: NodeViewProps) {
     >
       <NodeViewContent
         data-canvas-rich
+        tabIndex={c.readOnly ? 0 : undefined}
         data-spatial-control
         role="textbox"
         aria-label="Connection label"
+        contentEditable={c.readOnly ? false : undefined}
+        aria-readonly={c.readOnly}
         onPointerDown={() => c.select(node.attrs.id)}
       />
     </NodeViewWrapper>

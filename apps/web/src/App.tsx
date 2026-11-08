@@ -4,6 +4,7 @@ import { SignIn } from './identity/SignIn.js';
 import { Workspace } from './workspace/Workspace.js';
 import { WorkspaceSetup, InvitationAccept } from './identity/Onboarding.js';
 import { shortcutCommand } from './workbench/commands.js';
+import { AppearanceProjection } from './appearance/projection.js';
 export default function App() {
   const loading = useWorkspace((state) => state.loading);
   const user = useWorkspace((state) => state.user);
@@ -72,7 +73,7 @@ export default function App() {
     ) : !workspaceCount ? (
       <WorkspaceSetup />
     ) : (
-      <Workspace />
+      <><AppearanceProjection /><Workspace /></>
     )
   ) : (
     <SignIn />

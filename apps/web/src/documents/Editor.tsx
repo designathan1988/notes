@@ -1,4 +1,14 @@
-import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
+import { initProseMirrorDoc, type ProsemirrorMapping } from '@tiptap/y-tiptap';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
@@ -78,12 +88,33 @@ export function DocumentEditor({ page, embedded = false }: { page: Page; embedde
       <CanvasEditor session={session} />
     </Suspense>
   ) : session ? (
+    <ReadyDocument session={session} embedded={embedded} />
+  ) : (
+    <p className="editor-prompt">Opening document…</p>
+  );
+}
+function ReadyDocument({ session, embedded }: { session: DocumentSession; embedded: boolean }) {
+  const subscribe = useCallback(
+    (notify: () => void) => {
+      session.doc.on('update', notify);
+      return () => {
+        session.doc.off('update', notify);
+      };
+    },
+    [session],
+  );
+  const ready = useSyncExternalStore(
+    subscribe,
+    () => session.doc.getXmlFragment('default').length > 0,
+  );
+  return ready ? (
     <ConnectedEditor session={session} embedded={embedded} />
   ) : (
     <p className="editor-prompt">Opening document…</p>
   );
 }
 function ConnectedEditor({ session, embedded }: { session: DocumentSession; embedded: boolean }) {
+  const mapping = useMemo<ProsemirrorMapping>(() => new Map(), [session]);
   const status = useSyncExternalStore(session.subscribeStatus, session.getStatus);
   const [commands, setCommands] = useState(false);
   const [blockActions, setBlockActions] = useState(false);
@@ -104,7 +135,7 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
         ...richEditorExtensions(),
         BlockSurface,
         DocumentFind,
-        Collaboration.configure({ document: session.doc }),
+        Collaboration.configure({ document: session.doc, ySyncOptions: { mapping } }),
         CollaborationCaret.configure({
           provider: session.provider,
           user: { name: useWorkspace.getState().user?.name, color: '#5865e8' },
@@ -117,6 +148,12 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
         }),
       ],
       editable: !session.readOnly,
+      onBeforeCreate: ({ editor }) => {
+        const initial = initProseMirrorDoc(session.doc.getXmlFragment('default'), editor.schema);
+        mapping.clear();
+        for (const [type, node] of initial.mapping) mapping.set(type, node);
+        editor.setOptions({ content: initial.doc.toJSON() });
+      },
       enableContentCheck: true,
       onContentError: () =>
         useWorkspace
@@ -220,9 +257,8 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
   });
   useEffect(() => {
     if (editor) {
-      session.readOnly = role === 'viewer';
+      session.setReadOnly(role === 'viewer');
       editor.setEditable(!session.readOnly);
-      if (session.readOnly) useWorkspace.setState({ saveStatus: 'read-only' });
     }
   }, [role, editor, session]);
   if (!editor) return null;

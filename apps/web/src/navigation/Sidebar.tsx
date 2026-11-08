@@ -19,6 +19,8 @@ import {
   LayoutTemplate,
   SquareDashed,
   BookOpen,
+  Palette,
+  SquarePen,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '../state/store.js';
@@ -26,6 +28,7 @@ import { IconButton } from '../ui/IconButton.js';
 import type { Page } from '../../../../packages/contracts/src/index.js';
 import { useTreeDrag } from './useTreeDrag.js';
 import { PageActions } from './PageActions.js';
+import { Popover } from '../ui/Popover.js';
 function PageRow({
   page,
   depth,
@@ -141,6 +144,7 @@ function PageRow({
 }
 export function Sidebar() {
   const state = useWorkspace();
+  const [accountMenu, setAccountMenu] = useState<HTMLElement | null>(null);
   const drag = useTreeDrag();
   const drawer = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -218,8 +222,37 @@ export function Sidebar() {
         >
           <X size={18} />
         </button>
-        <nav className="activity-rail" aria-label="Workspace tools">
-          <div className="activity-destinations">
+        <div className="sidebar-pane">
+          <div className="workspace-identity">
+            <label className="workspace-select">
+              <BookOpen size={19} />
+              <select
+                aria-label="Workspace"
+                value={state.workspaceId ?? ''}
+                onChange={(event) => void state.chooseWorkspace(event.target.value)}
+              >
+                {state.workspaces.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} />
+            </label>
+            <IconButton
+              label="New page"
+              disabled={workspace?.role === 'viewer'}
+              onClick={() => void state.createQuickPage().catch(state.setError)}
+            >
+              <SquarePen size={17} />
+            </IconButton>
+          </div>
+          <button className="search-trigger" onClick={() => state.openDialog('search')}>
+            <Search size={18} />
+            <span>Search anything</span>
+            <kbd>Ctrl K</kbd>
+          </button>
+          <nav className="workspace-destinations" aria-label="Workspace tools">
             {destinations.map(({ view, label, Icon }) => {
               const active = template
                 ? view === 'templates'
@@ -227,77 +260,17 @@ export function Sidebar() {
               return (
                 <button
                   key={view}
-                  className={`activity-button${active ? ' active' : ''}`}
                   aria-label={label}
                   aria-current={active ? 'page' : undefined}
                   onClick={() =>
                     state.navigate(['all', 'graph'].includes(view) ? state.selectedId : null, view)
                   }
                 >
-                  <Icon />
-                  <span className="activity-label" aria-hidden="true">
-                    {label}
-                  </span>
+                  <Icon size={16} />
+                  <span>{label}</span>
                 </button>
               );
             })}
-          </div>
-          <div className="activity-utilities">
-            {utilities.map(({ label, Icon, run }) => (
-              <button key={label} className="activity-button" aria-label={label} onClick={run}>
-                <Icon />
-                <span className="activity-label" aria-hidden="true">
-                  {label}
-                </span>
-              </button>
-            ))}
-          </div>
-        </nav>
-        <div className="sidebar-pane">
-          <a
-            className="brand"
-            href="#"
-            onClick={(event) => {
-              event.preventDefault();
-              state.navigate(
-                state.pages.find((p) => p.title === 'Product direction')?.id ??
-                  state.pages[0]?.id ??
-                  null,
-              );
-            }}
-          >
-            <BookOpen className="brand-icon" aria-hidden="true" />
-            Note
-          </a>
-          <label className="workspace-select">
-            <Building2 size={17} />
-            <select
-              aria-label="Workspace"
-              value={state.workspaceId ?? ''}
-              onChange={(event) => void state.chooseWorkspace(event.target.value)}
-            >
-              {state.workspaces.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={15} />
-          </label>
-          <button className="search-trigger" onClick={() => state.openDialog('search')}>
-            <Search size={18} />
-            <span>Search anything</span>
-            <kbd>Ctrl K</kbd>
-          </button>
-          <nav className="main-nav">
-            <button
-              className="new-page-trigger"
-              disabled={workspace?.role === 'viewer'}
-              onClick={() => void state.createQuickPage().catch(state.setError)}
-            >
-              <Plus />
-              New page<kbd>Ctrl Alt N</kbd>
-            </button>
           </nav>
           <div className="sidebar-scroll">
             {state.favorites.length > 0 && (
@@ -334,7 +307,7 @@ export function Sidebar() {
               data-tree-root
               data-drag-over={drag.target?.id === null || undefined}
             >
-              <span>Workspace</span>
+              <span>Pages</span>
               <IconButton
                 label="Create page"
                 disabled={workspace?.role === 'viewer'}
@@ -381,27 +354,54 @@ export function Sidebar() {
             )}
           </div>
           <footer className="sidebar-footer">
-            <div className="mobile-sidebar-utilities">
-              {utilities.map(({ label, Icon, run }) => (
-                <button key={label} onClick={run}>
-                  <Icon />
-                  <span>{label}</span>
-                </button>
-              ))}
-            </div>
-            <div className="user-row">
+            <button
+              className="account-trigger"
+              aria-label="Account menu"
+              aria-haspopup="menu"
+              aria-expanded={!!accountMenu}
+              onClick={(event) => setAccountMenu(accountMenu ? null : event.currentTarget)}
+            >
               <span className="avatar">{state.user?.name[0]}</span>
               <span>{state.user?.name}</span>
-              <IconButton
-                label="Sign out"
-                onClick={() => void state.signOut().catch(state.setError)}
-              >
-                <LogOut size={15} />
-              </IconButton>
-              <small className={state.online ? 'connection' : 'connection offline'}>
-                {state.online ? 'Connected' : 'Offline'}
-              </small>
-            </div>
+              <ChevronDown size={13} />
+              {!state.online && <small>Offline</small>}
+            </button>
+            {accountMenu && (
+              <Popover anchor={accountMenu} label="Account" close={() => setAccountMenu(null)}>
+                <div className="menu-list">
+                  <button
+                    onClick={() => {
+                      setAccountMenu(null);
+                      state.openAppearance('app');
+                    }}
+                  >
+                    <Palette />
+                    Appearance
+                  </button>
+                  {utilities.map(({ label, Icon, run }) => (
+                    <button
+                      key={label}
+                      onClick={() => {
+                        setAccountMenu(null);
+                        run();
+                      }}
+                    >
+                      <Icon />
+                      {label}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => {
+                      setAccountMenu(null);
+                      void state.signOut().catch(state.setError);
+                    }}
+                  >
+                    <LogOut />
+                    Sign out
+                  </button>
+                </div>
+              </Popover>
+            )}
           </footer>
         </div>
       </aside>

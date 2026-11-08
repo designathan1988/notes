@@ -4,7 +4,11 @@ import { api } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
 import { snapshotAcknowledgementCovers } from './durability.js';
 import { openRecovery, type Recovery } from './recovery.js';
-import type { Page, SaveStatus } from '../../../../packages/contracts/src/index.js';
+import {
+  DOCUMENT_ACCESS_CHANGED,
+  type Page,
+  type SaveStatus,
+} from '../../../../packages/contracts/src/index.js';
 const activeSessions = new Set<DocumentSession>();
 /** Copy only acknowledged content; retained drafts are never silently omitted or discarded. */
 export async function ensureCopySourcesSaved(
@@ -122,6 +126,7 @@ export class DocumentSession {
   private readonly userId: string;
   private readonly key: string;
   private lastAcknowledgement = '';
+  private accessRefresh = 0;
   constructor(readonly page: Page) {
     this.userId = useWorkspace.getState().user!.id;
     this.key = `${this.userId}:${page.workspaceId}:${page.id}:${page.generation}`;
@@ -134,6 +139,19 @@ export class DocumentSession {
     }
     if (!this.destroyed && useWorkspace.getState().selectedId === this.page.id)
       useWorkspace.setState({ saveStatus: status });
+  }
+  setReadOnly(readOnly: boolean) {
+    if (this.destroyed || this.readOnly === readOnly) return;
+    this.readOnly = readOnly;
+    if (readOnly) this.setStatus('read-only');
+    else {
+      this.setStatus(this.connected ? 'connecting' : this.locallySaved ? 'local' : 'connecting');
+      if (this.connected) {
+        // A newly permitted writer may have a retained local update the server has not seen.
+        this.provider.forceSync();
+        this.provider.sendStateless('checkpoint');
+      }
+    }
   }
   async start() {
     this.setStatus('connecting');
@@ -185,8 +203,15 @@ export class DocumentSession {
           this.setStatus(this.readOnly ? 'read-only' : this.locallySaved ? 'local' : 'connecting');
       },
       onSynced: () => {
+        this.connected = true;
         if (this.readOnly) this.setStatus('read-only');
         this.provider.sendStateless('checkpoint');
+      },
+      onClose: ({ event }) => {
+        if (event.reason !== DOCUMENT_ACCESS_CHANGED || this.destroyed) return;
+        this.connected = false;
+        this.setStatus(this.readOnly ? 'read-only' : this.locallySaved ? 'local' : 'connecting');
+        void this.resume(true);
       },
       onStateless: ({ payload }) => {
         try {
@@ -241,23 +266,45 @@ export class DocumentSession {
     if (this.dirty) this.setStatus(this.locallySaved ? 'local' : 'error');
   };
   private onOnline = () => {
-    if (!this.destroyed)
-      void api<{ generation: number }>(`/pages/${this.page.id}/document`)
-        .then(async (config) => {
-          if (this.destroyed) return;
-          if (config.generation !== this.page.generation) {
-            await Promise.allSettled(this.recoveryWrites);
-            throw new Error(
-              'The document generation changed. Keep your local recovery copy before reopening it.',
-            );
-          }
-          return this.provider.connect();
-        })
-        .catch((error) => {
-          this.setStatus('error');
-          useWorkspace.getState().setError(error);
-        });
+    if (!this.destroyed) void this.resume(false);
   };
+  private async resume(rejoin: boolean) {
+    const sequence = ++this.accessRefresh;
+    try {
+      const config = await api<{ generation: number; readOnly: boolean }>(
+        `/pages/${this.page.id}/document`,
+      );
+      if (this.destroyed || sequence !== this.accessRefresh) return;
+      if (config.generation !== this.page.generation) {
+        await Promise.allSettled(this.recoveryWrites);
+        throw new Error(
+          'The document generation changed. Keep your local recovery copy before reopening it.',
+        );
+      }
+      this.setReadOnly(config.readOnly);
+      if (rejoin) {
+        // This session owns its socket. Reopen it to authenticate a fresh document channel.
+        const transport = this.provider.configuration.websocketProvider;
+        if (transport.status !== 'disconnected')
+          await new Promise<void>((resolve) => {
+            const closed = () => {
+              transport.off('disconnect', closed);
+              transport.off('destroy', closed);
+              resolve();
+            };
+            transport.on('disconnect', closed);
+            transport.on('destroy', closed);
+            transport.disconnect();
+          });
+        if (this.destroyed || sequence !== this.accessRefresh) return;
+        await transport.connect();
+      } else await this.provider.connect();
+    } catch (error) {
+      if (this.destroyed || sequence !== this.accessRefresh) return;
+      this.setStatus('error');
+      useWorkspace.getState().setError(error);
+    }
+  }
   private beforeUnload = (event: BeforeUnloadEvent) => {
     if (this.dirty) {
       event.preventDefault();

@@ -158,9 +158,8 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
   useDocumentProjection(editor, page.id);
   useEffect(() => {
     if (editor) {
-      session.readOnly = readOnly;
+      session.setReadOnly(readOnly);
       editor.setEditable(!readOnly);
-      if (readOnly) useWorkspace.setState({ saveStatus: 'read-only' });
     }
   }, [editor, readOnly, session]);
   if (!editor) return null;

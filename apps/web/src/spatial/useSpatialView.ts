@@ -281,6 +281,9 @@ export function useSpatialView(options: Options) {
     size,
     camera,
     draft,
+    cancelItem: () => {
+      if (gesture.current?.type === 'item') cancelRef.current();
+    },
     dragging,
     changeCamera,
     zoom,

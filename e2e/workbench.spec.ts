@@ -24,7 +24,7 @@ test('an authorized initial page opens while the redundant background navigation
     await page.goto('/#ea293f81-c7fa-4551-9da5-58b8af0510a9/document');
     await expect.poll(() => held).toBeGreaterThan(0);
     await expect(page.getByRole('textbox', { name: 'Page content', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Command palette', exact: true }).click();
+    await page.keyboard.press('Control+Shift+p');
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.keyboard.press('Escape');
     release();

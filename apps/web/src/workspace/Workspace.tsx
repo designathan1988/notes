@@ -21,6 +21,8 @@ import { useWorkspace } from '../state/store.js';
 import { Sidebar } from '../navigation/Sidebar.js';
 import { IconButton } from '../ui/IconButton.js';
 import { PageHeader } from './PageHeader.js';
+import { AppearancePanel } from '../appearance/AppearancePanel.js';
+import { appearanceVariables, PageAppearance } from '../appearance/projection.js';
 import { PagePanel } from '../activity/PagePanel.js';
 import { DatabaseView } from '../databases/DatabaseView.js';
 import { Search } from '../knowledge/Search.js';
@@ -94,7 +96,6 @@ export function Workspace() {
     >
       <Sidebar />
       <main className="workspace-main" inert={state.sidebarOpen}>
-        <TabStrip />
         <header className="topbar">
           <div className="history-controls">
             <IconButton
@@ -120,6 +121,7 @@ export function Workspace() {
               <Menu />
             </IconButton>
           </div>
+          <TabStrip />
           <div className="breadcrumb">
             {parent && !globalView && (
               <>
@@ -142,6 +144,9 @@ export function Workspace() {
                         ? 'Canvases'
                         : (page?.title ?? 'Workspace')}
             </strong>
+            {page && !globalView && ['document', 'canvas'].includes(state.view) && (
+              <small className="mobile-save-label">{status}</small>
+            )}
           </div>
           <div className="topbar-actions">
             <IconButton label="Command palette" onClick={state.showCommands}>
@@ -230,7 +235,17 @@ export function Workspace() {
             <AllPages kind="canvas" />
           ) : page?.kind === 'canvas' ? (
             <>
-              <div className="canvas-page">
+              <div
+                className="canvas-page"
+                data-styled-page={page.id}
+                style={appearanceVariables(
+                  state.pageAppearanceDrafts[page.id]?.overrides ?? page.appearance ?? {},
+                )}
+              >
+                <PageAppearance
+                  id={page.id}
+                  appearance={state.pageAppearanceDrafts[page.id]?.overrides ?? page.appearance}
+                />
                 <TemplateBanner page={page} />
                 <LazyBoundary key={page.id} name="Canvas">
                   <Suspense fallback={<p className="editor-prompt">Opening canvas…</p>}>
@@ -238,7 +253,7 @@ export function Workspace() {
                   </Suspense>
                 </LazyBoundary>
               </div>
-              {state.contextOpen && (
+              {state.contextOpen && !state.appearanceScope && (
                 <>
                   <button
                     className="details-scrim"
@@ -255,7 +270,15 @@ export function Workspace() {
                 <TemplateBanner page={page} />
                 <article
                   className={`document-canvas ${state.view === 'database' ? 'database-page' : ''}`}
+                  data-styled-page={page.id}
+                  style={appearanceVariables(
+                    state.pageAppearanceDrafts[page.id]?.overrides ?? page.appearance ?? {},
+                  )}
                 >
+                  <PageAppearance
+                    id={page.id}
+                    appearance={state.pageAppearanceDrafts[page.id]?.overrides ?? page.appearance}
+                  />
                   <PageHeader page={page} connections={state.linkedPageIds.length} />
                   {state.view === 'database' ? (
                     page.kind === 'database' ? (
@@ -282,7 +305,7 @@ export function Workspace() {
                   )}
                 </article>
               </div>
-              {state.contextOpen && (
+              {state.contextOpen && !state.appearanceScope && (
                 <>
                   <button
                     className="details-scrim"
@@ -307,6 +330,7 @@ export function Workspace() {
               </button>
             </div>
           )}
+          {state.appearanceScope && <AppearancePanel />}
         </div>
       </main>
       {state.dialog === 'new-page' && <NewPage />}

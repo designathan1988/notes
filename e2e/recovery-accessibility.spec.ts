@@ -69,7 +69,9 @@ test('signing out from graph clears recovery even after the document editor was 
   await expect.poll(async () => (await keys()).length).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Knowledge graph', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Knowledge graph' })).toBeVisible();
-  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.getByRole('button', { name: 'Account menu', exact: true }).click();
+
+  await page.getByRole('menuitem', { name: 'Sign out', exact: true }).click();
   await expect(
     page.getByRole('button', { name: 'Open demo workspace', exact: true }),
   ).toBeVisible();
@@ -99,7 +101,9 @@ test('sign out preserves disconnected drafts after navigating away, then succeed
     .getByRole('textbox', { name: 'Page content' })
     .pressSequentially('Keep this disconnected draft');
   await expect(page.locator('.save-status')).toHaveText('Saved locally');
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Account menu', exact: true }).click();
+
+  await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Data', exact: true }).click();
   await expect(page.locator('.local-draft')).toContainText('Keep this disconnected draft');
   const downloading = page.waitForEvent('download');
@@ -115,18 +119,22 @@ test('sign out preserves disconnected drafts after navigating away, then succeed
   expect(archive[draft.yjsFile].byteLength).toBeGreaterThan(0);
   await page.getByRole('dialog').getByRole('button', { name: 'Close dialog', exact: true }).click();
   await page.getByRole('button', { name: 'All pages', exact: true }).click();
-  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.getByRole('button', { name: 'Account menu', exact: true }).click();
+
+  await page.getByRole('menuitem', { name: 'Sign out', exact: true }).click();
   await expect(
     page.getByRole('alert').filter({ hasText: 'Some edits are saved only on this device' }),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Account menu', exact: true })).toBeVisible();
   await context.setOffline(false);
   await page.goto(`/#${note.id}/document`);
   await expect(page.getByRole('textbox', { name: 'Page content' })).toContainText(
     'Keep this disconnected draft',
   );
   await expect(page.locator('.save-status')).toHaveText('Saved');
-  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.getByRole('button', { name: 'Account menu', exact: true }).click();
+
+  await page.getByRole('menuitem', { name: 'Sign out', exact: true }).click();
   await expect(
     page.getByRole('button', { name: 'Open demo workspace', exact: true }),
   ).toBeVisible();

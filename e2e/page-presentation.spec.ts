@@ -53,7 +53,9 @@ test('page icons, uploaded covers, repositioning and tags persist and drive sear
     await page.getByRole('button', { name: 'Save cover position', exact: true }).click();
     const persisted = await (await context.request.get(`/api/pages/${note.id}`)).json();
     expect(persisted.cover.positionY).not.toBe(50);
-    await page.getByRole('button', { name: 'Page properties', exact: true }).click();
+    await page.getByRole('button', { name: 'Customize page', exact: true }).click();
+
+    await page.getByRole('menuitem', { name: 'Page properties', exact: true }).click();
     await page.getByRole('button', { name: 'Add tag', exact: true }).click();
     await page.getByRole('textbox', { name: 'New tag' }).fill('Field Research');
     await page.getByRole('textbox', { name: 'New tag' }).press('Enter');

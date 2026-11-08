@@ -225,7 +225,9 @@ test('ordinary-page properties edit inline, calculate, retain conflicts and arch
   first.on('pageerror', (error) => errors.push(error.message));
   try {
     await first.goto(`/#${note.id}/document`);
-    await first.getByRole('button', { name: 'Page properties', exact: true }).click();
+    await first.getByRole('button', { name: 'Customize page', exact: true }).click();
+
+    await first.getByRole('menuitem', { name: 'Page properties', exact: true }).click();
     await expect(
       first.getByRole('button', { name: 'Add page property', exact: true }),
     ).toBeVisible();

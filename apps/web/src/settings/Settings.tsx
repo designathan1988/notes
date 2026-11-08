@@ -48,6 +48,7 @@ export function Settings() {
   return (
     <Dialog title="Workspace settings" wide onClose={() => state.openDialog(null)}>
       <nav className="settings-tabs">
+        <button onClick={() => state.openAppearance('app')}>Appearance</button>
         {['members', 'data', 'trash', 'account'].map((item) => (
           <button key={item} className={tab === item ? 'active' : ''} onClick={() => setTab(item)}>
             {item[0].toUpperCase() + item.slice(1)}

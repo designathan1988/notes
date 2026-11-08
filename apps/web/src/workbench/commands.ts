@@ -15,7 +15,36 @@ const canWrite = (state: WorkspaceState) => {
   return !!role && role !== 'viewer';
 };
 export const commands: AppCommand[] = [
-  { id: 'page.canvas', title: 'New canvas', group: 'Create', keywords: 'spatial board whiteboard notes', available: canWrite, run: state => state.createQuickPage(null, 'canvas') },
+  {
+    id: 'appearance.app',
+    title: 'Customize app appearance',
+    group: 'Workspace',
+    keywords: 'theme fonts colors styles CSS density',
+    run: (state) => state.openAppearance('app'),
+  },
+  {
+    id: 'appearance.page',
+    title: 'Customize page style',
+    group: 'Page',
+    keywords: 'fonts colors CSS typography',
+    available: (state) => !!page(state),
+    run: (state) => state.openAppearance('page'),
+  },
+  {
+    id: 'appearance.reset',
+    title: 'Reset app appearance',
+    group: 'Workspace',
+    keywords: 'restore default theme CSS',
+    run: (state) => state.resetAppearance(),
+  },
+  {
+    id: 'page.canvas',
+    title: 'New canvas',
+    group: 'Create',
+    keywords: 'spatial board whiteboard notes',
+    available: canWrite,
+    run: (state) => state.createQuickPage(null, 'canvas'),
+  },
   {
     id: 'workspace.templates',
     title: 'Open templates',
