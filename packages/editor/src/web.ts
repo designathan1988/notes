@@ -8,7 +8,7 @@ export const webFile = Node.create({
   code: true,
   defining: true,
   isolating: true,
-  addAttributes: () => ({ path: { default: 'index.html' } }),
+  addAttributes: () => ({ path: { default: 'index.html' }, id: { default: null } }),
   parseHTML: () => [{ tag: 'pre[data-web-file]', preserveWhitespace: 'full' as const }],
   renderHTML: ({ node }) => [
     'pre',
@@ -19,7 +19,7 @@ export const webFile = Node.create({
 const attributes = () => ({ version: { default: 1 }, entry: { default: 'index.html' } });
 export const webPage = Node.create({
   name: 'webPage',
-  content: 'webFile+',
+  content: '(webFile | webAsset)+',
   isolating: true,
   defining: true,
   addAttributes: attributes,
@@ -37,7 +37,7 @@ export const webPage = Node.create({
 export const webComponent = Node.create({
   name: 'webComponent',
   group: 'block',
-  content: 'webFile+',
+  content: '(webFile | webAsset)+',
   isolating: true,
   defining: true,
   addAttributes: () => ({ ...attributes(), height: { default: 420 } }),
@@ -52,10 +52,22 @@ export const webComponent = Node.create({
     0,
   ],
 });
-export const webExtensions = () => [webPage, webComponent, webFile];
+export const webAsset = Node.create({
+  name: 'webAsset',
+  atom: true,
+  selectable: false,
+  addAttributes: () => ({ id: { default: '' }, attachmentId: { default: '' } }),
+  parseHTML: () => [{ tag: 'span[data-web-asset]' }],
+  renderHTML: ({ node }) => [
+    'span',
+    { 'data-web-asset': node.attrs.id, hidden: '', class: 'web-asset-binding' },
+  ],
+});
+export const webExtensions = () => [webPage, webComponent, webFile, webAsset];
 export interface WebSource {
   entry: string;
   files: { path: string; text: string }[];
+  assets: Record<string, string>;
 }
 export async function sourceFingerprint(source: WebSource) {
   const digest = await globalThis.crypto.subtle.digest(
@@ -83,10 +95,17 @@ export function webSource(node: JSONContent): WebSource {
     throw new Error('Choose a web page or component.');
   return {
     entry: String(node.attrs?.entry ?? 'index.html'),
-    files: (node.content ?? []).map((file) => ({
-      path: String(file.attrs?.path ?? 'index.html'),
-      text: (file.content ?? []).map((text) => text.text ?? '').join(''),
-    })),
+    assets: Object.fromEntries(
+      (node.content ?? [])
+        .filter((child) => child.type === 'webAsset')
+        .map((asset) => [String(asset.attrs?.id), String(asset.attrs?.attachmentId)]),
+    ),
+    files: (node.content ?? [])
+      .filter((child) => child.type === 'webFile')
+      .map((file) => ({
+        path: String(file.attrs?.path ?? 'index.html'),
+        text: (file.content ?? []).map((text) => text.text ?? '').join(''),
+      })),
   };
 }
 export function validateWeb(content: JSONContent) {
@@ -98,8 +117,30 @@ export function validateWeb(content: JSONContent) {
     if (node.type === 'webPage' || node.type === 'webComponent') {
       if (node.attrs?.version !== 1) throw new Error('Unsupported web source version.');
       const source = webSource(node),
-        paths = new Set<string>();
-      for (const file of source.files) {
+        paths = new Set<string>(),
+        ids = new Set<string>();
+      const fileNodes = (node.content ?? []).filter((child) => child.type === 'webFile');
+      const assetIds = new Set<string>();
+      for (const asset of (node.content ?? []).filter((child) => child.type === 'webAsset')) {
+        for (const id of [asset.attrs?.id, asset.attrs?.attachmentId])
+          if (
+            typeof id !== 'string' ||
+            !/^[\w-]{1,128}$/.test(id) ||
+            ['__proto__', 'constructor', 'prototype'].includes(id)
+          )
+            throw new Error('Use valid managed asset identities.');
+        if (assetIds.has(asset.attrs!.id)) throw new Error('Use unique managed asset references.');
+        assetIds.add(asset.attrs!.id);
+      }
+      if (assetIds.size > 256)
+        throw new Error('Use up to 256 managed asset references per website.');
+      for (const [index, file] of source.files.entries()) {
+        const id = fileNodes[index].attrs?.id;
+        if (id !== undefined && id !== null) {
+          if (typeof id !== 'string' || !/^[\w-]{1,128}$/.test(id) || ids.has(id))
+            throw new Error('Use a unique identity for each website file.');
+          ids.add(id);
+        }
         if (!validWebPath(file.path) || paths.has(file.path))
           throw new Error('Use unique relative file paths without traversal.');
         paths.add(file.path);
@@ -126,7 +167,7 @@ export function validateWeb(content: JSONContent) {
 export function newWebContent(component = false): JSONContent {
   const source = (path: string, text: string): JSONContent => ({
     type: 'webFile',
-    attrs: { path },
+    attrs: { path, id: crypto.randomUUID() },
     content: text ? [{ type: 'text', text }] : [],
   });
   const root: JSONContent = {

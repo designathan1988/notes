@@ -132,7 +132,7 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
   const editor = useEditor(
     {
       extensions: [
-        ...richEditorExtensions(),
+        ...richEditorExtensions(session.page.id),
         BlockSurface,
         DocumentFind,
         Collaboration.configure({ document: session.doc, ySyncOptions: { mapping } }),
@@ -252,6 +252,7 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
             italic: editor.isActive('italic'),
             undo: editor.can().undo(),
             redo: editor.can().redo(),
+            website: editor.state.doc.firstChild?.type.name === 'webPage',
           }
         : null,
   });
@@ -317,10 +318,10 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
         />
       )}
       <EditorContent editor={editor} />
-      {!session.readOnly && (
+      {!session.readOnly && !formatting?.website && (
         <SelectionToolbar editor={editor} pageId={session.page.id} link={() => setLinkOpen(true)} />
       )}
-      {!session.readOnly && (
+      {!session.readOnly && !formatting?.website && (
         <BlockControls
           editor={editor}
           requested={commands}

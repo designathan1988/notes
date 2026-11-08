@@ -356,6 +356,8 @@ export function rewriteContent(
       if (node.type === 'databaseView')
         node.attrs.databaseId = reference(pages, node.attrs.databaseId);
       if (node.type === 'attachment') node.attrs.id = reference(attachments, node.attrs.id);
+      if (node.type === 'webAsset')
+        node.attrs.attachmentId = reference(attachments, node.attrs.attachmentId);
     }
     for (const mark of node.marks ?? []) {
       const match =

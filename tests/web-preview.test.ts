@@ -138,7 +138,7 @@ test('the separate renderer delivers real files, sandbox headers and no applicat
       'frame-ancestors http://127.0.0.1:5173',
     );
     expect(html.headers['referrer-policy']).toBe('no-referrer');
-    expect(html.body).toContain('src="/.note/runtime.js"');
+    expect(html.body).toContain(`src="${new URL('/.note/runtime.js', ticket.url).href}"`);
     expect(html.body).toContain('src="./main.js"');
     expect(
       (await renderer.inject({ method: 'GET', url: '/main.js', headers })).headers['content-type'],

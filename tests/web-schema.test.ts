@@ -1,6 +1,8 @@
 import { expect, test } from 'vitest';
 import { documentFromJSON, documentJSON, validateDocument } from '../packages/editor/src/schema.js';
 import type { JSONContent } from '@tiptap/core';
+import { rewriteContent } from '../apps/server/src/transfer/archive.js';
+import { webSource } from '../packages/editor/src/web.js';
 
 const file = (path: string, text = ''): JSONContent => ({
   type: 'webFile',
@@ -89,4 +91,22 @@ test('web ingress rejects traversal, duplicate paths, missing entry files and un
   expect(() =>
     validateDocument(document({ ...site(), content: [file('index.html'), { type: 'paragraph' }] })),
   ).toThrow();
+});
+
+test('managed asset bindings remap independently while website source remains byte-exact', () => {
+  const html =
+    '<img src=".note/assets/picture-one"><script>const url = ".note/assets/picture-one";</script>';
+  const content = document(
+    site([
+      file('index.html', html),
+      { type: 'webAsset', attrs: { id: 'picture-one', attachmentId: 'original-asset' } },
+    ]),
+  );
+  expect(() => validateDocument(content)).not.toThrow();
+  const copied = rewriteContent(content, {}, { 'original-asset': 'copied-asset' });
+  expect(webSource(copied.content![0])).toMatchObject({
+    files: [{ path: 'index.html', text: html }],
+    assets: { 'picture-one': 'copied-asset' },
+  });
+  expect(copied.content![0].content![0].content![0].text).toBe(html);
 });

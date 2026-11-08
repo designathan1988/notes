@@ -143,7 +143,10 @@ export class WebPreviews {
     });
     return {
       token,
-      url: this.configuration.originTemplate.replace('{token}', token) + '/',
+      url:
+        this.configuration.originTemplate.replace('{token}', token).replace(/\/$/, '') +
+        '/' +
+        source.entry.split('/').map(encodeURIComponent).join('/'),
       expiresAt,
     };
   }
@@ -191,6 +194,10 @@ export class WebPreviews {
   }
   async asset(token: string, id: string) {
     const preview = await this.read(token);
+    id =
+      preview.source.assets && Object.hasOwn(preview.source.assets, id)
+        ? preview.source.assets[id]
+        : id;
     const [owned] = await this.db.query('SELECT id FROM attachments WHERE id=$1 AND page_id=$2', [
       id,
       preview.pageId,

@@ -342,7 +342,7 @@ export function CanvasProvider({
   }
   function key(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
-    if (target?.closest('input,textarea,select')) return false;
+    if (target?.closest('input,textarea,select,.cm-editor,[data-web-workspace]')) return false;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
       if (target === editor.view.dom || target?.closest('[data-canvas-rich]')) {
         const { doc } = editor.state,

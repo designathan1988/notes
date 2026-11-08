@@ -63,7 +63,7 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
   const editor = useEditor(
     {
       extensions: [
-        ...richEditorExtensions().filter(
+        ...richEditorExtensions(session.page.id).filter(
           (extension) =>
             !['doc', 'pageLink', 'canvasRoot', 'canvasCard', 'canvasGroup', 'canvasEdge'].includes(
               extension.name,

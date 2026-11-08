@@ -51,7 +51,11 @@ export interface WorkbenchSlice {
   restoreWorkbench(): void;
   clearWorkbench(): void;
   reconcileTabs(pages: Page[]): void;
-  createQuickPage(parentId?: string | null, kind?: 'document' | 'database' | 'canvas'): Promise<void>;
+  createQuickPage(
+    parentId?: string | null,
+    kind?: 'document' | 'database' | 'canvas',
+  ): Promise<void>;
+  createWebPage(parentId?: string | null): Promise<void>;
 }
 export function workbenchSlice(
   set: (partial: Partial<WorkspaceState>) => void,
@@ -393,12 +397,35 @@ export function workbenchSlice(
       });
       persist();
     },
+    async createWebPage(parentId = null) {
+      const user = get().user?.id,
+        workspace = get().workspaceId;
+      const { newWebContent } = await import('../../../../packages/editor/src/web.js');
+      if (get().user?.id !== user || get().workspaceId !== workspace) return;
+      const page = await get().createPage(
+        {
+          title: 'Untitled site',
+          parentId: parentId ?? undefined,
+          kind: 'document',
+          content: newWebContent(),
+          requestId: crypto.randomUUID(),
+        },
+        { navigate: false },
+      );
+      if (get().user?.id !== user || get().workspaceId !== workspace) return;
+      get().openTab(page.id, 'document');
+    },
     async createQuickPage(parentId = null, kind = 'document') {
       const user = get().user?.id,
         workspace = get().workspaceId;
       const page = await get().createPage(
         {
-          title: kind === 'database' ? 'Untitled database' : kind === 'canvas' ? 'Untitled canvas' : 'Untitled',
+          title:
+            kind === 'database'
+              ? 'Untitled database'
+              : kind === 'canvas'
+                ? 'Untitled canvas'
+                : 'Untitled',
           parentId: parentId ?? undefined,
           kind,
         },

@@ -3,6 +3,7 @@ import { editorExtensions, databaseView } from '../../../../packages/editor/src/
 import { toggleBlock } from '../../../../packages/editor/src/structure.js';
 import { ToggleSection } from './ToggleSection.js';
 import { DatabaseView } from '../databases/DatabaseView.js';
+import { webEditorExtensions } from '../web/extensions.js';
 function EmbeddedDatabase({ node }: NodeViewProps) {
   return (
     <NodeViewWrapper className="embedded-database">
@@ -15,10 +16,14 @@ function EmbeddedDatabase({ node }: NodeViewProps) {
   );
 }
 /** Shared rich block rendering for continuous documents and spatial card bodies. */
-export const richEditorExtensions = () => [
+export const richEditorExtensions = (pageId = '') => [
   ...editorExtensions().filter(
-    (extension) => !['databaseView', 'toggleBlock'].includes(extension.name),
+    (extension) =>
+      !['databaseView', 'toggleBlock', 'webPage', 'webComponent', 'webFile'].includes(
+        extension.name,
+      ),
   ),
   toggleBlock.extend({ addNodeView: () => ReactNodeViewRenderer(ToggleSection) }),
   databaseView.extend({ addNodeView: () => ReactNodeViewRenderer(EmbeddedDatabase) }),
+  ...webEditorExtensions(pageId),
 ];

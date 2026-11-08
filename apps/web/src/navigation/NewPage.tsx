@@ -24,6 +24,19 @@ export function NewPage() {
   }
   return (
     <Dialog title="Create a page" onClose={() => state.openDialog(null)}>
+      <button
+        className="button new-website-action"
+        disabled={busy}
+        onClick={() => {
+          setBusy(true);
+          void state.createWebPage(state.newPageParentId).catch((error) => {
+            setError(error.message);
+            setBusy(false);
+          });
+        }}
+      >
+        New web page
+      </button>
       <form onSubmit={submit}>
         <label>
           Title

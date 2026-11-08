@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
+import { newWebContent } from '../../../../packages/editor/src/web.js';
 import {
   ArrowDown,
   ArrowUp,
@@ -99,36 +100,38 @@ const choices = [
 export function insertBlock(editor: Editor, position: number, type: string, level = 2) {
   const paragraph = { type: 'paragraph' };
   const node =
-    type === 'toggleBlock'
-      ? {
-          type,
-          content: [{ type: 'toggleTitle' }, { type: 'toggleContent', content: [paragraph] }],
-        }
-      : ['callout', 'blockquote'].includes(type)
-        ? { type, content: [paragraph] }
-        : ['bulletList', 'orderedList', 'taskList'].includes(type)
-          ? {
-              type,
-              content: [
-                {
-                  type: type === 'taskList' ? 'taskItem' : 'listItem',
-                  attrs: type === 'taskList' ? { checked: false } : undefined,
-                  content: [paragraph],
-                },
-              ],
-            }
-          : type === 'table'
+    type === 'webComponent'
+      ? newWebContent(true)
+      : type === 'toggleBlock'
+        ? {
+            type,
+            content: [{ type: 'toggleTitle' }, { type: 'toggleContent', content: [paragraph] }],
+          }
+        : ['callout', 'blockquote'].includes(type)
+          ? { type, content: [paragraph] }
+          : ['bulletList', 'orderedList', 'taskList'].includes(type)
             ? {
                 type,
-                content: Array.from({ length: 3 }, (_, row) => ({
-                  type: 'tableRow',
-                  content: Array.from({ length: 3 }, () => ({
-                    type: row === 0 ? 'tableHeader' : 'tableCell',
+                content: [
+                  {
+                    type: type === 'taskList' ? 'taskItem' : 'listItem',
+                    attrs: type === 'taskList' ? { checked: false } : undefined,
                     content: [paragraph],
-                  })),
-                })),
+                  },
+                ],
               }
-            : { type, attrs: type === 'heading' ? { level } : undefined };
+            : type === 'table'
+              ? {
+                  type,
+                  content: Array.from({ length: 3 }, (_, row) => ({
+                    type: 'tableRow',
+                    content: Array.from({ length: 3 }, () => ({
+                      type: row === 0 ? 'tableHeader' : 'tableCell',
+                      content: [paragraph],
+                    })),
+                  })),
+                }
+              : { type, attrs: type === 'heading' ? { level } : undefined };
   const selected = blockAt(editor.state.doc, editor.state.selection.from);
   const empty =
     selected?.node.type.name === 'paragraph' &&
@@ -363,6 +366,12 @@ export function BlockMenu({
                 insertBlock(editor, selected?.to ?? editor.state.doc.content.size, 'table'),
             },
             { label: 'File or media', Icon: Paperclip, action: attachment },
+            {
+              label: 'Web component',
+              Icon: Code2,
+              action: () =>
+                insertBlock(editor, selected?.to ?? editor.state.doc.content.size, 'webComponent'),
+            },
             { label: 'Database view', Icon: Database, action: database },
             { label: 'Video embed', Icon: Video, action: embed },
             { label: 'Page connection', Icon: Link, action: link },

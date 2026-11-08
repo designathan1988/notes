@@ -4,7 +4,7 @@ import { DomainError } from '../../../../packages/contracts/src/index.js';
 import type { WebPreviews } from './service.js';
 import { sendAttachment } from '../attachments/http.js';
 
-function renderedHTML(source: string) {
+function renderedHTML(source: string, runtimeURL: string) {
   const document = parse(source);
   function head(node: DefaultTreeAdapterTypes.Node): DefaultTreeAdapterTypes.Element | undefined {
     if ('tagName' in node && node.tagName === 'head') return node;
@@ -16,7 +16,7 @@ function renderedHTML(source: string) {
   }
   const target = head(document)!;
   const script = defaultTreeAdapter.createElement('script', html.NS.HTML, [
-    { name: 'src', value: '/.note/runtime.js' },
+    { name: 'src', value: runtimeURL },
   ]);
   if (target.childNodes.length)
     defaultTreeAdapter.insertBefore(target, script, target.childNodes[0]);
@@ -58,7 +58,7 @@ export function createWebRenderer(previews: WebPreviews) {
     reply.header('Cross-Origin-Resource-Policy', 'same-origin');
     reply.header(
       'Content-Security-Policy',
-      `sandbox allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups; default-src 'self' https: http: data: blob:; script-src 'self' https: http: 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' https: http: 'unsafe-inline'; connect-src 'self' https: http: wss: ws:; object-src 'none'; frame-ancestors ${previews.configuration.appOrigin}`,
+      `sandbox allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups; default-src 'self' https: http: data: blob:; script-src 'self' https: http: 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' https: http: 'unsafe-inline'; connect-src 'self' https: http: wss: ws:; object-src 'none'; frame-ancestors ${previews.configuration.appOrigin} 'self'`,
     );
     let path: string;
     try {
@@ -86,7 +86,17 @@ export function createWebRenderer(previews: WebPreviews) {
         name === preview.source.entry ? 'text/html' : (contentTypes[extension] ?? 'text/plain');
     return reply
       .type(type + '; charset=utf-8')
-      .send(type === 'text/html' ? renderedHTML(file.text) : file.text);
+      .send(
+        type === 'text/html'
+          ? renderedHTML(
+              file.text,
+              new URL(
+                '/.note/runtime.js',
+                previews.configuration.originTemplate.replace('{token}', token),
+              ).href,
+            )
+          : file.text,
+      );
   });
   return app;
 }

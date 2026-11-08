@@ -16,6 +16,14 @@ const canWrite = (state: WorkspaceState) => {
 };
 export const commands: AppCommand[] = [
   {
+    id: 'page.web',
+    title: 'New web page',
+    group: 'Create',
+    keywords: 'website HTML CSS JavaScript source site',
+    available: canWrite,
+    run: (state) => state.createWebPage(),
+  },
+  {
     id: 'appearance.app',
     title: 'Customize app appearance',
     group: 'Workspace',
