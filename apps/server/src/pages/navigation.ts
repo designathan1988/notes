@@ -142,10 +142,15 @@ export class Navigation {
   }
   async flat(actor: Actor, workspace: string, offset = 0, kind = '', query = '') {
     const scope = await new Access(this.db).scope(actor, workspace);
-    const rows = await this.db.query<VisiblePageRow>(
-      `${scope.sql} SELECT * FROM visible WHERE ($4='' OR kind=$4) AND title ILIKE $5 ORDER BY updated_at DESC,id LIMIT 51 OFFSET $3`,
+    const rows = await this.db.query<VisiblePageRow & { parent_title: string | null }>(
+      `${scope.sql} SELECT p.*,parent.title AS parent_title FROM visible p LEFT JOIN visible parent ON parent.id=p.parent_id WHERE ($4='' OR p.kind=$4) AND p.title ILIKE $5 ORDER BY p.updated_at DESC,p.id LIMIT 51 OFFSET $3`,
       [...scope.params, Math.max(0, Math.min(100000, offset)), kind, `%${query.slice(0, 256)}%`],
     );
-    return { pages: rows.slice(0, 50).map(toVisiblePage), more: rows.length > 50 };
+    return {
+      pages: rows
+        .slice(0, 50)
+        .map((row) => ({ ...toVisiblePage(row), parentTitle: row.parent_title ?? undefined })),
+      more: rows.length > 50,
+    };
   }
 }

@@ -38,8 +38,9 @@ test('database controls save typed values, relations, filtered views, sorting, f
       .locator('.table-actions')
       .getByRole('button', { name: 'New record', exact: true })
       .click();
-    await dialog.getByLabel('Name', { exact: true }).fill(name);
-    await dialog.getByRole('button', { name: 'Create record', exact: true }).click();
+    await page.getByLabel('New record name', { exact: true }).fill(name);
+    await page.getByLabel('New record name', { exact: true }).press('Enter');
+    await page.getByRole('button', { name: 'Close record', exact: true }).click();
     await expect(page.getByLabel(`Name for ${name}`, { exact: true })).toBeVisible();
   }
   await page.getByLabel(`Effort for ${alpha}`, { exact: true }).fill('42');

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link2, X } from 'lucide-react';
-import type { Page } from '../../../../packages/contracts/src/index.js';
+import type { Page, PageLookup } from '../../../../packages/contracts/src/index.js';
 import { api } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
 import { Dialog } from '../ui/Dialog.js';
@@ -18,7 +18,7 @@ export function RelationCell({
   const [open, setOpen] = useState(false),
     [query, setQuery] = useState(''),
     [title, setTitle] = useState('');
-  const [results, setResults] = useState<Page[]>([]),
+  const [results, setResults] = useState<PageLookup[]>([]),
     [error, setError] = useState('');
   const workspace = useWorkspace((state) => state.workspaceId);
   useEffect(() => {
@@ -41,7 +41,7 @@ export function RelationCell({
     let active = true;
     const timer = setTimeout(
       () =>
-        void api<{ pages: Page[] }>(
+        void api<{ pages: PageLookup[] }>(
           `/workspaces/${workspace}/page-list?kind=record&q=${encodeURIComponent(query)}`,
         )
           .then((result) => {
@@ -89,6 +89,8 @@ export function RelationCell({
             {results.map((page) => (
               <button
                 key={page.id}
+                aria-label={page.title}
+                aria-description={page.parentTitle ?? 'Workspace record'}
                 onClick={() => {
                   change(page.id);
                   setTitle(page.title);
@@ -96,7 +98,10 @@ export function RelationCell({
                 }}
               >
                 <Link2 size={15} />
-                {page.title}
+                <span className="relation-result-context">
+                  <strong>{page.title}</strong>
+                  <small>{page.parentTitle ?? 'Workspace record'}</small>
+                </span>
               </button>
             ))}
           </div>

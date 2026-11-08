@@ -1,0 +1,131 @@
+import { lazy, Suspense, useEffect, useRef, useMemo } from 'react';
+import { compileFormulas } from '../../../../packages/data/src/formulas.js';
+import { ArrowUpRight, X } from 'lucide-react';
+import type { Page, RecordField } from '../../../../packages/contracts/src/index.js';
+import { useWorkspace } from '../state/store.js';
+import { api } from '../state/api.js';
+import { IconButton } from '../ui/IconButton.js';
+import { Cell } from './Cell.js';
+import { RecordProperty } from './RecordProperty.js';
+const Editor = lazy(() =>
+  import('../documents/Editor.js').then((module) => ({ default: module.DocumentEditor })),
+);
+
+export function RecordInspector({
+  databaseId,
+  pageId,
+  fields,
+  readOnly,
+  close,
+  refresh,
+}: {
+  databaseId: string;
+  pageId: string;
+  fields: RecordField[];
+  readOnly: boolean;
+  close(): void;
+  refresh(): Promise<void>;
+}) {
+  const entity = useWorkspace((state) => state.recordEntities[pageId]);
+  const calculate = useMemo(() => compileFormulas(fields), [fields]);
+  const record = useMemo(
+    () => (entity ? { ...entity, computedValues: calculate(entity.values) } : null),
+    [entity, calculate],
+  );
+  const page = useWorkspace((state) => state.pages.find((page) => page.id === pageId));
+  const root = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const identity = useWorkspace.getState().user?.id,
+      workspace = useWorkspace.getState().workspaceId;
+    let active = true;
+    if (!page)
+      void api<Page>(`/pages/${pageId}`)
+        .then((page) => {
+          const state = useWorkspace.getState();
+          if (active && identity === state.user?.id && workspace === state.workspaceId)
+            useWorkspace.setState({
+              pages: [...state.pages.filter((item) => item.id !== pageId), page],
+            });
+        })
+        .catch(useWorkspace.getState().setError);
+    const previous = document.activeElement as HTMLElement;
+    root.current?.focus();
+    return () => {
+      active = false;
+      if (previous?.isConnected) previous.focus();
+    };
+  }, [pageId]);
+  if (!record) return null;
+  return (
+    <aside
+      ref={root}
+      tabIndex={-1}
+      className="record-inspector"
+      role="region"
+      aria-label="Record details"
+      onKeyDown={(event) => {
+        if (
+          event.key === 'Escape' &&
+          !document.querySelector('dialog[open],.app-popover,.block-popover')
+        ) {
+          event.preventDefault();
+          close();
+        }
+      }}
+    >
+      <header>
+        <span>Record</span>
+        <IconButton
+          label="Open record in tab"
+          onClick={() => {
+            close();
+            useWorkspace.getState().openTab(pageId);
+          }}
+        >
+          <ArrowUpRight />
+        </IconButton>
+        <IconButton label="Close record" onClick={close}>
+          <X />
+        </IconButton>
+      </header>
+      <div className="record-inspector-scroll">
+        <div className="record-inspector-name">
+          <Cell
+            initial={record.title}
+            label="Record name"
+            readOnly={readOnly}
+            save={async (value) => {
+              await useWorkspace
+                .getState()
+                .editRecord(databaseId, pageId, { title: String(value) });
+              await refresh();
+            }}
+          />
+        </div>
+        <dl className="record-properties">
+          {fields
+            .filter((field) => !field.archived)
+            .map((field) => (
+              <div key={field.id}>
+                <dt>{field.name}</dt>
+                <dd>
+                  <RecordProperty
+                    databaseId={databaseId}
+                    record={record}
+                    field={field}
+                    readOnly={readOnly}
+                    refresh={refresh}
+                  />
+                </dd>
+              </div>
+            ))}
+        </dl>
+        <div className="record-document">
+          <Suspense fallback={<p>Opening document…</p>}>
+            {page && <Editor page={page} embedded />}
+          </Suspense>
+        </div>
+      </div>
+    </aside>
+  );
+}

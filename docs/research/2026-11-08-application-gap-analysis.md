@@ -4,7 +4,7 @@ Date: 2026-11-08. Starting checkpoint: 0d18807. The user explicitly requested in
 
 ## Evidence and comparison
 
-| Capability | Reference behavior | Current implementation evidence | Required change |
+| Capability | Reference behavior | Starting implementation evidence | Required change |
 | --- | --- | --- | --- |
 | Working context | [Obsidian tabs](https://obsidian.md/help/tabs) keep several pages open and support modifier-click navigation | `Workspace.tsx` renders one selected route; no tabs or retained page working set | Identity/workspace-scoped tabs, reopen/close/reorder, modifier-click, back/forward and recent pages |
 | Direct creation | [Notion](https://www.notion.com/help/keyboard-shortcuts) supports quick page creation and contextual block commands; [OneNote](https://support.microsoft.com/en-au/onenote/take-and-format-notes) provides direct note entry and page organization | A sidebar plus opens a multi-field Create a page form | Create immediately, focus the new title, choose advanced location/type only when requested; contextual tree actions |
@@ -25,3 +25,7 @@ Implement the working context and direct interaction first, then editor depth an
 Retain one Zustand application store. Tabs hold page IDs and route state, never body/title copies. PostgreSQL and Yjs remain authoritative for durable data. UI-only layout preferences are identity/workspace scoped. Each capability owns its server service, client slice and UI. Shared editor schema must support every persisted node across editor, import, export and search. All authored CSS stays in `styles.css`. Never alter existing user note content to make screenshots look complete.
 
 The references establish interaction patterns, not a claim of total feature parity. Hosted operations, native packaging and external service provisioning remain tracked by the original staged architecture; no real invitations, payments or publication are authorized by this investigation.
+
+## Implementation progress
+
+The workbench, editor-depth and connected-data rows are implemented under Tasks 1–3 of the implementation plan, with behavior and rendered browser evidence recorded there. This includes real data layouts/actions and their shared-state, persistence, access and concurrency checks. Discussion/history, page identity/reusable knowledge, spatial tools and whole-product acceptance remain explicitly unfinished; this is not a claim that the entire application is ready for sale.

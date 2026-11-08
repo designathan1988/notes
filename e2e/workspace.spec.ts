@@ -173,8 +173,9 @@ test('creates and edits a structured record, finds its body, and follows its gra
   await expect(page.getByRole('table', { name: 'Database records' })).toBeVisible();
   await page.locator('.table-actions').getByRole('button', { name: 'New record' }).click();
   const title = `Discovery check ${Date.now()}`;
-  await page.getByRole('dialog').getByLabel('Name', { exact: true }).fill(title);
-  await page.getByRole('button', { name: 'Create record', exact: true }).click();
+  await page.getByLabel('New record name', { exact: true }).fill(title);
+  await page.getByLabel('New record name', { exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'Close record', exact: true }).click();
   await page.getByLabel(`Status for ${title}`, { exact: true }).selectOption('Active');
   await expect(page.getByLabel(`Status for ${title}`, { exact: true })).toHaveValue('Active');
   await page.getByRole('button', { name: `Open ${title}`, exact: true }).click();

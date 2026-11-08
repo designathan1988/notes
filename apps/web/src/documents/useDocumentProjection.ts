@@ -5,7 +5,7 @@ import { documentStatistics } from '../../../../packages/editor/src/statistics.j
 import { useWorkspace } from '../state/store.js';
 
 /** Derived UI only. The shared Y.Doc remains the sole writable content owner. */
-export function useDocumentProjection(editor: Editor | null) {
+export function useDocumentProjection(editor: Editor | null, pageId: string) {
   const [statistics, setStatistics] = useState({ words: 0, characters: 0, minutes: 0 });
   useEffect(() => {
     if (!editor) return;
@@ -14,8 +14,9 @@ export function useDocumentProjection(editor: Editor | null) {
       const projection = projectDocument(editor.getJSON()),
         state = useWorkspace.getState();
       if (
-        JSON.stringify(state.outline) !== JSON.stringify(projection.headings) ||
-        JSON.stringify(state.linkedPageIds) !== JSON.stringify(projection.links)
+        state.selectedId === pageId &&
+        (JSON.stringify(state.outline) !== JSON.stringify(projection.headings) ||
+          JSON.stringify(state.linkedPageIds) !== JSON.stringify(projection.links))
       )
         useWorkspace.setState({ outline: projection.headings, linkedPageIds: projection.links });
       setStatistics(documentStatistics(editor.state.doc));
@@ -30,6 +31,6 @@ export function useDocumentProjection(editor: Editor | null) {
       clearTimeout(timer);
       editor.off('update', schedule);
     };
-  }, [editor]);
+  }, [editor, pageId]);
   return statistics;
 }

@@ -11,6 +11,8 @@ export interface WorkbenchTab {
 export const tabKey = (pageId: string | null, view: View) =>
   view === 'document' || (view === 'database' && pageId) ? `${view}:${pageId ?? ''}` : view;
 export interface WorkbenchSlice {
+  tableSelections: Record<string, string>;
+  selectTableView(databaseId: string, viewId: string): void;
   tabs: WorkbenchTab[];
   closedTabs: WorkbenchTab[];
   recentPageIds: string[];
@@ -58,11 +60,17 @@ export function workbenchSlice(
           tabs: get().tabs,
           recentPageIds: get().recentPageIds,
           sidebarCollapsed: get().sidebarCollapsed,
+          tableSelections: get().tableSelections,
         }),
       );
   };
   const activeKey = () => tabKey(get().selectedId, get().view);
   return {
+    tableSelections: {},
+    selectTableView(databaseId, viewId) {
+      set({ tableSelections: { ...get().tableSelections, [databaseId]: viewId } });
+      persist();
+    },
     tabs: [],
     closedTabs: [],
     recentPageIds: [],
@@ -188,6 +196,7 @@ export function workbenchSlice(
       persist();
     },
     restoreWorkbench() {
+      let tableSelections: Record<string, string> = {};
       let tabs: WorkbenchTab[] = [],
         recentPageIds: string[] = [],
         sidebarCollapsed = false;
@@ -217,11 +226,27 @@ export function workbenchSlice(
             .filter((id: unknown) => typeof id === 'string')
             .slice(0, 30);
         sidebarCollapsed = Boolean(value.sidebarCollapsed);
+        if (
+          value.tableSelections &&
+          typeof value.tableSelections === 'object' &&
+          !Array.isArray(value.tableSelections)
+        )
+          tableSelections = Object.fromEntries(
+            Object.entries(value.tableSelections)
+              .filter(
+                ([id, view]) =>
+                  /^[\w-]{1,128}$/u.test(id) &&
+                  typeof view === 'string' &&
+                  /^[\w-]{1,128}$/u.test(view),
+              )
+              .slice(0, 200),
+          ) as Record<string, string>;
       } catch {
         /* Corrupt optional working context never blocks the workspace. */
       }
       set({
         tabs,
+        tableSelections,
         recentPageIds,
         sidebarCollapsed,
         closedTabs: [],
@@ -236,6 +261,7 @@ export function workbenchSlice(
       const key = scope();
       if (key) preferences.removeItem(key);
       set({
+        tableSelections: {},
         tabs: [],
         closedTabs: [],
         recentPageIds: [],

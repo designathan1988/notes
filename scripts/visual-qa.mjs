@@ -55,6 +55,14 @@ try {
     .click();
   await page.getByRole('table', { name: 'Database records' }).getByRole('row').nth(1).waitFor();
   await page.screenshot({ path: resolve(output, 'workspace-database.png') });
+  await page.getByRole('combobox', { name: 'Layout', exact: true }).selectOption('board');
+  await page.getByRole('combobox', { name: 'Group by', exact: true }).selectOption('status');
+  await page.locator('.board-record').first().waitFor();
+  await page.screenshot({ path: resolve(output, 'workspace-board-desktop.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: resolve(output, 'workspace-board-mobile.png') });
+  const boardOverflow390 = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
+  await page.setViewportSize({ width: 1536, height: 1024 });
   const report = {
     title: await page.title(),
     url: page.url(),
@@ -66,12 +74,13 @@ try {
     ],
     overflow390,
     overflow360,
+    boardOverflow390,
     typography,
     errors,
   };
   await writeFile(resolve(output, 'verification.json'), JSON.stringify(report, null, 2));
   process.stdout.write(JSON.stringify({ output, ...report }, null, 2) + '\n');
-  if (overflow390 || overflow360 || errors.length) process.exitCode = 1;
+  if (overflow390 || overflow360 || boardOverflow390 || errors.length) process.exitCode = 1;
 } finally {
   await browser.close();
 }

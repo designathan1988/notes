@@ -22,7 +22,12 @@ CREATE TABLE IF NOT EXISTS document_checkpoints (id text PRIMARY KEY, page_id te
 CREATE TABLE IF NOT EXISTS database_definitions (page_id text PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE, fields jsonb NOT NULL DEFAULT '[]');
 ALTER TABLE database_definitions ADD COLUMN IF NOT EXISTS revision integer NOT NULL DEFAULT 1;
 CREATE TABLE IF NOT EXISTS records (page_id text PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE, database_id text NOT NULL REFERENCES database_definitions(page_id), values jsonb NOT NULL DEFAULT '{}', revision integer NOT NULL DEFAULT 1);
+ALTER TABLE records ADD COLUMN IF NOT EXISTS computed_values jsonb NOT NULL DEFAULT '{}';
+CREATE INDEX IF NOT EXISTS records_database_page ON records(database_id,page_id);
 CREATE TABLE IF NOT EXISTS table_views (id text PRIMARY KEY, database_id text NOT NULL REFERENCES database_definitions(page_id) ON DELETE CASCADE, name text NOT NULL, config jsonb NOT NULL DEFAULT '{}');
+ALTER TABLE table_views ADD COLUMN IF NOT EXISTS revision integer NOT NULL DEFAULT 1;
+CREATE INDEX IF NOT EXISTS table_views_database_name ON table_views(database_id,name,id);
+ALTER TABLE database_definitions ADD COLUMN IF NOT EXISTS views_revision integer NOT NULL DEFAULT 1;
 CREATE TABLE IF NOT EXISTS attachments (id text PRIMARY KEY, page_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE, filename text NOT NULL, media_type text NOT NULL, size integer NOT NULL, object_key text NOT NULL UNIQUE, status text NOT NULL DEFAULT 'pending', created_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE IF NOT EXISTS search_projection (page_id text PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE, version bigint NOT NULL, body text NOT NULL DEFAULT '', tokens tsvector NOT NULL DEFAULT ''::tsvector);
 CREATE INDEX IF NOT EXISTS search_tokens ON search_projection USING GIN(tokens);

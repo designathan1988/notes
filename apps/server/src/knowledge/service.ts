@@ -47,8 +47,9 @@ export class Knowledge {
       description: string;
       state: Uint8Array | null;
       values: Record<string, unknown> | null;
+      computed_values: Record<string, unknown> | null;
     }>(
-      `SELECT p.index_revision,p.description,d.state,r.values FROM pages p LEFT JOIN documents d ON d.page_id=p.id LEFT JOIN records r ON r.page_id=p.id WHERE p.id=$1`,
+      `SELECT p.index_revision,p.description,d.state,r.values,r.computed_values FROM pages p LEFT JOIN documents d ON d.page_id=p.id LEFT JOIN records r ON r.page_id=p.id WHERE p.id=$1`,
       [id],
     );
     if (!page) return;
@@ -67,6 +68,9 @@ export class Knowledge {
         page.description,
         projection.text,
         ...Object.values(page.values ?? {})
+          .filter((value) => value !== null)
+          .map(String),
+        ...Object.values(page.computed_values ?? {})
           .filter((value) => value !== null)
           .map(String),
       ].join('\n'),

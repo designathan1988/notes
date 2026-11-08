@@ -217,7 +217,7 @@ export function Workspace() {
                   <PageHeader page={page} connections={state.linkedPageIds.length} />
                   {state.view === 'database' ? (
                     page.kind === 'database' ? (
-                      <DatabaseView id={page.id} />
+                      <DatabaseView key={page.id} id={page.id} />
                     ) : (
                       <div className="empty-state">
                         <Database />

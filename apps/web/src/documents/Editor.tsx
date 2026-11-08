@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   EditorContent,
   useEditor,
@@ -51,7 +51,7 @@ import { Templates } from './Templates.js';
 import { DocumentFind, FindInPage } from './FindInPage.js';
 import { useDocumentProjection } from './useDocumentProjection.js';
 
-export function DocumentEditor({ page }: { page: Page }) {
+export function DocumentEditor({ page, embedded = false }: { page: Page; embedded?: boolean }) {
   const [session, setSession] = useState<DocumentSession | null>(null);
   const [failure, setFailure] = useState('');
   const [attempt, setAttempt] = useState(0);
@@ -87,12 +87,13 @@ export function DocumentEditor({ page }: { page: Page }) {
       </div>
     );
   return session ? (
-    <ConnectedEditor session={session} />
+    <ConnectedEditor session={session} embedded={embedded} />
   ) : (
     <p className="editor-prompt">Opening document…</p>
   );
 }
-function ConnectedEditor({ session }: { session: DocumentSession }) {
+function ConnectedEditor({ session, embedded }: { session: DocumentSession; embedded: boolean }) {
+  const status = useSyncExternalStore(session.subscribeStatus, session.getStatus);
   const [commands, setCommands] = useState(false);
   const [blockActions, setBlockActions] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
@@ -231,7 +232,7 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
     },
     [session],
   );
-  const statistics = useDocumentProjection(editor);
+  const statistics = useDocumentProjection(editor, session.page.id);
   useEffect(() => {
     if (!editor || request?.pageId !== session.page.id) return;
     if (request.command === 'find') setFindOpen(true);
@@ -264,6 +265,20 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
   return (
     <div className="editor-wrap">
       <div className="document-utilities">
+        {embedded && (
+          <span role="status" aria-label="Record document status">
+            {
+              {
+                connecting: 'Connecting…',
+                saving: 'Saving…',
+                saved: 'Saved',
+                local: 'Saved on this device',
+                error: 'Save failed',
+                'read-only': 'Read only',
+              }[status]
+            }
+          </span>
+        )}
         <span
           role="status"
           aria-label="Document statistics"
@@ -455,7 +470,11 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
 function EmbeddedDatabase({ node }: NodeViewProps) {
   return (
     <NodeViewWrapper className="embedded-database">
-      <DatabaseView id={String(node.attrs.databaseId)} compact />
+      <DatabaseView
+        key={String(node.attrs.databaseId)}
+        id={String(node.attrs.databaseId)}
+        compact
+      />
     </NodeViewWrapper>
   );
 }

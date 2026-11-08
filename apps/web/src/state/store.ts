@@ -41,7 +41,12 @@ export interface WorkspaceState
   initialize(): Promise<void>;
   reload(): Promise<void>;
   chooseWorkspace(id: string): Promise<void>;
-  navigate(id: string | null, view?: View, mode?: 'push' | 'replace' | 'none'): void;
+  navigate(
+    id: string | null,
+    view?: View,
+    mode?: 'push' | 'replace' | 'none',
+    options?: { preserveOverlays?: boolean },
+  ): void;
   openDialog(dialog: Dialog): void;
   setError(error: unknown): void;
   createPage(
@@ -196,15 +201,18 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
         });
         get().invalidateKnowledge();
         get().reconcileTabs(snapshot.pages);
-        if (selected !== null && snapshot.selectedId !== selected)
+        if (selected !== null && snapshot.selectedId !== selected) {
+          const next = get().tabs.find((tab) => tab.pageId);
           get().navigate(
-            snapshot.selectedId,
-            ['all', 'graph'].includes(get().view) ? get().view : undefined,
+            next?.pageId ?? snapshot.selectedId,
+            ['all', 'graph'].includes(get().view) ? get().view : next?.view,
             'replace',
+            { preserveOverlays: true },
           );
-        const selectedPage = snapshot.pages.find((page) => page.id === snapshot.selectedId);
+        }
+        const selectedPage = snapshot.pages.find((page) => page.id === get().selectedId);
         if (get().view === 'document' && selectedPage?.kind === 'database')
-          get().navigate(selectedPage.id, 'database', 'replace');
+          get().navigate(selectedPage.id, 'database', 'replace', { preserveOverlays: true });
       }
     } catch (error) {
       if (error instanceof ApiError && [401, 403].includes(error.status)) {
@@ -222,7 +230,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       get().setError(error);
     }
   },
-  navigate(id, view, mode = 'push') {
+  navigate(id, view, mode = 'push', options = {}) {
     const kind = get().pages.find((page) => page.id === id)?.kind;
     view ??= kind === 'database' ? 'database' : 'document';
     if (view === 'document' && kind === 'database') {
@@ -234,9 +242,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     set({
       selectedId: id,
       view,
-      sidebarOpen: false,
-      dialog: null,
-      commandOpen: false,
+      ...(options.preserveOverlays ? {} : { sidebarOpen: false, dialog: null, commandOpen: false }),
       ...(get().selectedId !== id ? { outline: [], linkedPageIds: [], editorRequest: null } : {}),
     });
     if (mode !== 'none')
@@ -300,13 +306,11 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     }
   },
   async trashPage(id) {
-    const selected = get().selectedId;
+    const user = get().user?.id,
+      workspace = get().workspaceId;
     await api(`/pages/${id}`, { method: 'DELETE' });
+    if (user !== get().user?.id || workspace !== get().workspaceId) return;
     await get().reload();
-    if (selected && !get().pages.some((page) => page.id === selected)) {
-      const next = get().tabs.find((tab) => tab.pageId);
-      get().navigate(next?.pageId ?? get().selectedId ?? get().pages[0]?.id ?? null, next?.view);
-    }
   },
   toggleExpanded(id) {
     if (!get().expanded.includes(id)) void get().loadChildren(id).catch(get().setError);

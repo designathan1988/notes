@@ -83,3 +83,17 @@ test('an unloaded database reference becomes one canonical database tab when met
     ['database:collection', 'database'],
   ]);
 });
+
+test('preferred saved database views persist as scoped references and clear on identity changes', () => {
+  const { get, set } = fixture(),
+    state = get();
+  state.selectTableView('database', 'calendar-view');
+  set({ user: { id: 'bob' } as WorkspaceState['user'] });
+  state.restoreWorkbench();
+  expect(state.tableSelections).toEqual({});
+  set({ user: { id: 'alice' } as WorkspaceState['user'] });
+  state.restoreWorkbench();
+  expect(state.tableSelections).toEqual({ database: 'calendar-view' });
+  state.clearWorkbench();
+  expect(state.tableSelections).toEqual({});
+});

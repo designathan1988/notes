@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Plus, RotateCcw } from 'lucide-react';
 import { Dialog } from '../ui/Dialog.js';
 import { api, json } from '../state/api.js';
@@ -14,16 +14,37 @@ export function Settings() {
   );
   const [trash, setTrash] = useState<Page[]>([]);
   const [creating, setCreating] = useState(false);
+  const sequence = useRef(0);
   const workspace = state.workspaces.find((item) => item.id === state.workspaceId);
   const refresh = () => {
+    const token = ++sequence.current,
+      identity = state.user?.id,
+      workspaceId = state.workspaceId;
+    const current = () =>
+      token === sequence.current &&
+      identity === useWorkspace.getState().user?.id &&
+      workspaceId === useWorkspace.getState().workspaceId;
     void api<typeof members>(`/workspaces/${state.workspaceId}/members`)
-      .then(setMembers)
-      .catch((error) => setError(error.message));
+      .then((result) => {
+        if (current()) setMembers(result);
+      })
+      .catch((error) => {
+        if (current()) setError(error.message);
+      });
     void api<Page[]>(`/workspaces/${state.workspaceId}/pages?trash=true`)
-      .then(setTrash)
-      .catch(() => {});
+      .then((result) => {
+        if (current()) setTrash(result);
+      })
+      .catch((error) => {
+        if (current()) setError(error.message);
+      });
   };
-  useEffect(refresh, [state.workspaceId]);
+  useEffect(() => {
+    refresh();
+    return () => {
+      sequence.current++;
+    };
+  }, [state.workspaceId, state.knowledgeVersion]);
   return (
     <Dialog title="Workspace settings" wide onClose={() => state.openDialog(null)}>
       <nav className="settings-tabs">

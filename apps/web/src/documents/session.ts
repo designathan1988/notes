@@ -30,6 +30,15 @@ export async function closeIdentitySessions(identity: string) {
   );
 }
 export class DocumentSession {
+  private status: SaveStatus = 'connecting';
+  private readonly observers = new Set<() => void>();
+  getStatus = () => this.status;
+  subscribeStatus = (listener: () => void) => {
+    this.observers.add(listener);
+    return () => {
+      this.observers.delete(listener);
+    };
+  };
   get identity() {
     return this.userId;
   }
@@ -51,6 +60,10 @@ export class DocumentSession {
     activeSessions.add(this);
   }
   private setStatus(status: SaveStatus) {
+    if (!this.destroyed) {
+      this.status = status;
+      for (const listener of this.observers) listener();
+    }
     if (!this.destroyed && useWorkspace.getState().selectedId === this.page.id)
       useWorkspace.setState({ saveStatus: status });
   }

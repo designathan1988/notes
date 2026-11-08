@@ -88,8 +88,9 @@ test('creates pages through the UI, edits table structure, embeds an editable da
     .locator('.embedded-database')
     .getByRole('button', { name: 'New record', exact: true })
     .click();
-  await dialog.getByLabel('Name', { exact: true }).fill('Embedded record');
-  await dialog.getByRole('button', { name: 'Create record', exact: true }).click();
+  await page.getByLabel('New record name', { exact: true }).fill('Embedded record');
+  await page.getByLabel('New record name', { exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'Close record', exact: true }).click();
   await expect(content.getByLabel('Name for Embedded record', { exact: true })).toBeVisible();
   await content.getByLabel('Name for Embedded record', { exact: true }).fill('Edited inline');
   await content.getByLabel('Name for Embedded record', { exact: true }).press('Tab');

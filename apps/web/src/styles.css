@@ -4,6 +4,492 @@
 @import '@fontsource/inter/latin-700.css';
 @layer tokens, base, layout, components, editor, responsive;
 
+@layer components {
+  .property-editor-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  .relation-result-context {
+    display: grid;
+    gap: 4px;
+    text-align: left;
+  }
+  .relation-result-context strong {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .relation-result-context small {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .table-toolbar {
+    flex-wrap: wrap;
+  }
+  .table-actions {
+    flex-wrap: wrap;
+  }
+  .table-actions > select {
+    max-width: 150px;
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    padding: 6px 8px;
+    background: white;
+    font-size: 12px;
+  }
+  .inline-record-create {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--rule);
+    padding: 10px 0;
+  }
+  .inline-record-create > input {
+    flex: 1;
+    min-width: 60px;
+    padding: 8px;
+    border: 0;
+    background: var(--soft);
+    border-radius: 4px;
+  }
+  .computed-value {
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+  }
+  .record-action {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .record-action .button {
+    min-height: 26px;
+    padding: 3px 9px;
+    font-size: 11px;
+  }
+  .record-action > small {
+    color: var(--danger);
+  }
+  .record-open {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .record-open:hover {
+    color: var(--accent);
+  }
+  .record-grip {
+    display: grid;
+    place-items: center;
+    padding: 3px;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--muted);
+    cursor: grab;
+    touch-action: none;
+    flex-shrink: 0;
+  }
+  .record-grip:hover {
+    background: var(--soft);
+  }
+  .record-drag-ghost {
+    position: fixed;
+    z-index: 120;
+    pointer-events: none;
+    padding: 12px 18px;
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+    background: white;
+    box-shadow: 0 8px 30px #18203526;
+    max-width: 260px;
+    font-size: 13px;
+  }
+  .database-board {
+    display: flex;
+    gap: 12px;
+    overflow: auto;
+    padding: 10px 0 20px;
+    min-height: 260px;
+  }
+  .board-column {
+    flex: 0 0 246px;
+    min-width: 0;
+    border-radius: 6px;
+    background: #f6f7f9;
+    padding: 9px;
+    border: 1px solid transparent;
+  }
+  .board-column > header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 4px 12px;
+    font-size: 12px;
+  }
+  .board-column > header > strong {
+    font-weight: 550;
+  }
+  .board-column > header > span {
+    color: var(--muted);
+  }
+  .board-column > header > button {
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .board-record {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    padding: 11px;
+    margin: 0 0 8px;
+    box-shadow: 0 1px 2px #18203506;
+  }
+  .board-record-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .board-record-property {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    min-width: 0;
+  }
+  .board-record-property > small {
+    min-width: 45px;
+    color: #737781;
+    font-size: 10px;
+  }
+  .board-record-property > .cell-control {
+    min-width: 0;
+    flex: 1;
+  }
+  .board-record-property input,
+  .board-record-property select {
+    max-width: 100%;
+  }
+  .drop-active {
+    border-color: var(--accent) !important;
+    background: #edf3fc !important;
+  }
+  .database-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .database-list > li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    min-height: 48px;
+    padding: 9px 4px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .database-list > li > .record-open {
+    min-width: 170px;
+    flex: 1;
+  }
+  .list-properties {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+  .list-properties > div {
+    width: 100px;
+    min-width: 0;
+  }
+  .database-calendar > header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .database-calendar > header h3 {
+    font: 600 16px var(--ui);
+    margin: 0 auto 0 0;
+  }
+  .database-calendar > header button {
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: white;
+    padding: 5px 7px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .database-calendar > header button[aria-pressed='true'] {
+    color: var(--accent);
+    background: var(--selected);
+  }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    border-left: 1px solid var(--rule);
+    border-top: 1px solid var(--rule);
+  }
+  .calendar-week {
+    display: contents;
+  }
+  .calendar-agenda {
+    display: none;
+  }
+  .calendar-weekday {
+    text-align: center;
+    font-size: 10px;
+    color: #737781;
+    padding: 8px 0;
+  }
+  .calendar-day {
+    min-height: 96px;
+    padding: 5px;
+    min-width: 0;
+    border: 1px solid var(--rule);
+    border-left: 0;
+    border-top: 0;
+  }
+  .calendar-day > time {
+    display: block;
+    font-size: 10px;
+    color: #737781;
+    padding: 0 1px 7px;
+  }
+  .calendar-day.outside-month {
+    background: #fafafb;
+  }
+  .calendar-day.outside-month > time {
+    color: #a5a8af;
+  }
+  .calendar-record {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px;
+    margin-bottom: 4px;
+    border-radius: 3px;
+    background: var(--selected);
+  }
+  .calendar-record > .record-open {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+  }
+  .calendar-undated {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 50px;
+    padding: 10px;
+    background: var(--soft);
+    margin-bottom: 12px;
+  }
+  .calendar-undated .calendar-record {
+    min-width: 150px;
+  }
+  .record-inspector {
+    position: fixed;
+    z-index: 55;
+    top: 85px;
+    right: 0;
+    bottom: 0;
+    width: min(560px, 100vw);
+    background: white;
+    border-left: 1px solid var(--rule);
+    box-shadow: -12px 0 35px #1820350d;
+    display: flex;
+    flex-direction: column;
+    outline: none;
+  }
+  .record-inspector > header {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .record-inspector > header > span {
+    flex: 1;
+    color: #737781;
+    font-size: 11px;
+  }
+  .record-inspector-scroll {
+    overflow: auto;
+    padding: 28px 30px 90px;
+    flex: 1;
+  }
+  .record-inspector-name .cell-control > input {
+    font-size: 26px;
+    font-weight: 650;
+    border: 0;
+    padding: 0;
+    margin-bottom: 18px;
+    width: 100%;
+    background: transparent;
+  }
+  .record-properties {
+    margin: 0 0 24px;
+    font-size: 12px;
+  }
+  .record-properties > div {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    align-items: center;
+    min-height: 34px;
+    gap: 8px;
+  }
+  .record-properties dt {
+    color: #737781;
+    font-weight: 400;
+  }
+  .record-properties dd {
+    margin: 0;
+    min-width: 0;
+  }
+  .record-document {
+    border-top: 1px solid var(--rule);
+    padding-top: 18px;
+  }
+  .record-inspector .document-tools {
+    position: sticky;
+    bottom: 8px;
+    max-width: 100%;
+    margin: 20px auto 0;
+    transform: none;
+    left: auto;
+    flex-wrap: wrap;
+  }
+  .record-inspector .document-utilities {
+    flex-wrap: wrap;
+    margin: 0 0 16px;
+  }
+  .record-inspector .document-utilities > [aria-label='Record document status'] {
+    color: var(--accent);
+  }
+  .record-inspector .document-utilities > [aria-label='Document statistics'] {
+    margin-left: auto;
+    margin-right: 6px;
+  }
+  .property-manager-list > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--rule);
+    padding: 9px 0;
+    gap: 16px;
+  }
+  .property-manager-list > div > button:first-child {
+    display: grid;
+    gap: 4px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+  }
+  .property-manager-list strong {
+    font-weight: 550;
+    font-size: 13px;
+  }
+  .property-manager-list small {
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .property-manager-list > .button {
+    margin-top: 16px;
+  }
+  .formula-references {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .formula-references button {
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--soft);
+    padding: 4px 8px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+}
+@layer responsive {
+  @media (max-width: 600px) {
+    .record-inspector-scroll {
+      padding: 22px 20px 80px;
+    }
+    .record-properties > div {
+      grid-template-columns: 90px minmax(0, 1fr);
+    }
+    .database-calendar {
+      overflow: auto;
+    }
+    .calendar-grid {
+      min-width: 0;
+    }
+    .calendar-day {
+      min-height: 64px;
+      padding: 3px;
+    }
+    .calendar-day .record-grip {
+      display: none;
+    }
+    .calendar-day .record-open {
+      font-size: 9px;
+    }
+    .calendar-agenda {
+      display: block;
+      list-style: none;
+      padding: 0;
+      margin: 14px 0;
+    }
+    .calendar-agenda > li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 7px 0;
+      font-size: 11px;
+    }
+    .calendar-agenda > li > time {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .calendar-agenda .calendar-record {
+      flex: 1;
+      padding: 8px;
+    }
+    .table-actions > select {
+      max-width: 130px;
+    }
+    .list-properties {
+      gap: 6px;
+    }
+  }
+}
+
 @layer editor {
   .document-utilities {
     display: flex;
@@ -2591,7 +3077,8 @@
     gap: 12px;
     overflow: auto;
     min-width: 0;
-    flex: 1;
+    flex: 1 1 220px;
+    max-width: 100%;
   }
   .view-tabs button {
     display: flex;

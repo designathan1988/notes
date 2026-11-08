@@ -40,21 +40,70 @@ export interface NavigationSnapshot {
 export interface RecordField {
   id: string;
   name: string;
-  type: 'text' | 'number' | 'checkbox' | 'select' | 'multi-select' | 'date' | 'url' | 'relation';
+  type:
+    | 'text'
+    | 'number'
+    | 'checkbox'
+    | 'select'
+    | 'multi-select'
+    | 'date'
+    | 'url'
+    | 'relation'
+    | 'formula'
+    | 'button';
   options?: string[];
+  formula?: string;
+  archived?: boolean;
+  action?: { fieldId: string; value: unknown };
 }
 export interface DatabaseRecord {
   pageId: string;
+  pageRevision: number;
   title: string;
   values: Record<string, unknown>;
+  computedValues?: Record<string, number | null>;
   revision: number;
   updatedAt: string;
 }
+export interface DatabaseViewConfig {
+  layout?: 'table' | 'board' | 'list' | 'calendar';
+  groupBy?: string;
+  dateField?: string;
+  columns?: string[];
+  filter?: string;
+  sort?: string;
+  direction?: string;
+}
+export interface SavedDatabaseView {
+  id: string;
+  name: string;
+  config: DatabaseViewConfig;
+  revision: number;
+}
+export interface RecordQuery {
+  filter?: string;
+  sort?: string;
+  direction?: string;
+  offset?: number;
+  limit?: number;
+  dateField?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  undated?: boolean | string;
+}
+export const validDate = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  /^\d{4}-\d{2}-\d{2}$/u.test(value) &&
+  Number.isFinite(Date.parse(value)) &&
+  new Date(value).toISOString().slice(0, 10) === value;
 export interface SearchResult {
   id: string;
   title: string;
   snippet: string;
   kind: PageKind;
+  parentTitle?: string;
+}
+export interface PageLookup extends Page {
   parentTitle?: string;
 }
 export interface KnowledgeLink {
