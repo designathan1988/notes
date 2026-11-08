@@ -15,6 +15,7 @@ export interface AppearanceSlice {
   appearanceError: string;
   appearanceScope: 'app' | 'page' | null;
   openAppearance(scope: 'app' | 'page'): void;
+  closeAppearance(): void;
   pageAppearanceDrafts: Record<
     string,
     { overrides: AppearanceOverrides; revision: number; status: 'saving' | 'error'; error?: string }
@@ -70,6 +71,9 @@ export function appearanceSlice(
         dialog: null,
         sidebarOpen: false,
       });
+    },
+    closeAppearance() {
+      set({ appearanceScope: null });
     },
     pageAppearanceDrafts: {},
     changePageAppearance(id, overrides) {

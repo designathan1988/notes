@@ -113,9 +113,7 @@ export default function Library() {
         {database && (
           <button
             className="text-button"
-            onClick={() =>
-              useWorkspace.setState({ templateFilters: { ...state.templateFilters, database: '' } })
-            }
+            onClick={() => state.setTemplateFilters({ ...state.templateFilters, database: '' })}
           >
             Clear database filter
           </button>

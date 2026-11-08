@@ -1,3 +1,4 @@
+import { setTemplateMetadata } from '../pages/revisions.js';
 import { assertObject, DomainError, type Actor } from '../../../../packages/contracts/src/index.js';
 import type { Database } from '../platform/database.js';
 import { Access } from '../access/service.js';
@@ -61,10 +62,7 @@ export async function markTemplate(
   templateValues(values);
   if (!databaseId && Object.keys(values).length)
     throw new DomainError('INVALID', 'Record defaults require a database reference.');
-  await db.query(
-    'UPDATE pages SET template_root_id=$2,template_database_id=$3,template_values=$4 WHERE id=$1',
-    [pageId, rootId, databaseId, JSON.stringify(values)],
-  );
+  await setTemplateMetadata(db, pageId, { rootId, databaseId, values });
 }
 
 export async function assertSourceReady(db: Database, id: string) {

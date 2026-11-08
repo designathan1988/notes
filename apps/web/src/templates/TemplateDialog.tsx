@@ -11,10 +11,7 @@ export function TemplateDialog() {
     [error, setError] = useState('');
   if (!request || !page) return null;
   return (
-    <Dialog
-      title="Save as template"
-      onClose={() => useWorkspace.setState({ templateDialog: null })}
-    >
+    <Dialog title="Save as template" onClose={() => useWorkspace.getState().closeTemplateDialog()}>
       <form
         onSubmit={async (event) => {
           event.preventDefault();
@@ -63,7 +60,7 @@ export function TemplateDialog() {
           <button
             type="button"
             className="button"
-            onClick={() => useWorkspace.setState({ templateDialog: null })}
+            onClick={() => useWorkspace.getState().closeTemplateDialog()}
           >
             Cancel
           </button>

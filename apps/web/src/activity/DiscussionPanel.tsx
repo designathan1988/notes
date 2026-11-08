@@ -248,7 +248,7 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
                   <button
                     type="button"
                     aria-label="Remove quoted context"
-                    onClick={() => useWorkspace.setState({ discussionQuote: null })}
+                    onClick={() => useWorkspace.getState().clearDiscussionQuote()}
                   >
                     <X size={12} />
                   </button>

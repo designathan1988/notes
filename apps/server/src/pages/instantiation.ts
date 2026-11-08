@@ -1,3 +1,4 @@
+import { findOperation, recordOperation } from '../platform/operations.js';
 import { createHash } from 'node:crypto';
 import * as Y from 'yjs';
 import type { JSONContent } from '@tiptap/core';
@@ -130,10 +131,8 @@ export class PageInstances {
         const access = new Access(tx);
         await access.guardWorkspace(workspace);
         await access.requireWorkspace(actor, workspace, 'editor');
-        const [existing] = await tx.query<{ result: { hash: string; pageId: string } }>(
-          'SELECT result FROM operation_keys WHERE id=$1',
-          [key],
-        );
+        const result = await findOperation<{ hash: string; pageId: string }>(tx, key);
+        const existing = result && { result };
         if (existing) {
           if (existing.result.hash !== hash)
             throw new DomainError(
@@ -167,10 +166,7 @@ export class PageInstances {
           kind,
           content: source,
         });
-        await tx.query(
-          'INSERT INTO operation_keys (id,result) VALUES ($1,$2) ON CONFLICT (id) DO UPDATE SET result=excluded.result',
-          [key, JSON.stringify({ hash, pageId: page.id })],
-        );
+        await recordOperation(tx, key, { hash, pageId: page.id }, { replace: true });
         return new Pages(tx).get(actor, page.id);
       });
     } finally {

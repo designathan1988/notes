@@ -138,7 +138,7 @@ export class DocumentSession {
       for (const listener of this.observers) listener();
     }
     if (!this.destroyed && useWorkspace.getState().selectedId === this.page.id)
-      useWorkspace.setState({ saveStatus: status });
+      useWorkspace.getState().setSaveStatus(status);
   }
   setReadOnly(readOnly: boolean) {
     if (this.destroyed || this.readOnly === readOnly) return;

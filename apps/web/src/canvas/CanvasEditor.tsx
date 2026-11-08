@@ -165,7 +165,7 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
     if (typeof request.command === 'object') api.current.revealHeading(request.command.heading);
     else if (request.command === 'link' && editor.isEditable) setLink('card');
     if (useWorkspace.getState().editorRequest === request)
-      useWorkspace.setState({ editorRequest: null });
+      useWorkspace.getState().clearEditorRequest();
   }, [request, editor, page.id]);
   if (!editor) return null;
   async function insertFile(file: File, point?: Point, existingId?: string) {

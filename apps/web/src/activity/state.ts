@@ -26,6 +26,8 @@ type HistoryPage = { entries: HistoryEntry[]; hasMore: boolean; version: number;
 type PageMove = 'next' | 'previous' | 'first';
 export type VersionPreview = { entry: HistoryEntry; content: JSONContent; version: number };
 export interface ActivitySlice {
+  clearDiscussionQuote(): void;
+  closeVersionPreview(): void;
   pagePanelTab: PagePanelTab;
   discussionQuote: { pageId: string; text: string } | null;
   discussionDrafts: Record<string, { pageId: string; body: string }>;
@@ -97,6 +99,12 @@ export function activitySlice(
     }
   };
   return {
+    clearDiscussionQuote() {
+      set({ discussionQuote: null });
+    },
+    closeVersionPreview() {
+      set({ versionPreview: null });
+    },
     pagePanelTab: 'details',
     discussionQuote: null,
     discussionDrafts: {},

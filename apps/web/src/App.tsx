@@ -13,7 +13,7 @@ export default function App() {
   const invitation = new URLSearchParams(location.search).get('invite');
   useEffect(() => {
     void useWorkspace.getState().initialize();
-    const online = () => useWorkspace.setState({ online: navigator.onLine });
+    const online = () => useWorkspace.getState().setOnline(navigator.onLine);
     const keys = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.isComposing) return;
       const command = shortcutCommand(event, useWorkspace.getState());
@@ -73,7 +73,10 @@ export default function App() {
     ) : !workspaceCount ? (
       <WorkspaceSetup />
     ) : (
-      <><AppearanceProjection /><Workspace /></>
+      <>
+        <AppearanceProjection />
+        <Workspace />
+      </>
     )
   ) : (
     <SignIn />

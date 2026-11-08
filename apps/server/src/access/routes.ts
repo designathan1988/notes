@@ -15,11 +15,7 @@ export function accessRoutes(app: FastifyInstance, access: Access, auth: Auth) {
   app.get<{ Params: { workspace: string } }>(
     '/api/workspaces/:workspace/members',
     async (request) => {
-      await access.requireWorkspace(request.actor, request.params.workspace);
-      return access.db.query(
-        'SELECT u.id,u.name,u.email,m.role FROM member m JOIN "user" u ON u.id=m.user_id WHERE m.organization_id=$1 ORDER BY m.created_at',
-        [request.params.workspace],
-      );
+      return access.members(request.actor, request.params.workspace);
     },
   );
   app.patch<{ Params: { workspace: string; user: string } }>(

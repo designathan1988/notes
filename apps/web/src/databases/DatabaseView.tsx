@@ -144,7 +144,7 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
           view={(edit) => setViewEditing(edit ? 'edit' : 'new')}
           templates={() => {
             const state = useWorkspace.getState();
-            useWorkspace.setState({ templateFilters: { database: id, kind: 'record', q: '' } });
+            useWorkspace.getState().setTemplateFilters({ database: id, kind: 'record', q: '' });
             state.navigate(null, 'templates');
           }}
         />

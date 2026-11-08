@@ -1,3 +1,4 @@
+import { findOperation, recordOperation } from '../platform/operations.js';
 import { createHash, randomUUID } from 'node:crypto';
 import type {
   Actor,
@@ -62,10 +63,8 @@ export class TemplateClone {
       const access = new Access(tx);
       await access.guardWorkspace(workspace);
       await access.requireWorkspace(actor, workspace, 'editor');
-      const [existing] = await tx.query<{ result: Receipt }>(
-        'SELECT result FROM operation_keys WHERE id=$1',
-        [key],
-      );
+      const receipt = await findOperation<Receipt>(tx, key);
+      const existing = receipt && { result: receipt };
       if (existing) {
         if (existing.result.intent !== intent)
           throw new DomainError(
@@ -84,10 +83,7 @@ export class TemplateClone {
           content: doc,
         });
         await markTemplate(tx, actor, page.id, page.id);
-        await tx.query('INSERT INTO operation_keys(id,result) VALUES($1,$2)', [
-          key,
-          JSON.stringify({ intent, pageId: page.id }),
-        ]);
+        await recordOperation(tx, key, { intent, pageId: page.id });
         return new Pages(tx).get(actor, page.id);
       } finally {
         doc.destroy();
@@ -138,10 +134,8 @@ export class TemplateClone {
         .update(JSON.stringify([actor.userId, workspace, input.requestId]))
         .digest('hex');
     const replay = async (tx: Database) => {
-      const [row] = await tx.query<{ result: Receipt }>(
-        'SELECT result FROM operation_keys WHERE id=$1',
-        [key],
-      );
+      const receipt = await findOperation<Receipt>(tx, key);
+      const row = receipt && { result: receipt };
       if (!row) return null;
       if (row.result.intent !== intent)
         throw new DomainError(
@@ -361,10 +355,7 @@ export class TemplateClone {
             });
           }
         }
-        await tx.query('INSERT INTO operation_keys(id,result) VALUES($1,$2)', [
-          key,
-          JSON.stringify({ intent, pageId: rootId }),
-        ]);
+        await recordOperation(tx, key, { intent, pageId: rootId });
         return { page: await pages.get(actor, rootId), created: true };
       });
       published = result.created;

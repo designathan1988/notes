@@ -43,9 +43,7 @@ export function RecordInspector({
         .then((page) => {
           const state = useWorkspace.getState();
           if (active && identity === state.user?.id && workspace === state.workspaceId)
-            useWorkspace.setState({
-              pages: [...state.pages.filter((item) => item.id !== pageId), page],
-            });
+            state.receivePage(page);
         })
         .catch(useWorkspace.getState().setError);
     const previous = document.activeElement as HTMLElement;

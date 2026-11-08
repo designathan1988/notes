@@ -15,7 +15,7 @@ export function Search() {
   const [kind, setKind] = useState('');
   const [after, setAfter] = useState('');
   const [tag, setTag] = useState(useWorkspace.getState().searchTag);
-  useEffect(() => () => useWorkspace.setState({ searchTag: '' }), []);
+  useEffect(() => () => useWorkspace.getState().clearSearchTag(), []);
   const [active, setActive] = useState(0);
   const resultsRef = useRef<HTMLDivElement>(null);
   const recent: SearchResult[] = recentIds.flatMap((id) => {

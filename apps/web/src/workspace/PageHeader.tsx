@@ -38,7 +38,7 @@ export function PageHeader({
     if (focusTitleId === page.id && title.current) {
       title.current.focus();
       title.current.select();
-      useWorkspace.setState({ focusTitleId: null });
+      useWorkspace.getState().clearTitleFocus();
     }
   }, [focusTitleId, page.id]);
   useLayoutEffect(() => {

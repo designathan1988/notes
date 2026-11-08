@@ -69,7 +69,7 @@ export function Workspace() {
     const resize = () => {
       // A responsive change must not unmount work already open in a native dialog.
       if (narrow.matches && !document.querySelector('dialog[open]'))
-        useWorkspace.setState({ contextOpen: false });
+        useWorkspace.getState().setContextOpen(false);
     };
     resize();
     narrow.addEventListener('change', resize);
@@ -120,7 +120,7 @@ export function Workspace() {
           <div className="mobile-brand">
             <IconButton
               label="Open navigation"
-              onClick={() => useWorkspace.setState({ sidebarOpen: true })}
+              onClick={() => useWorkspace.getState().setSidebarOpen(true)}
             >
               <Menu />
             </IconButton>
@@ -179,7 +179,7 @@ export function Workspace() {
             {['document', 'canvas'].includes(state.view) && (
               <IconButton
                 label={state.contextOpen ? 'Close page details' : 'Open page details'}
-                onClick={() => useWorkspace.setState({ contextOpen: !state.contextOpen })}
+                onClick={() => useWorkspace.getState().setContextOpen(!state.contextOpen)}
               >
                 <PanelRight />
               </IconButton>
@@ -210,10 +210,7 @@ export function Workspace() {
                 Retry connection
               </button>
             )}
-            <IconButton
-              label="Dismiss error"
-              onClick={() => useWorkspace.setState({ error: null })}
-            >
+            <IconButton label="Dismiss error" onClick={() => useWorkspace.getState().clearError()}>
               <X />
             </IconButton>
           </div>
@@ -262,7 +259,7 @@ export function Workspace() {
                   <button
                     className="details-scrim"
                     aria-label="Close page details overlay"
-                    onClick={() => useWorkspace.setState({ contextOpen: false })}
+                    onClick={() => useWorkspace.getState().setContextOpen(false)}
                   />
                   <PagePanel />
                 </>
@@ -318,7 +315,7 @@ export function Workspace() {
                   <button
                     className="details-scrim"
                     aria-label="Close page details overlay"
-                    onClick={() => useWorkspace.setState({ contextOpen: false })}
+                    onClick={() => useWorkspace.getState().setContextOpen(false)}
                   />
                   <PagePanel />
                 </>

@@ -64,7 +64,7 @@ export function HistoryPanel({ pageId, canWrite }: { pageId: string; canWrite: b
         <div role="region" aria-label="Version preview" className="version-preview">
           <button
             className="activity-back"
-            onClick={() => useWorkspace.setState({ versionPreview: null })}
+            onClick={() => useWorkspace.getState().closeVersionPreview()}
           >
             <ArrowLeft size={14} />
             All versions

@@ -14,17 +14,13 @@ export function CommandPalette() {
     list.current?.querySelectorAll('[role=option]')[active]?.scrollIntoView({ block: 'nearest' });
   }, [active]);
   const run = (command: AppCommand) => {
-    useWorkspace.setState({ commandOpen: false });
+    useWorkspace.getState().hideCommands();
     void Promise.resolve(command.run(useWorkspace.getState())).catch(
       useWorkspace.getState().setError,
     );
   };
   return (
-    <Dialog
-      title="Command palette"
-      onClose={() => useWorkspace.setState({ commandOpen: false })}
-      wide
-    >
+    <Dialog title="Command palette" onClose={() => useWorkspace.getState().hideCommands()} wide>
       <div className="command-input">
         <Search size={19} />
         <input

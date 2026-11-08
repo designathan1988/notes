@@ -63,7 +63,7 @@ export function AppearancePanel() {
       ),
     );
   }, [pageScope, page?.id]);
-  const close = () => useWorkspace.setState({ appearanceScope: null });
+  const close = () => useWorkspace.getState().closeAppearance();
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     if (matchMedia('(max-width:1050px)').matches)
@@ -129,14 +129,14 @@ export function AppearancePanel() {
         <div className="appearance-scopes" role="group" aria-label="Appearance scope">
           <button
             aria-pressed={!pageScope}
-            onClick={() => useWorkspace.setState({ appearanceScope: 'app' })}
+            onClick={() => useWorkspace.getState().openAppearance('app')}
           >
             App
           </button>
           <button
             aria-pressed={pageScope}
             disabled={!page}
-            onClick={() => useWorkspace.setState({ appearanceScope: 'page' })}
+            onClick={() => useWorkspace.getState().openAppearance('page')}
           >
             This page
           </button>

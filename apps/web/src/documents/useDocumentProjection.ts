@@ -18,7 +18,7 @@ export function useDocumentProjection(editor: Editor | null, pageId: string) {
         (JSON.stringify(state.outline) !== JSON.stringify(projection.headings) ||
           JSON.stringify(state.linkedPageIds) !== JSON.stringify(projection.links))
       )
-        useWorkspace.setState({ outline: projection.headings, linkedPageIds: projection.links });
+        useWorkspace.getState().setDocumentProjection(projection.headings, projection.links);
       setStatistics(documentStatistics(editor.state.doc));
     };
     const schedule = () => {

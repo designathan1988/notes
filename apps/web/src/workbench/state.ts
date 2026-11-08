@@ -16,6 +16,9 @@ export const tabKey = (pageId: string | null, view: View) =>
     : view;
 export type EditorCommand = 'find' | 'templates' | 'link' | { heading: number };
 export interface WorkbenchSlice {
+  hideCommands(): void;
+  clearEditorRequest(): void;
+  clearTitleFocus(): void;
   graphPlacements: Record<string, Point>;
   graphCameras: Record<string, Camera>;
   canvasCameras: Record<string, Camera>;
@@ -166,6 +169,15 @@ export function workbenchSlice(
     },
     showCommands() {
       set({ commandOpen: true, dialog: null });
+    },
+    hideCommands() {
+      set({ commandOpen: false });
+    },
+    clearEditorRequest() {
+      set({ editorRequest: null });
+    },
+    clearTitleFocus() {
+      set({ focusTitleId: null });
     },
     toggleSidebar() {
       set({ sidebarCollapsed: !get().sidebarCollapsed });

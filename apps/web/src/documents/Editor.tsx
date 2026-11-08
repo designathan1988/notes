@@ -246,7 +246,7 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
     else if (request.command === 'link' && editor.isEditable) setLinkOpen(true);
     else if (request.command === 'templates' && editor.isEditable) setTemplatesOpen(true);
     if (useWorkspace.getState().editorRequest === request)
-      useWorkspace.setState({ editorRequest: null });
+      useWorkspace.getState().clearEditorRequest();
   }, [request, editor, session]);
   const role = useWorkspace(
     (state) => state.workspaces.find((item) => item.id === state.workspaceId)?.role,

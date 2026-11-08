@@ -72,7 +72,7 @@ export function ContextPanel() {
               onClick={() => {
                 useWorkspace.getState().requestEditor({ heading: index });
                 if (matchMedia('(max-width:1050px)').matches)
-                  useWorkspace.setState({ contextOpen: false });
+                  useWorkspace.getState().setContextOpen(false);
               }}
             >
               {heading.text}
@@ -187,7 +187,7 @@ export function ContextPanel() {
           onClick={() => {
             useWorkspace.getState().requestEditor('link');
             if (matchMedia('(max-width:1050px)').matches)
-              useWorkspace.setState({ contextOpen: false });
+              useWorkspace.getState().setContextOpen(false);
           }}
         >
           <Link2 />

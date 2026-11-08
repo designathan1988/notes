@@ -36,7 +36,7 @@ export function PagePanel() {
         if ((event.target as HTMLElement).closest('dialog')) return;
         if (event.key === 'Escape') {
           event.stopPropagation();
-          useWorkspace.setState({ contextOpen: false });
+          useWorkspace.getState().setContextOpen(false);
         }
         if (event.key === 'Tab' && matchMedia('(max-width:1050px)').matches) {
           const controls = [
@@ -66,7 +66,7 @@ export function PagePanel() {
         </h2>
         <IconButton
           label="Close page details"
-          onClick={() => useWorkspace.setState({ contextOpen: false })}
+          onClick={() => useWorkspace.getState().setContextOpen(false)}
         >
           <X />
         </IconButton>

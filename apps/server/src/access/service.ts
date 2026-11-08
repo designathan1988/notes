@@ -26,6 +26,13 @@ export class Access {
     await this.guardWorkspace(location.workspace_id);
     return this.requirePage(actor, id, 'write', includeDeleted);
   }
+  async members(actor: Actor, workspace: string) {
+    await this.requireWorkspace(actor, workspace);
+    return this.db.query<{ id: string; name: string; email: string; role: Role }>(
+      'SELECT u.id,u.name,u.email,m.role FROM member m JOIN "user" u ON u.id=m.user_id WHERE m.organization_id=$1 ORDER BY m.created_at',
+      [workspace],
+    );
+  }
   async requireWorkspace(actor: Actor, workspace: string, minimum: Role = 'viewer'): Promise<Role> {
     const [member] = await this.db.query<{ role: Role }>(
       'SELECT role FROM member WHERE organization_id=$1 AND user_id=$2',

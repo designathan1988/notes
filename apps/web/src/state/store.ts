@@ -86,6 +86,13 @@ export interface WorkspaceState
   toggleExpanded(id: string): void;
   toggleFavorite(id: string): void;
   signOut(): Promise<void>;
+  setSidebarOpen(open: boolean): void;
+  setContextOpen(open: boolean): void;
+  setOnline(online: boolean): void;
+  clearError(): void;
+  setSaveStatus(status: SaveStatus): void;
+  setDocumentProjection(outline: { level: number; text: string }[], links: string[]): void;
+  receivePage(page: Page): void;
 }
 export const useWorkspace = create<WorkspaceState>((set, get) => ({
   ...databaseSlice(set, get),
@@ -119,6 +126,27 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   online: true,
   outline: [],
   linkedPageIds: [],
+  setSidebarOpen(open) {
+    set({ sidebarOpen: open });
+  },
+  setContextOpen(open) {
+    set({ contextOpen: open });
+  },
+  setOnline(online) {
+    set({ online });
+  },
+  clearError() {
+    set({ error: null });
+  },
+  setSaveStatus(status) {
+    set({ saveStatus: status });
+  },
+  setDocumentProjection(outline, links) {
+    set({ outline, linkedPageIds: links });
+  },
+  receivePage(page) {
+    set({ pages: [...get().pages.filter((item) => item.id !== page.id), page] });
+  },
   async initialize() {
     set({ loading: true, error: null, connectionError: false });
     try {

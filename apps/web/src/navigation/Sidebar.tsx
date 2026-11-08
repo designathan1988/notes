@@ -155,7 +155,7 @@ export function Sidebar() {
     const keys = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        useWorkspace.setState({ sidebarOpen: false });
+        useWorkspace.getState().setSidebarOpen(false);
       }
       if (event.key === 'Tab') {
         const items = [
@@ -204,7 +204,7 @@ export function Sidebar() {
         className={`sidebar-scrim ${state.sidebarOpen ? 'visible' : ''}`}
         aria-hidden="true"
         tabIndex={-1}
-        onClick={() => useWorkspace.setState({ sidebarOpen: false })}
+        onClick={() => useWorkspace.getState().setSidebarOpen(false)}
       />
       <aside
         ref={drawer}
@@ -218,7 +218,7 @@ export function Sidebar() {
         <button
           className="mobile-navigation-close icon-button"
           aria-label="Close navigation drawer"
-          onClick={() => useWorkspace.setState({ sidebarOpen: false })}
+          onClick={() => useWorkspace.getState().setSidebarOpen(false)}
         >
           <X size={18} />
         </button>

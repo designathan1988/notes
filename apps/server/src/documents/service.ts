@@ -1,3 +1,4 @@
+import { markPagesChanged } from '../pages/revisions.js';
 import * as Y from 'yjs';
 import type { Database } from '../platform/database.js';
 import {
@@ -160,14 +161,7 @@ export class Documents {
           authorId: actor.userId,
           kind: 'automatic',
         });
-        await tx.query(
-          'UPDATE pages SET index_revision=index_revision+1,updated_at=now() WHERE id=$1',
-          [pageId],
-        );
-        await tx.query(
-          'INSERT INTO outbox (page_id,version) SELECT id,index_revision FROM pages WHERE id=$1',
-          [pageId],
-        );
+        await markPagesChanged(tx, [pageId], { touch: true });
         return {
           acknowledgement: {
             type: 'durable',

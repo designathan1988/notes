@@ -1,3 +1,4 @@
+import { advancePageGeneration } from '../pages/revisions.js';
 import * as Y from 'yjs';
 import type { Database } from '../platform/database.js';
 import { Access } from '../access/service.js';
@@ -120,9 +121,7 @@ export class History {
               }),
           );
         });
-        await tx.query('UPDATE pages SET generation=generation+1,revision=revision+1 WHERE id=$1', [
-          pageId,
-        ]);
+        await advancePageGeneration(tx, pageId);
         const ack = await new Documents(tx).save(
           actor,
           pageId,

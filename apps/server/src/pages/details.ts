@@ -1,3 +1,4 @@
+import { enqueueProjection } from '../knowledge/queue.js';
 import type { Database } from '../platform/database.js';
 import { Access } from '../access/service.js';
 import {
@@ -14,7 +15,12 @@ import { changePageProperties } from './properties.js';
 import { changeDefaults } from '../templates/defaults.js';
 
 const controls = /[\u0000-\u001f\u007f]/u;
-export function validatePresentation(input: { icon?: unknown; cover?: unknown; tags?: unknown; appearance?: unknown }) {
+export function validatePresentation(input: {
+  icon?: unknown;
+  cover?: unknown;
+  tags?: unknown;
+  appearance?: unknown;
+}) {
   const result: Pick<PageUpdate, 'icon' | 'cover' | 'tags' | 'appearance'> = {};
   if (input.appearance !== undefined) result.appearance = validateAppearance(input.appearance);
   if (input.icon !== undefined) {
@@ -141,10 +147,7 @@ export class PageDetails {
           JSON.stringify(presentation.appearance ?? page.appearance ?? {}),
         ],
       );
-      await tx.query(
-        'INSERT INTO outbox (page_id,version) SELECT id,index_revision FROM pages WHERE id=$1',
-        [id],
-      );
+      await enqueueProjection(tx, [id]);
       return toPage({
         ...updated,
         private_owner_id: page.accessOwnerId,

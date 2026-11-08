@@ -1,3 +1,4 @@
+import { enqueueMissingProjections } from './queue.js';
 import type { FastifyInstance } from 'fastify';
 import { Knowledge } from './service.js';
 import type { Database } from '../platform/database.js';
@@ -12,9 +13,7 @@ export async function knowledgeRoutes(app: FastifyInstance, db: Database) {
     },
   );
   let processing: Promise<void> | null = null;
-  await db.query(
-    'INSERT INTO outbox (page_id,version) SELECT id,index_revision FROM pages p WHERE NOT EXISTS (SELECT 1 FROM search_projection s WHERE s.page_id=p.id)',
-  );
+  await enqueueMissingProjections(db);
   const tick = () => {
     if (!processing)
       processing = knowledge

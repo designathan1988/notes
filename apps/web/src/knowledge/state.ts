@@ -6,6 +6,7 @@ import type {
 import { api, json } from '../state/api.js';
 import type { WorkspaceState } from '../state/store.js';
 export interface KnowledgeSlice {
+  clearSearchTag(): void;
   references: Record<
     string,
     { status: 'ready'; page: GraphData['nodes'][number] } | { status: 'unavailable' | 'error' }
@@ -132,6 +133,9 @@ export function knowledgeSlice(
     },
     searchResults: [],
     searchTag: '',
+    clearSearchTag() {
+      set({ searchTag: '' });
+    },
     openTagSearch(tag) {
       set({ searchTag: tag, dialog: 'search' });
     },

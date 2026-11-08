@@ -1,3 +1,5 @@
+import { createDatabaseDefinition } from '../databases/definitions.js';
+import { enqueueProjection } from '../knowledge/queue.js';
 import type { Database } from '../platform/database.js';
 import {
   DomainError,
@@ -65,14 +67,34 @@ export class Pages {
           parent?.templateRootId ?? null,
         ],
       );
-      if (input.kind === 'database')
-        await tx.query('INSERT INTO database_definitions (page_id) VALUES ($1)', [id]);
-      await tx.query('INSERT INTO outbox (page_id,version) VALUES ($1,1)', [id]);
+      if (input.kind === 'database') await createDatabaseDefinition(tx, id);
+      await enqueueProjection(tx, [id]);
       return toPage(row);
     });
   }
   get(actor: Actor, id: string): Promise<Page> {
     return this.access.requirePage(actor, id, 'read');
+  }
+  async favorites(actor: Actor, workspace: string): Promise<string[]> {
+    const visible = new Set((await this.list(actor, workspace)).map((page) => page.id));
+    const rows = await this.db.query<{ page_id: string }>(
+      'SELECT page_id FROM favorites WHERE user_id=$1',
+      [actor.userId],
+    );
+    return rows.map((row) => row.page_id).filter((id) => visible.has(id));
+  }
+  async setFavorite(actor: Actor, id: string, favorite: boolean): Promise<void> {
+    await this.get(actor, id);
+    if (favorite)
+      await this.db.query(
+        'INSERT INTO favorites (user_id,page_id) VALUES ($1,$2) ON CONFLICT DO NOTHING',
+        [actor.userId, id],
+      );
+    else
+      await this.db.query('DELETE FROM favorites WHERE user_id=$1 AND page_id=$2', [
+        actor.userId,
+        id,
+      ]);
   }
   list(actor: Actor, workspace: string, trash = false): Promise<Page[]> {
     return this.access.visiblePages(actor, workspace, trash);

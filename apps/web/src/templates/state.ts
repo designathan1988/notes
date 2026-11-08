@@ -17,6 +17,8 @@ export interface DefaultsReview {
   issues: { fieldId: string; name: string; message: string }[];
 }
 export interface TemplateSlice {
+  setTemplateFilters(filters: TemplateFilters): void;
+  closeTemplateDialog(): void;
   templateIds: string[];
   templateFilters: TemplateFilters;
   templateCursor: { after: string; id: string } | null;
@@ -84,6 +86,12 @@ export function templateSlice(
       await ensureCopySourcesSaved(user, workspace, context.pages);
     });
   return {
+    setTemplateFilters(filters) {
+      set({ templateFilters: filters });
+    },
+    closeTemplateDialog() {
+      set({ templateDialog: null });
+    },
     templateIds: [],
     templateFilters: {},
     templateCursor: null,

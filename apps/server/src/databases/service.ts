@@ -1,3 +1,4 @@
+import { markPagesChanged } from '../pages/revisions.js';
 import type { Database } from '../platform/database.js';
 import {
   DomainError,
@@ -119,17 +120,18 @@ export class Databases {
           )
             changed.push({ page_id: row.page_id, computed_values: computed });
         }
-        if (changed.length)
-          await tx.query(
-            `WITH changed AS (
-          UPDATE records r SET computed_values=x.computed_values
+        if (changed.length) {
+          const updated = await tx.query<{ page_id: string }>(
+            `UPDATE records r SET computed_values=x.computed_values
           FROM jsonb_to_recordset($1::jsonb) AS x(page_id text,computed_values jsonb)
-          WHERE r.page_id=x.page_id AND r.database_id=$2 RETURNING r.page_id
-        ), indexed AS (
-          UPDATE pages p SET index_revision=index_revision+1 FROM changed c WHERE p.id=c.page_id RETURNING p.id,p.index_revision
-        ) INSERT INTO outbox (page_id,version) SELECT id,index_revision FROM indexed`,
+          WHERE r.page_id=x.page_id AND r.database_id=$2 RETURNING r.page_id`,
             [JSON.stringify(changed), id],
           );
+          await markPagesChanged(
+            tx,
+            updated.map((row) => row.page_id),
+          );
+        }
         cursor = rows[rows.length - 1].page_id;
       }
       await tx.query(

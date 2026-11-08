@@ -73,31 +73,12 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
       request.query.direction,
     ),
   );
-  app.get<{ Params: { workspace: string } }>(
-    '/api/workspaces/:workspace/favorites',
-    async (request) => {
-      const visible = await pages.list(request.actor, request.params.workspace);
-      const rows = await pages.db.query<{ page_id: string }>(
-        'SELECT page_id FROM favorites WHERE user_id=$1',
-        [request.actor.userId],
-      );
-      const ids = new Set(visible.map((page) => page.id));
-      return rows.map((row) => row.page_id).filter((id) => ids.has(id));
-    },
+  app.get<{ Params: { workspace: string } }>('/api/workspaces/:workspace/favorites', (request) =>
+    pages.favorites(request.actor, request.params.workspace),
   );
   app.put<{ Params: { id: string } }>('/api/pages/:id/favorite', async (request) => {
-    await pages.get(request.actor, request.params.id);
     assertObject(request.body);
-    if (request.body.favorite === true)
-      await pages.db.query(
-        'INSERT INTO favorites (user_id,page_id) VALUES ($1,$2) ON CONFLICT DO NOTHING',
-        [request.actor.userId, request.params.id],
-      );
-    else
-      await pages.db.query('DELETE FROM favorites WHERE user_id=$1 AND page_id=$2', [
-        request.actor.userId,
-        request.params.id,
-      ]);
+    await pages.setFavorite(request.actor, request.params.id, request.body.favorite === true);
     return { ok: true };
   });
   app.get<{ Params: { workspace: string }; Querystring: { trash?: string } }>(
