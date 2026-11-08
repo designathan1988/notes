@@ -8,11 +8,12 @@ import type * as Y from 'yjs';
 import { safeEmbedSource } from './embeds.js';
 import { toggleBlock, toggleTitle, toggleContent, highlight } from './structure.js';
 import { canvasExtensions, isCanvas, validateCanvas } from './canvas.js';
+import { webExtensions, validateWeb } from './web.js';
 import type { PageKind } from '../../contracts/src/index.js';
 export const documentRoot = Node.create({
   name: 'doc',
   topNode: true,
-  content: 'block+ | canvasRoot',
+  content: 'block+ | canvasRoot | webPage',
 });
 
 export const pageLink = Node.create({
@@ -201,6 +202,7 @@ export const editorExtensions = () => [
     link: { openOnClick: false, defaultProtocol: 'https' },
   }),
   ...canvasExtensions(),
+  ...webExtensions(),
   TableKit.configure({ table: { resizable: false } }),
   TaskList,
   TaskItem.configure({ nested: true }),
@@ -221,6 +223,7 @@ export function validateDocument(content: JSONContent, kind?: PageKind) {
   const node = editorSchema().nodeFromJSON(content);
   node.check();
   validateCanvas(node.toJSON());
+  validateWeb(node.toJSON());
   if (kind && (kind === 'canvas') !== isCanvas(node.toJSON()))
     throw new Error('The content does not match this page type.');
   return node;
