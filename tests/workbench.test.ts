@@ -97,3 +97,48 @@ test('preferred saved database views persist as scoped references and clear on i
   state.clearWorkbench();
   expect(state.tableSelections).toEqual({});
 });
+
+test('graph positions and cameras are scoped visual preferences, never page mutations or copied titles', () => {
+  const { get, set, saved } = fixture(),
+    state = get();
+  state.placeGraphNode('shared', { x: 125, y: -80 });
+  state.setGraphCamera('all', { x: 12, y: 24, zoom: 1.4 });
+  expect(state.pages).toEqual([]);
+  expect(state.graphPlacements).toEqual({ shared: { x: 125, y: -80 } });
+  expect([...saved.values()].join('')).not.toContain('title');
+  set({ user: { id: 'bob' } as WorkspaceState['user'] });
+  state.restoreWorkbench();
+  expect(state.graphPlacements).toEqual({});
+  expect(state.graphCameras).toEqual({});
+  set({ user: { id: 'alice' } as WorkspaceState['user'] });
+  state.restoreWorkbench();
+  expect(state.graphPlacements.shared).toEqual({ x: 125, y: -80 });
+  expect(state.graphCameras.all).toEqual({ x: 12, y: 24, zoom: 1.4 });
+  state.placeGraphNode('shared', null);
+  expect(state.graphPlacements).toEqual({});
+  state.placeGraphNode('another', { x: 4, y: 5 });
+  state.resetGraphPositions();
+  expect(state.graphPlacements).toEqual({});
+  state.clearWorkbench();
+  expect(state.graphCameras).toEqual({});
+});
+
+test('corrupt spatial preferences cannot introduce nonfinite coordinates or unbounded zoom', () => {
+  const { get, saved } = fixture(),
+    state = get();
+  saved.set(
+    'note:workbench:v1:alice:studio',
+    JSON.stringify({
+      graphPlacements: {
+        valid: { x: 2, y: 3 },
+        broken: { x: null, y: 2 },
+        huge: { x: 1e30, y: 1 },
+        'bad/key': { x: 1, y: 1 },
+      },
+      graphCameras: { all: { x: 0, y: 0, zoom: -1 }, valid: { x: 1, y: 2, zoom: 1 } },
+    }),
+  );
+  state.restoreWorkbench();
+  expect(state.graphPlacements).toEqual({ valid: { x: 2, y: 3 } });
+  expect(state.graphCameras).toEqual({ valid: { x: 1, y: 2, zoom: 1 } });
+});

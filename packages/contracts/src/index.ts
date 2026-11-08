@@ -143,6 +143,7 @@ export interface KnowledgeLink {
 export interface GraphData {
   nodes: Pick<Page, 'id' | 'title' | 'kind'>[];
   edges: { source: string; target: string }[];
+  truncated?: boolean;
 }
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export interface DiscussionMessage {

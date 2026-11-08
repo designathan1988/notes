@@ -9,6 +9,7 @@ import { Access } from '../access/service.js';
 import { documentJSON, projectDocument } from '../../../../packages/editor/src/schema.js';
 import * as Y from 'yjs';
 import { compileFormulas } from '../../../../packages/data/src/formulas.js';
+import { DomainError } from '../../../../packages/contracts/src/index.js';
 import type { PageProperties } from '../../../../packages/contracts/src/index.js';
 export class Knowledge {
   constructor(readonly db: Database) {}
@@ -161,22 +162,36 @@ export class Knowledge {
   async graph(actor: Actor, workspace: string, center?: string): Promise<GraphData> {
     const access = new Access(this.db);
     const scope = await access.scope(actor, workspace);
-    if (center) await access.requirePage(actor, center, 'read');
-    const edges = await this.db.query<{ source: string; target: string }>(
-      `${scope.sql} SELECT l.source_id AS source,l.target_id AS target FROM link_projection l JOIN visible s ON s.id=l.source_id JOIN visible t ON t.id=l.target_id WHERE s.template_root_id IS NULL AND t.template_root_id IS NULL ${center ? 'AND (l.source_id=$3 OR l.target_id=$3)' : ''} LIMIT 500`,
-      center ? [...scope.params, center] : scope.params,
+    if (center) {
+      const page = await access.requirePage(actor, center, 'read');
+      if (page.workspaceId !== workspace || page.templateRootId)
+        throw new DomainError('FORBIDDEN', 'This graph center is unavailable.');
+    }
+    const params = center ? [...scope.params, center] : scope.params;
+    // Degree is computed only from authorized endpoints; private links cannot influence ranking.
+    const graphScope = `${scope.sql}, graph_links AS (
+      SELECT l.source_id AS source,l.target_id AS target FROM link_projection l
+      JOIN visible s ON s.id=l.source_id JOIN visible t ON t.id=l.target_id
+      WHERE s.template_root_id IS NULL AND t.template_root_id IS NULL
+      ${center ? 'AND (l.source_id=$3 OR l.target_id=$3)' : ''})`;
+    const limit = center ? 60 : 180;
+    const candidates = await this.db.query<GraphData['nodes'][number]>(
+      `${graphScope}, degrees AS (
+        SELECT id,count(*) AS degree FROM (SELECT source AS id FROM graph_links UNION ALL SELECT target AS id FROM graph_links) endpoints GROUP BY id
+      ) SELECT p.id,p.title,p.kind FROM visible p LEFT JOIN degrees d ON d.id=p.id
+      WHERE p.template_root_id IS NULL ${center ? 'AND (p.id=$3 OR d.id IS NOT NULL)' : ''}
+      ORDER BY ${center ? 'CASE WHEN p.id=$3 THEN 0 ELSE 1 END,' : ''}coalesce(d.degree,0) DESC,p.position,p.id LIMIT ${limit + 1}`,
+      params,
     );
-    const ids = center
-      ? [...new Set([center, ...edges.flatMap((edge) => [edge.source, edge.target])])].slice(0, 60)
-      : null;
-    const nodes = await this.db.query<GraphData['nodes'][number]>(
-      `${scope.sql} SELECT id,title,kind FROM visible WHERE template_root_id IS NULL ${ids ? 'AND id=ANY($3::text[])' : ''} ORDER BY position LIMIT 180`,
-      ids ? [...scope.params, ids] : scope.params,
+    const nodes = candidates.slice(0, limit);
+    const edges = await this.db.query<GraphData['edges'][number]>(
+      `${graphScope} SELECT source,target FROM graph_links WHERE source=ANY($${params.length + 1}::text[]) AND target=ANY($${params.length + 1}::text[]) ORDER BY source,target LIMIT 501`,
+      [...params, nodes.map((node) => node.id)],
     );
-    const allowed = new Set(nodes.map((node) => node.id));
     return {
       nodes,
-      edges: edges.filter((edge) => allowed.has(edge.source) && allowed.has(edge.target)),
+      edges: edges.slice(0, 500),
+      truncated: candidates.length > limit || edges.length > 500,
     };
   }
 }

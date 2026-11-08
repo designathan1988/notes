@@ -52,3 +52,35 @@ test('search snippets and graph immediately respect private roots and membership
     code: 'FORBIDDEN',
   });
 });
+
+test('local graph centers belong to the requested workspace and cannot expose template definitions', async () => {
+  await db.query(
+    "INSERT INTO member (id,organization_id,user_id,role) VALUES ('owner-other','other','owner','owner')",
+  );
+  const other = await rawPage(db, { workspace: 'other', title: 'Different workspace' });
+  await expect(knowledge.graph(actor, 'studio', other)).rejects.toMatchObject({
+    code: 'FORBIDDEN',
+  });
+  const definition = await rawPage(db, { title: 'Template definition' });
+  await db.query('UPDATE pages SET template_root_id=id WHERE id=$1', [definition]);
+  await expect(knowledge.graph(actor, 'studio', definition)).rejects.toMatchObject({
+    code: 'FORBIDDEN',
+  });
+});
+
+test('bounded graph results prioritize connected visible knowledge, report truncation and remain deterministic', async () => {
+  await db.query(`INSERT INTO pages (id,workspace_id,title,created_by,kind,visibility,position)
+    SELECT 'spatial-' || n,'studio','Spatial page ' || n,'owner','document','workspace',n FROM generate_series(1,190) n`);
+  const hub = 'spatial-190',
+    linked = 'spatial-189';
+  await knowledge.applyProjection(hub, 1, { text: '', links: [linked] });
+  const graph = await knowledge.graph(actor, 'studio');
+  expect(graph.nodes).toHaveLength(180);
+  expect(graph.truncated).toBe(true);
+  expect(graph.nodes.some((node) => node.id === hub)).toBe(true);
+  expect(graph.edges).toContainEqual({ source: hub, target: linked });
+  expect(await knowledge.graph(actor, 'studio')).toEqual(graph);
+  const local = await knowledge.graph(actor, 'studio', hub);
+  expect(local.nodes.map((node) => node.id).sort()).toEqual([linked, hub]);
+  expect(local.truncated).toBe(false);
+});

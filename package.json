@@ -34,6 +34,7 @@
     "@tiptap/starter-kit": "3.33.0",
     "@tiptap/y-tiptap": "^3.2.0",
     "better-auth": "1.7.18",
+    "d3-force": "3.0.1",
     "drizzle-orm": "0.45.4",
     "fastify": "^5.6.0",
     "fflate": "^0.8.2",
@@ -48,6 +49,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",
+    "@types/d3-force": "3.0.10",
     "@types/node": "^24.0.0",
     "@types/pg": "^8.15.0",
     "@types/react": "^19.0.0",

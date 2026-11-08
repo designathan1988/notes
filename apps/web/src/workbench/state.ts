@@ -2,6 +2,7 @@ import type { Page } from '../../../../packages/contracts/src/index.js';
 import type { View, WorkspaceState } from '../state/store.js';
 import { browserPreferences, type PreferenceStorage } from './preferences.js';
 import { navigateHistory, type WorkbenchHistory } from './history.js';
+import { validPoint, validCamera, type Point, type Camera } from '../spatial/geometry.js';
 export interface WorkbenchTab {
   id: string;
   pageId: string | null;
@@ -11,6 +12,11 @@ export interface WorkbenchTab {
 export const tabKey = (pageId: string | null, view: View) =>
   view === 'document' || (view === 'database' && pageId) ? `${view}:${pageId ?? ''}` : view;
 export interface WorkbenchSlice {
+  graphPlacements: Record<string, Point>;
+  graphCameras: Record<string, Camera>;
+  placeGraphNode(id: string, point: Point | null): void;
+  setGraphCamera(view: string, camera: Camera): void;
+  resetGraphPositions(): void;
   tableSelections: Record<string, string>;
   selectTableView(databaseId: string, viewId: string): void;
   tabs: WorkbenchTab[];
@@ -61,11 +67,39 @@ export function workbenchSlice(
           recentPageIds: get().recentPageIds,
           sidebarCollapsed: get().sidebarCollapsed,
           tableSelections: get().tableSelections,
+          graphPlacements: get().graphPlacements,
+          graphCameras: get().graphCameras,
         }),
       );
   };
   const activeKey = () => tabKey(get().selectedId, get().view);
   return {
+    graphPlacements: {},
+    graphCameras: {},
+    resetGraphPositions() {
+      set({ graphPlacements: {} });
+      persist();
+    },
+    placeGraphNode(id, point) {
+      if (!/^[\w-]{1,128}$/u.test(id) || (point !== null && !validPoint(point))) return;
+      const graphPlacements = { ...get().graphPlacements };
+      if (point) graphPlacements[id] = { x: point.x, y: point.y };
+      else delete graphPlacements[id];
+      set({ graphPlacements: Object.fromEntries(Object.entries(graphPlacements).slice(-1000)) });
+      persist();
+    },
+    setGraphCamera(view, camera) {
+      if (!/^[\w-]{1,128}$/u.test(view) || !validCamera(camera)) return;
+      set({
+        graphCameras: Object.fromEntries(
+          Object.entries({
+            ...get().graphCameras,
+            [view]: { x: camera.x, y: camera.y, zoom: camera.zoom },
+          }).slice(-200),
+        ),
+      });
+      persist();
+    },
     tableSelections: {},
     selectTableView(databaseId, viewId) {
       set({ tableSelections: { ...get().tableSelections, [databaseId]: viewId } });
@@ -196,6 +230,8 @@ export function workbenchSlice(
       persist();
     },
     restoreWorkbench() {
+      let graphPlacements: Record<string, Point> = {},
+        graphCameras: Record<string, Camera> = {};
       let tableSelections: Record<string, string> = {};
       let tabs: WorkbenchTab[] = [],
         recentPageIds: string[] = [],
@@ -204,6 +240,25 @@ export function workbenchSlice(
         const key = scope(),
           saved = key ? preferences.getItem(key) : null,
           value = saved ? JSON.parse(saved) : {};
+        const spatialEntries = (input: unknown) =>
+          input && typeof input === 'object' && !Array.isArray(input)
+            ? Object.entries(input).filter(([id]) => /^[\w-]{1,128}$/u.test(id))
+            : [];
+        graphPlacements = Object.fromEntries(
+          spatialEntries(value.graphPlacements)
+            .filter(([, point]) => validPoint(point))
+            .slice(-1000)
+            .map(([id, point]) => [id, { x: (point as Point).x, y: (point as Point).y }]),
+        );
+        graphCameras = Object.fromEntries(
+          spatialEntries(value.graphCameras)
+            .filter(([, camera]) => validCamera(camera))
+            .slice(-200)
+            .map(([id, camera]) => [
+              id,
+              { x: (camera as Camera).x, y: (camera as Camera).y, zoom: (camera as Camera).zoom },
+            ]),
+        );
         if (Array.isArray(value.tabs))
           tabs = value.tabs
             .filter(
@@ -246,6 +301,8 @@ export function workbenchSlice(
       }
       set({
         tabs,
+        graphPlacements,
+        graphCameras,
         tableSelections,
         recentPageIds,
         sidebarCollapsed,
@@ -261,6 +318,8 @@ export function workbenchSlice(
       const key = scope();
       if (key) preferences.removeItem(key);
       set({
+        graphPlacements: {},
+        graphCameras: {},
         tableSelections: {},
         tabs: [],
         closedTabs: [],
