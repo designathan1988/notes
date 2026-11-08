@@ -1,4 +1,15 @@
-import { Copy, ExternalLink, FileText, FolderInput, Plus, Star, Trash2, Type } from 'lucide-react';
+import {
+  Copy,
+  ExternalLink,
+  FileText,
+  FolderInput,
+  Plus,
+  Star,
+  Trash2,
+  Type,
+  History,
+  MessageSquare,
+} from 'lucide-react';
 import type { Page } from '../../../../packages/contracts/src/index.js';
 import { useWorkspace } from '../state/store.js';
 import { Popover } from '../ui/Popover.js';
@@ -76,6 +87,29 @@ export function PageActions({
         >
           <FileText />
           Export text as Markdown
+        </button>
+        <hr />
+        <button
+          onClick={() =>
+            run(() => {
+              state.navigate(page.id);
+              state.openPagePanel('discussion');
+            })
+          }
+        >
+          <MessageSquare />
+          Comments
+        </button>
+        <button
+          onClick={() =>
+            run(() => {
+              state.navigate(page.id);
+              state.openPagePanel('history');
+            })
+          }
+        >
+          <History />
+          Version history
         </button>
         <hr />
         <button

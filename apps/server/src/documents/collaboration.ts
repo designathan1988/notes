@@ -5,7 +5,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Database } from '../platform/database.js';
 import type { Auth } from '../identity/auth.js';
 import { Access } from '../access/service.js';
-import { Documents } from './service.js';
+import { Documents, type DurableAcknowledgement } from './service.js';
 import { DomainError, type Actor } from '../../../../packages/contracts/src/index.js';
 import { requestHeaders } from '../platform/http.js';
 type Context = { actor: Actor; generation: number };
@@ -142,10 +142,12 @@ export async function collaborationRoutes(
     socket.on('close', () => client.handleClose());
     socket.on('error', () => client.handleClose());
   });
-  const invalidate = async (workspace: string) => {
+  const invalidate = async (workspace: string, pageId?: string) => {
     const pages = await db.query<{ id: string; generation: number }>(
-      'SELECT id,generation FROM pages WHERE workspace_id=$1',
-      [workspace],
+      pageId
+        ? `WITH RECURSIVE branch AS (SELECT id,generation FROM pages WHERE id=$2 AND workspace_id=$1 UNION ALL SELECT p.id,p.generation FROM pages p JOIN branch b ON p.parent_id=b.id) SELECT * FROM branch`
+        : 'SELECT id,generation FROM pages WHERE workspace_id=$1',
+      pageId ? [workspace, pageId] : [workspace],
     );
     for (const page of pages) hub.closeConnections(`${page.id}:${page.generation}`);
   };
@@ -165,5 +167,14 @@ export async function collaborationRoutes(
       readOnly: (await access.requireWorkspace(request.actor, page.workspaceId)) === 'viewer',
     };
   });
-  return { hub, invalidate };
+  const publish = async (ack: DurableAcknowledgement) => {
+    // Restore commits a new generation. Old writers must retain their recovery copy,
+    // rather than merge unsent text into deleted structures from a prior generation.
+    for (const name of hub.documents.keys()) {
+      const identity = documentIdentity(name);
+      if (identity.pageId === ack.pageId && identity.generation !== ack.generation)
+        hub.closeConnections(name);
+    }
+  };
+  return { hub, invalidate, publish };
 }

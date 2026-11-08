@@ -117,6 +117,34 @@ export interface GraphData {
   edges: { source: string; target: string }[];
 }
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
+export interface DiscussionMessage {
+  id: string;
+  threadId: string;
+  authorId: string | null;
+  authorName: string;
+  body: string;
+  createdAt: string;
+}
+export const ACTIVITY_PAGE_SIZE = 40;
+export interface DiscussionThread {
+  id: string;
+  pageId: string;
+  quote: string;
+  resolved: boolean;
+  revision: number;
+  messageCount: number;
+  firstMessage: DiscussionMessage;
+  updatedAt: string;
+}
+export interface HistoryEntry {
+  id: string;
+  pageId: string;
+  label: string;
+  kind: 'automatic' | 'named' | 'before-restore';
+  authorName: string;
+  version: number;
+  createdAt: string;
+}
 export const MAX_DOCUMENT_BYTES = 4 * 1024 * 1024;
 export class DomainError extends Error {
   constructor(

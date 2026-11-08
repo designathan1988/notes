@@ -43,6 +43,7 @@ export class DocumentSession {
     return this.userId;
   }
   private readonly recoveryWrites = new Set<Promise<void>>();
+  private recoverySerial = 0;
   readonly doc = new Y.Doc();
   provider!: HocuspocusProvider;
   recovery: Recovery | null = null;
@@ -77,6 +78,17 @@ export class DocumentSession {
       throw new Error('This document changed. Reload before recovering it.');
     try {
       this.recovery = await openRecovery();
+      const retained = (await this.recovery.pendingIdentity(this.userId)).some(
+        (key) =>
+          key.startsWith(`${this.userId}:${this.page.workspaceId}:${this.page.id}:`) &&
+          key !== this.key,
+      );
+      if (retained)
+        useWorkspace
+          .getState()
+          .setError(
+            'A local draft from before this page was restored is retained on this device. Download local drafts in Settings → Data to recover your work.',
+          );
       const update = await this.recovery.read(this.key);
       if (update) {
         Y.applyUpdate(this.doc, update, 'recovery');
@@ -164,12 +176,14 @@ export class DocumentSession {
   private onOnline = () => {
     if (!this.destroyed)
       void api<{ generation: number }>(`/pages/${this.page.id}/document`)
-        .then((config) => {
+        .then(async (config) => {
           if (this.destroyed) return;
-          if (config.generation !== this.page.generation)
+          if (config.generation !== this.page.generation) {
+            await Promise.allSettled(this.recoveryWrites);
             throw new Error(
               'The document generation changed. Keep your local recovery copy before reopening it.',
             );
+          }
           return this.provider.connect();
         })
         .catch((error) => {
@@ -193,15 +207,16 @@ export class DocumentSession {
     if (!this.readOnly)
       this.setStatus(this.dirty ? (this.connected ? 'saving' : 'connecting') : 'saved');
     if (this.recovery) {
+      const serial = ++this.recoverySerial;
       const writing = this.recovery
         .write(this.key, Y.encodeStateAsUpdate(this.doc), this.dirty)
         .then(() => {
-          if (this.destroyed) return;
+          if (this.destroyed || serial !== this.recoverySerial) return;
           this.locallySaved = true;
           if (!this.connected && this.dirty) this.setStatus('local');
         })
         .catch(() => {
-          if (this.destroyed) return;
+          if (this.destroyed || serial !== this.recoverySerial) return;
           this.locallySaved = false;
           if (!this.connected) this.setStatus('error');
           useWorkspace.getState().setError('Local recovery storage is full or unavailable.');

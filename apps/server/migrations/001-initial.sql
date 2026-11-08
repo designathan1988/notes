@@ -19,6 +19,25 @@ ALTER TABLE pages ADD COLUMN IF NOT EXISTS index_revision bigint NOT NULL DEFAUL
 ALTER TABLE pages ADD COLUMN IF NOT EXISTS private_owner_id text REFERENCES "user"(id);
 CREATE TABLE IF NOT EXISTS documents (page_id text PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE, state bytea NOT NULL, version bigint NOT NULL DEFAULT 1, updated_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE IF NOT EXISTS document_checkpoints (id text PRIMARY KEY, page_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE, state bytea NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+ALTER TABLE document_checkpoints ADD COLUMN IF NOT EXISTS author_id text REFERENCES "user"(id) ON DELETE SET NULL;
+ALTER TABLE document_checkpoints ADD COLUMN IF NOT EXISTS label text NOT NULL DEFAULT '';
+ALTER TABLE document_checkpoints ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'automatic';
+ALTER TABLE document_checkpoints ADD COLUMN IF NOT EXISTS version bigint NOT NULL DEFAULT 0;
+ALTER TABLE document_checkpoints ALTER COLUMN version SET DEFAULT 0;
+UPDATE document_checkpoints SET version=0 WHERE version=1 AND author_id IS NULL AND label='' AND kind='automatic';
+CREATE INDEX IF NOT EXISTS document_checkpoints_page_created ON document_checkpoints(page_id,created_at DESC,id);
+CREATE TABLE IF NOT EXISTS discussion_threads (
+  id text PRIMARY KEY, page_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+  quote text NOT NULL DEFAULT '', resolved boolean NOT NULL DEFAULT false, revision integer NOT NULL DEFAULT 1,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS discussion_threads_page_updated ON discussion_threads(page_id,resolved,updated_at DESC,id);
+CREATE TABLE IF NOT EXISTS discussion_messages (
+  id text PRIMARY KEY, thread_id text NOT NULL REFERENCES discussion_threads(id) ON DELETE CASCADE,
+  author_id text REFERENCES "user"(id) ON DELETE SET NULL, body text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS discussion_messages_thread_created ON discussion_messages(thread_id,created_at,id);
 CREATE TABLE IF NOT EXISTS database_definitions (page_id text PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE, fields jsonb NOT NULL DEFAULT '[]');
 ALTER TABLE database_definitions ADD COLUMN IF NOT EXISTS revision integer NOT NULL DEFAULT 1;
 CREATE TABLE IF NOT EXISTS records (page_id text PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE, database_id text NOT NULL REFERENCES database_definitions(page_id), values jsonb NOT NULL DEFAULT '{}', revision integer NOT NULL DEFAULT 1);

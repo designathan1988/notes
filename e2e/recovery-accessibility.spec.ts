@@ -107,8 +107,11 @@ test('sign out preserves disconnected drafts after navigating away, then succeed
   const { readFile } = await import('node:fs/promises');
   const { unzipSync, strFromU8 } = await import('fflate');
   const archive = unzipSync(new Uint8Array(await readFile((await download.path())!)));
-  expect(strFromU8(archive[`${note.id}.json`])).toContain('Keep this disconnected draft');
-  expect(archive[`${note.id}.yjs`].byteLength).toBeGreaterThan(0);
+  const manifest = JSON.parse(strFromU8(archive['recovery.json'])),
+    draft = manifest.drafts.find((entry: { pageId: string }) => entry.pageId === note.id);
+  expect(manifest.version).toBe(2);
+  expect(strFromU8(archive[draft.jsonFile])).toContain('Keep this disconnected draft');
+  expect(archive[draft.yjsFile].byteLength).toBeGreaterThan(0);
   await page.getByRole('dialog').getByRole('button', { name: 'Close dialog', exact: true }).click();
   await page.getByRole('button', { name: 'All pages', exact: true }).click();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();

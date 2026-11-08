@@ -12,7 +12,14 @@ export async function downloadLocalDrafts() {
     const keys = await recovery.pendingIdentity(identity);
     if (!keys.length) throw new Error('There are no unsynchronized local drafts.');
     const files: Record<string, Uint8Array> = {};
-    const index: { pageId: string; workspaceId: string; generation: string; title: string }[] = [];
+    const index: {
+      pageId: string;
+      workspaceId: string;
+      generation: string;
+      title: string;
+      jsonFile: string;
+      yjsFile: string;
+    }[] = [];
     for (const key of keys) {
       const state = await recovery.read(key);
       if (!state) continue;
@@ -21,11 +28,19 @@ export async function downloadLocalDrafts() {
       const doc = new Y.Doc();
       try {
         Y.applyUpdate(doc, state);
-        files[`${pageId}.json`] = strToU8(
+        const filename = `${pageId}-generation-${generation}`;
+        files[`${filename}.json`] = strToU8(
           JSON.stringify(yDocToProsemirrorJSON(doc, 'default'), null, 2),
         );
-        files[`${pageId}.yjs`] = state;
-        index.push({ pageId, workspaceId, generation, title: page?.title ?? 'Local draft' });
+        files[`${filename}.yjs`] = state;
+        index.push({
+          pageId,
+          workspaceId,
+          generation,
+          title: page?.title ?? 'Local draft',
+          jsonFile: `${filename}.json`,
+          yjsFile: `${filename}.yjs`,
+        });
       } finally {
         doc.destroy();
       }
@@ -34,7 +49,7 @@ export async function downloadLocalDrafts() {
       JSON.stringify(
         {
           format: 'note-local-recovery',
-          version: 1,
+          version: 2,
           exportedAt: new Date().toISOString(),
           drafts: index,
         },

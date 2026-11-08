@@ -1,11 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEditorState, type Editor } from '@tiptap/react';
-import { Bold, Italic, Underline, Strikethrough, Code2, Highlighter, Link } from 'lucide-react';
+import {
+  Bold,
+  Italic,
+  Underline,
+  Strikethrough,
+  Code2,
+  Highlighter,
+  Link,
+  MessageSquarePlus,
+} from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
 
-export function SelectionToolbar({ editor, link }: { editor: Editor; link(): void }) {
+export function SelectionToolbar({
+  editor,
+  link,
+  pageId,
+}: {
+  editor: Editor;
+  link(): void;
+  pageId: string;
+}) {
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+  const surface = useRef<HTMLDivElement>(null);
   const obscured = useWorkspace(
     (state) => !!state.dialog || state.commandOpen || state.sidebarOpen,
   );
@@ -35,12 +53,16 @@ export function SelectionToolbar({ editor, link }: { editor: Editor; link(): voi
       }
       const start = editor.view.coordsAtPos(from),
         end = editor.view.coordsAtPos(to),
-        bounds = editor.view.dom.getBoundingClientRect();
+        bounds = editor.view.dom.getBoundingClientRect(),
+        width = surface.current?.getBoundingClientRect().width ?? 290;
       // Keep the block gutter reachable while a text selection is active.
       setPosition({
         left: Math.max(
           8,
-          Math.min(Math.max(bounds.left + 24, (start.left + end.left) / 2 - 130), innerWidth - 268),
+          Math.min(
+            Math.max(bounds.left + 24, (start.left + end.left) / 2 - width / 2),
+            innerWidth - width - 8,
+          ),
         ),
         top: Math.max(
           88,
@@ -76,6 +98,7 @@ export function SelectionToolbar({ editor, link }: { editor: Editor; link(): voi
   ] as const;
   return createPortal(
     <div
+      ref={surface}
       className="selection-toolbar"
       role="toolbar"
       aria-label="Selection formatting"
@@ -102,6 +125,21 @@ export function SelectionToolbar({ editor, link }: { editor: Editor; link(): voi
         onClick={link}
       >
         <Link size={16} />
+      </button>
+      <button
+        type="button"
+        aria-label="Comment on selection"
+        title="Comment on selection"
+        onClick={() => {
+          const { from, to } = editor.state.selection;
+          const quote = editor.state.doc.textBetween(from, to, ' ').slice(0, 1000);
+          editor.commands.blur();
+          const state = useWorkspace.getState();
+          if (state.selectedId !== pageId) state.openTab(pageId);
+          useWorkspace.getState().openPagePanel('discussion', quote);
+        }}
+      >
+        <MessageSquarePlus size={16} />
       </button>
     </div>,
     document.body,

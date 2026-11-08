@@ -108,7 +108,7 @@ export function workbenchSlice(
       persist();
     },
     togglePageDetails() {
-      set({ contextOpen: !get().contextOpen });
+      set({ contextOpen: !get().contextOpen, pagePanelTab: 'details' });
     },
     focusPageTitle() {
       set({ focusTitleId: get().selectedId });

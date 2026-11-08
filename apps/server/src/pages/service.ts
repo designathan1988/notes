@@ -17,7 +17,7 @@ type CreatePage = {
   description?: string;
 };
 export class Pages {
-  onChanged: (workspace: string) => void = () => {};
+  onChanged: (workspace: string, pageId: string) => void = () => {};
   constructor(
     readonly db: Database,
     readonly access = new Access(db),
@@ -154,7 +154,7 @@ export class Pages {
       row.position = insertion + 1;
       return toPage(row);
     });
-    this.onChanged(result.workspaceId);
+    this.onChanged(result.workspaceId, id);
     return result;
   }
   private async setTrash(actor: Actor, id: string, trash: boolean) {
@@ -168,7 +168,7 @@ export class Pages {
       );
       return page.workspaceId;
     });
-    this.onChanged(workspace);
+    this.onChanged(workspace, id);
   }
   trash(actor: Actor, id: string) {
     return this.setTrash(actor, id, true);

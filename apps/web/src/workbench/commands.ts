@@ -149,6 +149,22 @@ export const commands: AppCommand[] = [
     run: (state) => state.focusPageTitle(),
   },
   {
+    id: 'page.comments',
+    title: 'Open page comments',
+    group: 'Page',
+    keywords: 'discussion reply resolve',
+    available: (state) => !!page(state),
+    run: (state) => state.openPagePanel('discussion'),
+  },
+  {
+    id: 'page.history',
+    title: 'Open version history',
+    group: 'Page',
+    keywords: 'restore revision snapshot',
+    available: (state) => !!page(state),
+    run: (state) => state.openPagePanel('history'),
+  },
+  {
     id: 'workspace.sidebar',
     title: 'Toggle sidebar',
     group: 'Workspace',

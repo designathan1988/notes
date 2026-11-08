@@ -21,6 +21,7 @@ The generated reference `C:/Users/Jonathan/.codex/generated_images/01a1b7b6-be13
 - Record titles remain owned by page metadata. Record value revisions and page metadata revisions travel together so a stale table title cannot overwrite a newer page-header edit. Shared row refreshes preserve schema references and focused cell controls.
 - Saved-view preferences contain only view IDs, scoped through the workbench preference owner. A database change remounts its local tools; it cannot retain a record panel from the preceding database. Background removal reconciliation preserves overlays opened while the request was pending.
 - Discussion and history: separate server owners, current ACL checks within transactions, author/role rules and retained edit history. Restore uses the canonical document pipeline and produces a new durable state.
+- Restore advances the document generation after retaining its previous state. Older local drafts remain separate and exportable. The canonical page-instantiation command used for reusable templates must also recover these drafts as independent private pages, clear only a matching retained draft after the new copy is durable, and allow sign-out without discarding newer edits.
 - Discovery: graph remains a derived read model; spatial canvas is a separately owned persistent document capability with stable page references. Tags/properties remain structured metadata rather than duplicated document prose.
 
 ## Acceptance

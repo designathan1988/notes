@@ -15,6 +15,8 @@ import { storageFromEnvironment } from './attachments/storage.js';
 import { transferRoutes } from './transfer/routes.js';
 import { invitationRoutes } from './access/invitation-routes.js';
 import { workspaceEvents } from './access/events.js';
+import { discussionRoutes } from './discussion/routes.js';
+import { historyRoutes } from './history/routes.js';
 
 export async function createApp(options: { db: Database; auth?: Auth }) {
   const app = Fastify({ bodyLimit: 4 * 1024 * 1024, logger: false });
@@ -89,6 +91,8 @@ export async function createApp(options: { db: Database; auth?: Auth }) {
   accessRoutes(app, access, auth);
   pageRoutes(app, pages);
   const collaboration = await collaborationRoutes(app, options.db, auth, access);
+  discussionRoutes(app, options.db);
+  historyRoutes(app, options.db, collaboration.publish);
   const storage = storageFromEnvironment();
   attachmentRoutes(app, options.db, storage);
   databaseRoutes(app, options.db);
@@ -96,8 +100,8 @@ export async function createApp(options: { db: Database; auth?: Auth }) {
   transferRoutes(app, options.db, storage);
   invitationRoutes(app, options.db);
   workspaceEvents(app, access);
-  pages.onChanged = (workspace) => {
-    void collaboration.invalidate(workspace);
+  pages.onChanged = (workspace, pageId) => {
+    void collaboration.invalidate(workspace, pageId);
   };
   return app;
 }

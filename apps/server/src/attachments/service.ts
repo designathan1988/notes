@@ -7,6 +7,7 @@ import {
 } from '../../../../packages/contracts/src/index.js';
 import { Access } from '../access/service.js';
 import { randomUUID } from 'node:crypto';
+import { availableStorage } from '../platform/storage-capacity.js';
 export interface Attachment {
   id: string;
   pageId: string;
@@ -84,11 +85,7 @@ export class Attachments {
         );
         if (existing) return map(existing);
       }
-      const [usage] = await tx.query<{ used: string; limit: string }>(
-        `SELECT coalesce(sum(a.size),0)::text AS used,coalesce((SELECT storage_limit FROM beta_entitlements WHERE workspace_id=$1),1073741824)::text AS limit FROM attachments a JOIN pages p ON p.id=a.page_id WHERE p.workspace_id=$1`,
-        [page.workspaceId],
-      );
-      if (Number(usage.used) + input.size > Number(usage.limit))
+      if (input.size > (await availableStorage(tx, page.workspaceId)))
         throw new DomainError('LIMIT', 'This workspace has reached its storage allowance.');
       const id = internalId ?? randomUUID();
       const [row] = await tx.query<Row>(

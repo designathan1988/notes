@@ -11,12 +11,13 @@ import { knowledgeSlice, type KnowledgeSlice } from '../knowledge/state.js';
 import { navigationSlice, type NavigationSlice } from '../navigation/state.js';
 import { openRecovery } from '../documents/recovery.js';
 import { workbenchSlice, type WorkbenchSlice } from '../workbench/state.js';
+import { activitySlice, type ActivitySlice } from '../activity/state.js';
 type User = { id: string; name: string; email: string };
 const pageWrites = new Map<string, Promise<void>>();
 export type View = 'document' | 'database' | 'graph' | 'all';
 export type Dialog = 'search' | 'new-page' | 'page-menu' | 'settings' | 'invite' | 'move' | null;
 export interface WorkspaceState
-  extends DatabaseSlice, KnowledgeSlice, NavigationSlice, WorkbenchSlice {
+  extends DatabaseSlice, KnowledgeSlice, NavigationSlice, WorkbenchSlice, ActivitySlice {
   user: User | null;
   workspaces: Workspace[];
   workspaceId: string | null;
@@ -69,6 +70,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   ...knowledgeSlice(set, get),
   ...navigationSlice(set, get),
   ...workbenchSlice(set, get),
+  ...activitySlice(set, get),
   user: null,
   workspaces: [],
   workspaceId: null,
@@ -119,6 +121,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     }
   },
   async chooseWorkspace(workspaceId) {
+    get().clearActivity();
     set({
       workspaceId,
       pages: [],
@@ -199,6 +202,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
           workspaces: session.workspaces,
           ...(get().connectionError ? { error: null, connectionError: false } : {}),
         });
+        get().pruneActivity(snapshot.pages.map((page) => page.id));
         get().invalidateKnowledge();
         get().reconcileTabs(snapshot.pages);
         if (selected !== null && snapshot.selectedId !== selected) {
@@ -216,6 +220,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       }
     } catch (error) {
       if (error instanceof ApiError && [401, 403].includes(error.status)) {
+        get().clearActivity();
         set({
           pages: [],
           selectedId: null,
@@ -349,6 +354,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       }
     }
     get().clearWorkbench();
+    get().clearActivity();
     set({
       user: null,
       pages: [],

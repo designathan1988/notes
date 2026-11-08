@@ -1,6 +1,5 @@
-import { X, FileText, Link2, Network } from 'lucide-react';
+import { FileText, Link2, Network } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
-import { IconButton } from '../ui/IconButton.js';
 import { useEffect, useState } from 'react';
 export function ContextPanel() {
   const [tab, setTab] = useState<'outline' | 'links'>('outline');
@@ -33,16 +32,7 @@ export function ContextPanel() {
     .filter((page): page is NonNullable<typeof page> => !!page);
   const current = pages.find((page) => page.id === selectedId);
   return (
-    <aside className="context-panel" aria-label="Page details">
-      <header>
-        <h2>Page details</h2>
-        <IconButton
-          label="Close page details"
-          onClick={() => useWorkspace.setState({ contextOpen: false })}
-        >
-          <X />
-        </IconButton>
-      </header>
+    <div className="details-content">
       <div className="details-tabs" role="tablist" aria-label="Page details view">
         <button role="tab" aria-selected={tab === 'outline'} onClick={() => setTab('outline')}>
           Outline
@@ -166,6 +156,6 @@ export function ContextPanel() {
         <Link2 />
         Connect an idea
       </button>
-    </aside>
+    </div>
   );
 }

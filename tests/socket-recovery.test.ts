@@ -60,8 +60,8 @@ test('a transient failed socket write and its dependent delta both become durabl
       )
       .toBe('AB');
     const pages = new Pages(db);
-    pages.onChanged = (workspace) => {
-      void collaboration.invalidate(workspace);
+    pages.onChanged = (workspace, pageId) => {
+      void collaboration.invalidate(workspace, pageId);
     };
     const other = await pages.create({ userId: 'owner' }, 'studio', { title: 'Other page' });
     const disconnected = new Promise<boolean>((resolve) =>
@@ -71,6 +71,8 @@ test('a transient failed socket write and its dependent delta both become durabl
       title: 'Renamed other page',
       revision: other.revision,
     });
+    await pages.move({ userId: 'owner' }, other.id, null, other.revision + 1, true);
+    await pages.trash({ userId: 'owner' }, other.id);
     expect(
       await Promise.race([
         disconnected,

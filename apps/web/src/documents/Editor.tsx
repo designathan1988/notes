@@ -317,7 +317,9 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
         />
       )}
       <EditorContent editor={editor} />
-      {!session.readOnly && <SelectionToolbar editor={editor} link={() => setLinkOpen(true)} />}
+      {!session.readOnly && (
+        <SelectionToolbar editor={editor} pageId={session.page.id} link={() => setLinkOpen(true)} />
+      )}
       {!session.readOnly && (
         <BlockControls
           editor={editor}

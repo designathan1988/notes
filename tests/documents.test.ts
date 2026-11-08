@@ -78,6 +78,45 @@ test('never considers a partial state-vector acknowledgement fully saved', () =>
   local.destroy();
   empty.destroy();
 });
+
+test('replaying an already durable update does not invalidate a history comparison version', async () => {
+  const id = await rawPage(db),
+    doc = await documents.load(id);
+  try {
+    doc.getText('probe').insert(0, 'Durable once');
+    const first = await documents.save(actor, id, Y.encodeStateAsUpdate(doc), 1);
+    const replay = await documents.save(actor, id, Y.encodeStateAsUpdate(doc), 1);
+    expect(replay.version).toBe(first.version);
+    doc.getText('probe').delete(0, 7);
+    const deletion = await documents.save(actor, id, Y.encodeStateAsUpdate(doc), 1);
+    expect(deletion.version).toBeGreaterThan(replay.version);
+  } finally {
+    doc.destroy();
+  }
+});
+
+test('an out-of-order dependent update remains durable while waiting for its predecessor', async () => {
+  const id = await rawPage(db),
+    local = await documents.load(id);
+  try {
+    const initial = Y.encodeStateVector(local);
+    local.getText('probe').insert(0, 'A');
+    const predecessor = Y.encodeStateAsUpdate(local, initial),
+      afterFirst = Y.encodeStateVector(local);
+    local.getText('probe').insert(1, 'B');
+    const dependent = Y.encodeStateAsUpdate(local, afterFirst);
+    await documents.save(actor, id, dependent, 1);
+    await new Documents(db).save(actor, id, predecessor, 1);
+    const reopened = await new Documents(db).load(id);
+    try {
+      expect(reopened.getText('probe').toString()).toBe('AB');
+    } finally {
+      reopened.destroy();
+    }
+  } finally {
+    local.destroy();
+  }
+});
 test('does not acknowledge a save before the actual database transaction commits', async () => {
   let release!: () => void;
   let reached!: () => void;

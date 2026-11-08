@@ -12,7 +12,7 @@ import {
   editorSchema,
   emptyDocument,
 } from '../../../../packages/editor/src/schema.js';
-import { randomUUID } from 'node:crypto';
+import { captureCheckpoint } from '../history/checkpoints.js';
 export interface DurableAcknowledgement {
   type: 'durable';
   pageId: string;
@@ -88,19 +88,38 @@ export class Documents {
       await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`document:${pageId}`]);
       const doc = await new Documents(tx).load(pageId);
       try {
+        const before = Y.encodeStateAsUpdate(doc);
         Y.applyUpdate(doc, update);
         editorSchema().nodeFromJSON(documentJSON(doc)).check();
         const state = Y.encodeStateAsUpdate(doc);
+        if (Buffer.from(before).equals(Buffer.from(state))) {
+          const [stored] = await tx.query<{ version: string | number }>(
+            'SELECT version FROM documents WHERE page_id=$1',
+            [pageId],
+          );
+          return {
+            type: 'durable',
+            pageId,
+            generation,
+            version: Number(stored.version),
+            stateVector: Buffer.from(Y.encodeStateVector(doc)).toString('base64'),
+            snapshot: Buffer.from(Y.encodeSnapshot(Y.snapshot(doc))).toString('base64'),
+          };
+        }
         if (state.length > MAX_DOCUMENT_BYTES)
           throw new DomainError('LIMIT', 'This document exceeds the current size limit.');
         const [row] = await tx.query<{ version: string | number }>(
           'UPDATE documents SET state=$2,version=version+1,updated_at=now() WHERE page_id=$1 RETURNING version',
           [pageId, Buffer.from(state)],
         );
-        await tx.query(
-          `INSERT INTO document_checkpoints (id,page_id,state) SELECT $1,$2,$3 WHERE NOT EXISTS (SELECT 1 FROM document_checkpoints WHERE page_id=$2 AND created_at>now()-interval '10 minutes')`,
-          [randomUUID(), pageId, Buffer.from(state)],
-        );
+        await captureCheckpoint(tx, {
+          pageId,
+          workspaceId: page.workspaceId,
+          state,
+          version: Number(row.version),
+          authorId: actor.userId,
+          kind: 'automatic',
+        });
         await tx.query(
           'UPDATE pages SET index_revision=index_revision+1,updated_at=now() WHERE id=$1',
           [pageId],

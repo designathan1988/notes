@@ -14,13 +14,14 @@ import {
   ArrowLeft,
   ArrowRight,
   Command,
+  MessageSquare,
 } from 'lucide-react';
 import { useEffect, lazy, Suspense } from 'react';
 import { useWorkspace } from '../state/store.js';
 import { Sidebar } from '../navigation/Sidebar.js';
 import { IconButton } from '../ui/IconButton.js';
 import { PageHeader } from './PageHeader.js';
-import { ContextPanel } from '../knowledge/ContextPanel.js';
+import { PagePanel } from '../activity/PagePanel.js';
 import { DatabaseView } from '../databases/DatabaseView.js';
 import { Search } from '../knowledge/Search.js';
 import { Settings } from '../settings/Settings.js';
@@ -167,6 +168,11 @@ export function Workspace() {
                 <PanelRight />
               </IconButton>
             )}
+            {page && !globalView && (
+              <IconButton label="Open comments" onClick={() => state.openPagePanel('discussion')}>
+                <MessageSquare size={17} />
+              </IconButton>
+            )}
             <IconButton
               label="Page actions"
               disabled={!page || globalView}
@@ -238,14 +244,14 @@ export function Workspace() {
                   )}
                 </article>
               </div>
-              {state.contextOpen && state.view === 'document' && (
+              {state.contextOpen && (
                 <>
                   <button
                     className="details-scrim"
                     aria-label="Close page details overlay"
                     onClick={() => useWorkspace.setState({ contextOpen: false })}
                   />
-                  <ContextPanel />
+                  <PagePanel />
                 </>
               )}
             </>
