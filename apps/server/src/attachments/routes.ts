@@ -3,6 +3,7 @@ import type { Database } from '../platform/database.js';
 import { Attachments } from './service.js';
 import { storageFromEnvironment, type Storage } from './storage.js';
 import { assertObject, MAX_FILE_BYTES } from '../../../../packages/contracts/src/index.js';
+import { sendAttachment } from './http.js';
 export function attachmentRoutes(
   app: FastifyInstance,
   db: Database,
@@ -29,15 +30,7 @@ export function attachmentRoutes(
   );
   app.get<{ Params: { id: string } }>('/api/attachments/:id/content', async (request, reply) => {
     const file = await attachments.read(request.actor, request.params.id);
-    reply.header('Content-Type', file.inline ? file.mediaType : 'application/octet-stream');
-    reply.header(
-      'Content-Disposition',
-      `${file.inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(file.filename)}`,
-    );
-    reply.header('X-Content-Type-Options', 'nosniff');
-    reply.header('Content-Security-Policy', "sandbox; default-src 'none'");
-    reply.header('Cache-Control', 'private, no-store');
-    return reply.send(file.bytes);
+    return sendAttachment(reply, file, request.headers.range);
   });
   return attachments;
 }

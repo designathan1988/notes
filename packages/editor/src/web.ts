@@ -57,6 +57,13 @@ export interface WebSource {
   entry: string;
   files: { path: string; text: string }[];
 }
+export async function sourceFingerprint(source: WebSource) {
+  const digest = await globalThis.crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(JSON.stringify(source)),
+  );
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
 export function isWebPage(content: JSONContent): boolean {
   return (
     content.type === 'doc' && content.content?.length === 1 && content.content[0].type === 'webPage'

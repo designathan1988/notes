@@ -25,3 +25,11 @@ Run an isolated browser probe for module imports, source text containing closing
 ## Visual workspace
 
 `docs/design/concepts/workspace-reform-web-authoring.png` is the selected implementation companion under autonomous-work authorization, not user-approved artwork. Match its compact source/split/preview workspace and file tabs. Correct generated defects: remove the duplicate Saved status, do not expose an X that deletes the mandatory HTML channel, and do not mislabel the source as code-free note content. The reading-room site is optional authored sample content, not a restriction on page layouts. Its serif/navy styling is deliberately confined to user-authored content; app defaults remain neutral sans-serif. No plant image is required in a blank user page.
+
+## Recorded compatibility result
+
+The disposable `web-runtime-spike/probe.mjs` completed successfully on local Chromium on 2026-11-08. Its `verification.json` records relative and external module imports, literal closing script/style text, a loaded remote font, an owned image, a working JavaScript button, a real GET form submission, parent DOM denial, unreadable private API, isolated local storage between preview origins and HTTP 403 after capability revocation. The dummy application cookie was not received by the private API probe. External dependency/font responses were controlled CORS fixtures. No real Note account, secret, database or product renderer was used. This is compatibility evidence, not proof of production deployment or implemented ACL integration.
+
+## Flexible source model
+
+The first three files are a starter, not a fixed three-field form: `index.html`, `styles.css`, `main.js`. Additional relative files support modules, JSON and multiple HTML documents. All files are `webFile` text nodes in one `webPage` or `webComponent` inside the existing Yjs document. One selected entry file identifies the website; file rename updates that reference atomically. Traversal, duplicate paths and unsupported schema versions are rejected by shared ingress validation. These names supersede the preliminary fixed `webSource` channel proposal; the adapter's granular text/selection mapping remains the verified pattern.
