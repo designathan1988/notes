@@ -10,6 +10,8 @@
 
 **Spec:** `docs/research/2026-11-08-web-page-authoring.md` (researched implementation direction under autonomous-work authorization, not a claimed user-approved specification).
 
+**Current implementation ruling (2026-11-08):** The preliminary fixed language channels and opaque-origin resource restrictions below are superseded by `docs/research/2026-11-08-web-runtime-origin.md`: expandable `webFile` text nodes and logical `webAsset` bindings, a unique separate-site origin per revision, and normal external website resources, modules, forms and storage under browser rules. App credentials/DOM remain inaccessible. Source stays in the existing collaborative document. Integration evidence is in `docs/research/2026-11-08-web-authoring-verification.md`; unchecked broad acceptance items are not completion claims.
+
 ## Global constraints
 
 - English UI, code and documentation; Brazilian Portuguese chat.

@@ -2,7 +2,14 @@ import type { Editor } from '@tiptap/core';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { TextSelection } from '@tiptap/pm/state';
 import type { EditorView as ProseMirrorView, NodeView } from '@tiptap/pm/view';
-import { undo, redo } from '@tiptap/y-tiptap';
+import {
+  undo,
+  redo,
+  ySyncPluginKey,
+  absolutePositionToRelativePosition,
+  relativePositionToAbsolutePosition,
+  type RelativePosition,
+} from '@tiptap/y-tiptap';
 import {
   EditorView,
   keymap,
@@ -55,6 +62,7 @@ export class SourceView implements NodeView {
   private forwarding = false;
   private destroyed = false;
   private editable: boolean;
+  private bookmark: { anchor: RelativePosition; head: RelativePosition } | null = null;
 
   constructor(
     private node: ProseMirrorNode,
@@ -157,6 +165,7 @@ export class SourceView implements NodeView {
           this.forwarding = true;
           try {
             this.outer.dispatch(transaction);
+            this.rememberSelection(selection.anchor, selection.head);
           } finally {
             this.forwarding = false;
           }
@@ -164,6 +173,23 @@ export class SourceView implements NodeView {
       ],
     });
     this.editor.on('update', this.syncAccess);
+  }
+  private rememberSelection(anchor: number, head: number) {
+    const position = this.getPos(),
+      sync = ySyncPluginKey.getState(this.outer.state);
+    if (position === undefined || !sync) return;
+    this.bookmark = {
+      anchor: absolutePositionToRelativePosition(
+        position + 1 + anchor,
+        sync.type,
+        sync.binding.mapping,
+      ),
+      head: absolutePositionToRelativePosition(
+        position + 1 + head,
+        sync.type,
+        sync.binding.mapping,
+      ),
+    };
   }
   private contentAttributes() {
     return EditorView.contentAttributes.of({
@@ -216,7 +242,36 @@ export class SourceView implements NodeView {
     }
     this.reflecting = true;
     try {
-      this.cm.dispatch({ changes: { from, to: oldEnd, insert: after.slice(from, newEnd) } });
+      // Keep the caret attached to canonical Yjs text identities across a remote
+      // batch. Mapping the display's single replacement loses unchanged middle text.
+      const sync = ySyncPluginKey.getState(this.outer.state),
+        position = this.getPos();
+      let selection: { anchor: number; head: number } | undefined;
+      if (this.cm.hasFocus && this.bookmark && sync && position !== undefined) {
+        const anchor = relativePositionToAbsolutePosition(
+          sync.doc,
+          sync.type,
+          this.bookmark.anchor,
+          sync.binding.mapping,
+        );
+        const head = relativePositionToAbsolutePosition(
+          sync.doc,
+          sync.type,
+          this.bookmark.head,
+          sync.binding.mapping,
+        );
+        if (
+          anchor !== null &&
+          head !== null &&
+          Math.min(anchor, head) >= position + 1 &&
+          Math.max(anchor, head) <= position + 1 + after.length
+        )
+          selection = { anchor: anchor - position - 1, head: head - position - 1 };
+      }
+      this.cm.dispatch({
+        changes: { from, to: oldEnd, insert: after.slice(from, newEnd) },
+        ...(selection ? { selection } : {}),
+      });
     } finally {
       this.reflecting = false;
     }
@@ -233,6 +288,10 @@ export class SourceView implements NodeView {
         },
       });
       if (this.cm.hasFocus || this.outer.hasFocus()) this.cm.focus();
+      this.rememberSelection(
+        this.cm.state.selection.main.anchor,
+        this.cm.state.selection.main.head,
+      );
     } finally {
       this.reflecting = false;
     }

@@ -1,4 +1,5 @@
 import type { JSONContent } from '@tiptap/core';
+import { projectWebsite } from './web-projection.js';
 
 /** Read-only document projection; it does not load editor extensions or own content. */
 export function projectDocument(content: JSONContent) {
@@ -6,6 +7,12 @@ export function projectDocument(content: JSONContent) {
   const links = new Set<string>();
   const headings: { level: number; text: string }[] = [];
   function visit(node: JSONContent) {
+    if (node.type === 'webPage' || node.type === 'webComponent') {
+      const website = projectWebsite(node);
+      text.push(website.text, '\n');
+      headings.push(...website.headings);
+      return;
+    }
     if (node.text) text.push(node.text);
     if (node.type === 'attachment') {
       for (const value of [node.attrs?.filename, node.attrs?.caption])

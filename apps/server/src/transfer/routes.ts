@@ -6,8 +6,26 @@ import { MAX_ARCHIVE_BYTES } from './archive.js';
 import { Access } from '../access/service.js';
 import { Documents } from '../documents/service.js';
 import { documentJSON, projectDocument } from '../../../../packages/editor/src/schema.js';
+import { exportWebsite } from './website.js';
 export function transferRoutes(app: FastifyInstance, db: Database, storage: Storage) {
   const transfer = new Transfer(db, storage);
+  app.get<{ Params: { id: string }; Querystring: { position?: string } }>(
+    '/api/pages/:id/website',
+    async (request, reply) => {
+      const bytes = await exportWebsite(
+        db,
+        storage,
+        request.actor,
+        request.params.id,
+        Number(request.query.position ?? 0),
+      );
+      return reply
+        .header('Content-Type', 'application/zip')
+        .header('Content-Disposition', 'attachment; filename="website.zip"')
+        .header('Cache-Control', 'no-store')
+        .send(Buffer.from(bytes));
+    },
+  );
   app.get<{ Params: { workspace: string } }>(
     '/api/workspaces/:workspace/export',
     async (request, reply) => {

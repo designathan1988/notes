@@ -66,12 +66,14 @@
     "@types/pg": "^8.15.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/ws": "8.18.2",
     "@vitejs/plugin-react": "^5.0.0",
     "esbuild": "0.28.2",
     "prettier": "3.9.10",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.0",
-    "vitest": "5.1.0"
+    "vitest": "5.1.0",
+    "ws": "8.22.1"
   }
 }

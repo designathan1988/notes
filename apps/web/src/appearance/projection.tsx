@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import type { AppearanceOverrides } from '../../../../packages/contracts/src/index.js';
 import { useWorkspace } from '../state/store.js';
@@ -106,11 +106,16 @@ export function PageAppearance({
   appearance?: AppearanceOverrides;
   id: string;
 }) {
-  // @scope confines selectors to this page, including custom selectors for headings and blocks.
+  // Parse standalone first: unmatched braces in authored CSS must never close our scope.
+  const scoped = useMemo(() => {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(appearance?.customCss ?? '');
+    return `@scope ([data-styled-page="${CSS.escape(id)}"]) { ${Array.from(sheet.cssRules, (rule) => rule.cssText).join('\n')} }`;
+  }, [appearance?.customCss, id]);
   return (
     <>
       <Fonts fonts={appearance?.fonts} />
-      <style>{`@scope ([data-styled-page="${id}"]) { ${appearance?.customCss ?? ''} }`}</style>
+      <style>{scoped}</style>
     </>
   );
 }

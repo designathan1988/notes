@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
+import { unzipSync, strFromU8 } from 'fflate';
 const headers = { 'x-note-request': '1' };
 const file = (path: string, text: string) => ({
   type: 'webFile',
@@ -353,6 +356,48 @@ test('website media retains a failed original, retries once and stays readable a
     expect(
       await frame.locator('img').evaluate((image) => (image as HTMLImageElement).naturalWidth),
     ).toBe(1);
+    const downloaded = page.waitForEvent('download');
+    await editor.getByRole('button', { name: 'Export website', exact: true }).click();
+    const path = await (await downloaded).path();
+    expect(path).toBeTruthy();
+    const exported = unzipSync(await readFile(path!));
+    expect(strFromU8(exported['index.html'])).toContain('.note/assets/');
+    const assetPath = Object.keys(exported).find((name) => name.startsWith('.note/assets/'))!;
+    expect(Buffer.from(exported[assetPath])).toEqual(png);
+    const server = createServer((request, response) => {
+      const name =
+        decodeURIComponent(new URL(request.url!, 'http://static.test').pathname).slice(1) ||
+        'index.html';
+      if (!Object.hasOwn(exported, name)) {
+        response.writeHead(404).end();
+        return;
+      }
+      response.setHeader(
+        'Content-Type',
+        name.endsWith('.html') ? 'text/html' : 'application/octet-stream',
+      );
+      response.end(exported[name]);
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string')
+      throw new Error('Static test server did not start.');
+    const independent = await browser.newContext();
+    try {
+      const standalone = await independent.newPage();
+      await standalone.goto(`http://127.0.0.1:${address.port}/index.html`);
+      await expect(
+        standalone.getByRole('img', { name: 'A meaningful picture.png', exact: true }),
+      ).toBeVisible();
+      expect(
+        await standalone
+          .locator('img')
+          .evaluate((image) => (image as HTMLImageElement).naturalWidth),
+      ).toBe(1);
+    } finally {
+      await independent.close();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
     const copy = await context.request.post(`/api/pages/${note.id}/duplicate`, {
       headers,
       data: { requestId: crypto.randomUUID(), expectedUserId: session.user.id },

@@ -1,7 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { NodeViewContent, NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
-import { Code2, Play, Square, Plus, MoreHorizontal, X, FileCode2, Upload } from 'lucide-react';
+import {
+  Code2,
+  Play,
+  Square,
+  Plus,
+  MoreHorizontal,
+  X,
+  FileCode2,
+  Upload,
+  Download,
+} from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
 import { IconButton } from '../ui/IconButton.js';
 import { Popover } from '../ui/Popover.js';
@@ -10,6 +20,8 @@ import { isolatedDocumentEdit } from '../documents/history.js';
 import { useUploads, FailedFile } from '../documents/useUploads.js';
 import { validWebPath } from '../../../../packages/editor/src/web.js';
 import { Preview, type PreviewControls } from './Preview.js';
+import { ensureCopySourcesSaved } from '../documents/session.js';
+import { download } from '../settings/DataSettings.js';
 
 export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & { pageId: string }) {
   const page = useWorkspace((state) => state.pages.find((page) => page.id === pageId)),
@@ -262,6 +274,31 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
           onClick={() => preview.current?.stop()}
         >
           <Square size={14} />
+        </IconButton>
+        <IconButton
+          label="Export website"
+          onClick={() => {
+            void (async () => {
+              const state = useWorkspace.getState(),
+                actor = state.user?.id,
+                workspace = state.workspaceId;
+              if (!actor || !workspace || !page) return;
+              await ensureCopySourcesSaved(actor, workspace, [page]);
+              if (
+                actor !== useWorkspace.getState().user?.id ||
+                workspace !== useWorkspace.getState().workspaceId ||
+                editor.isDestroyed
+              )
+                return;
+              const { position } = current();
+              await download(
+                `/api/pages/${pageId}/website?position=${position}`,
+                `${page.title}.zip`,
+              );
+            })().catch((error) => setError(error.message));
+          }}
+        >
+          <Download size={14} />
         </IconButton>
       </div>
       <div

@@ -96,7 +96,11 @@ export function PageHeader({
           ref={title}
           onInput={(event) => fit(event.currentTarget)}
           onKeyDown={(event) => {
-            if (event.key === 'Enter') {
+            if (event.key === 'Tab' && !event.shiftKey && !compact) {
+              event.preventDefault();
+              setEditingDescription(true);
+              requestAnimationFrame(() => description.current?.focus());
+            } else if (event.key === 'Enter') {
               event.preventDefault();
               event.currentTarget.blur();
               document.querySelector<HTMLElement>('[aria-label="Page content"]')?.focus();
@@ -122,6 +126,10 @@ export function PageHeader({
         <>
           <textarea
             ref={description}
+            onFocus={(event) => {
+              setEditingDescription(true);
+              fit(event.currentTarget);
+            }}
             onInput={(event) => fit(event.currentTarget)}
             key={page.id + page.description}
             readOnly={readOnly}
