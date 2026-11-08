@@ -13,7 +13,9 @@ import {
 } from '../../../../packages/editor/src/canvas.js';
 import type { DocumentSession } from '../documents/session.js';
 import { richEditorExtensions } from '../documents/richExtensions.js';
-import { captureClipboard, fileNode } from '../documents/capture.js';
+import { captureClipboard, fileNode, type ClipboardContent } from '../documents/capture.js';
+import { canvasCaptureTarget } from './capture.js';
+import type { Point } from '../spatial/geometry.js';
 import { useUploads, FailedFile } from '../documents/useUploads.js';
 import { useDocumentProjection } from '../documents/useDocumentProjection.js';
 import { LinkPicker } from '../documents/LinkPicker.js';
@@ -132,12 +134,7 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
           const files = [...(event.dataTransfer?.files ?? [])];
           if (!files.length || readOnly) return false;
           event.preventDefault();
-          for (const file of files)
-            void upload(file)
-              .then((file) => {
-                if (!editor?.isDestroyed) api.current?.addNote(undefined, [fileNode(file)], false);
-              })
-              .catch(useWorkspace.getState().setError);
+          for (const file of files) void insertFile(file);
           return true;
         },
         handleClick: (_view, _pos, event) => {
@@ -163,6 +160,56 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
     }
   }, [editor, readOnly, session]);
   if (!editor) return null;
+  async function insertFile(file: File, point?: Point, existingId?: string) {
+    if (!editor || editor.isDestroyed) return;
+    if (!editor.isEditable) {
+      setFailed((items) => [...items, { file, id: existingId, label: 'Could not insert' }]);
+      return;
+    }
+    try {
+      const asset = await upload(file, existingId);
+      if (editor.isDestroyed) return;
+      if (!editor.isEditable || !api.current?.addNote(point, [fileNode(asset)], false))
+        setFailed((items) => [...items, { file, id: asset.id, label: 'Could not insert' }]);
+    } catch (error) {
+      useWorkspace.getState().setError(error);
+    }
+  }
+  async function captureStage(input: ClipboardContent, point?: Point) {
+    if (!editor || editor.isDestroyed || !editor.isEditable) return;
+    if (input.files.length) {
+      for (const file of input.files) {
+        await insertFile(file, point);
+      }
+      return;
+    }
+    if (!input.text && !input.html) return;
+    const id = api.current?.addNote(point);
+    if (!id) return;
+    try {
+      await captureClipboard(
+        editor,
+        input,
+        upload,
+        useWorkspace.getState().setError,
+        canvasCaptureTarget(editor, id),
+      );
+    } catch (error) {
+      if (!editor.isDestroyed)
+        setFailed((items) => [
+          ...items,
+          {
+            file: new File(
+              [input.html || input.text],
+              input.html ? 'Captured source.html' : 'Captured source.txt',
+              { type: input.html ? 'text/html' : 'text/plain' },
+            ),
+            label: 'Could not insert',
+          },
+        ]);
+      useWorkspace.getState().setError(error);
+    }
+  }
   return (
     <CanvasProvider
       editor={editor}
@@ -171,6 +218,9 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
       api={api}
       media={() => input.current?.click()}
       link={() => setLink('card')}
+      capture={(input, point) => {
+        void captureStage(input, point);
+      }}
     >
       <EditorContent className="canvas-editor-host" editor={editor} />
       {!readOnly && (
@@ -183,12 +233,7 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
         ref={input}
         aria-label="Upload canvas media"
         onChange={(event) => {
-          for (const file of event.currentTarget.files ?? [])
-            void upload(file)
-              .then((file) => {
-                if (!editor.isDestroyed) api.current?.addNote(undefined, [fileNode(file)], false);
-              })
-              .catch(useWorkspace.getState().setError);
+          for (const file of event.currentTarget.files ?? []) void insertFile(file);
           event.currentTarget.value = '';
         }}
       />
@@ -197,15 +242,15 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
           Uploading {uploading} {uploading === 1 ? 'file' : 'files'}…
         </p>
       )}
-      {failed.map(({ file, id }, index) => (
+      {failed.map(({ file, id, label }, index) => (
         <FailedFile
           key={index}
           file={file}
+          label={label}
+          disabled={readOnly}
           retry={() => {
             setFailed((items) => items.filter((_, i) => i !== index));
-            void upload(file, id)
-              .then((file) => api.current?.addNote(undefined, [fileNode(file)], false))
-              .catch(useWorkspace.getState().setError);
+            void insertFile(file, undefined, id);
           }}
         />
       ))}

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { uploadFile, UploadError, type CapturedFile } from './capture.js';
 export function useUploads(pageId: string) {
   const [uploading, setUploading] = useState(0);
-  const [failed, setFailed] = useState<{ file: File; id?: string }[]>([]);
+  const [failed, setFailed] = useState<{ file: File; id?: string; label?: string }[]>([]);
   async function upload(file: File, existingId?: string): Promise<CapturedFile> {
     setUploading((count) => count + 1);
     try {
@@ -19,7 +19,17 @@ export function useUploads(pageId: string) {
   }
   return { uploading, failed, setFailed, upload };
 }
-export function FailedFile({ file, retry }: { file: File; retry(): void }) {
+export function FailedFile({
+  file,
+  retry,
+  label = 'Upload failed',
+  disabled = false,
+}: {
+  file: File;
+  retry(): void;
+  label?: string;
+  disabled?: boolean;
+}) {
   const [url, setUrl] = useState('');
   useEffect(() => {
     const next = URL.createObjectURL(file);
@@ -28,8 +38,12 @@ export function FailedFile({ file, retry }: { file: File; retry(): void }) {
   }, [file]);
   return (
     <div className="upload-failure">
-      <span>Upload failed: {file.name}</span>
-      <button onClick={retry}>Retry</button>
+      <span>
+        {label}: {file.name}
+      </span>
+      <button onClick={retry} disabled={disabled}>
+        Retry
+      </button>
       <a download={file.name} href={url}>
         Save original
       </a>

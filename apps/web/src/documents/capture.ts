@@ -1,4 +1,4 @@
-import type { Editor } from '@tiptap/core';
+import type { Editor, JSONContent } from '@tiptap/core';
 import { marked } from 'marked';
 import { api, json } from '../state/api.js';
 import { classifyPaste } from './paste-policy.js';
@@ -60,17 +60,31 @@ export interface ClipboardContent {
   files: File[];
   mode?: string;
 }
+export type ClipboardInserter = (content: string | JSONContent, fullWhitespace?: boolean) => void;
 export async function captureClipboard(
   editor: Editor,
   input: ClipboardContent,
   upload: (file: File) => Promise<CapturedFile>,
   notify: (message: string) => void,
+  insert?: ClipboardInserter,
 ) {
+  const put: ClipboardInserter =
+    insert ??
+    ((content, fullWhitespace) => {
+      editor
+        .chain()
+        .focus()
+        .insertContent(
+          content,
+          fullWhitespace ? { parseOptions: { preserveWhitespace: 'full' } } : undefined,
+        )
+        .run();
+    });
   if (input.files.length) {
     for (const file of input.files) {
       try {
         const result = await upload(file);
-        editor.chain().focus().insertContent(fileNode(result)).run();
+        put(fileNode(result));
       } catch (error) {
         notify(
           error instanceof Error
@@ -83,15 +97,11 @@ export async function captureClipboard(
   }
   const policy = classifyPaste(input);
   if (policy.mode === 'code') {
-    editor
-      .chain()
-      .focus()
-      .insertContent({
-        type: 'codeBlock',
-        attrs: { language: input.text.trim().startsWith('{') ? 'json' : null },
-        content: input.text ? [{ type: 'text', text: input.text }] : [],
-      })
-      .run();
+    put({
+      type: 'codeBlock',
+      attrs: { language: input.text.trim().startsWith('{') ? 'json' : null },
+      content: input.text ? [{ type: 'text', text: input.text }] : [],
+    });
     return;
   }
   if (policy.mode === 'text') {
@@ -101,11 +111,7 @@ export async function captureClipboard(
       p.textContent = line;
       wrapper.append(p);
     }
-    editor
-      .chain()
-      .focus()
-      .insertContent(wrapper.innerHTML, { parseOptions: { preserveWhitespace: 'full' } })
-      .run();
+    put(wrapper.innerHTML, true);
     return;
   }
   let html =
@@ -215,12 +221,7 @@ export async function captureClipboard(
       }
     }
   }
-  if (parsed.body.innerHTML.trim())
-    editor
-      .chain()
-      .focus()
-      .insertContent(parsed.body.innerHTML, { parseOptions: { preserveWhitespace: 'full' } })
-      .run();
+  if (parsed.body.innerHTML.trim()) put(parsed.body.innerHTML, true);
   if (preserve) {
     const original = new File(
       [input.html || input.text],
@@ -228,11 +229,7 @@ export async function captureClipboard(
       { type: input.html ? 'text/html' : 'text/markdown' },
     );
     const file = await upload(original);
-    editor
-      .chain()
-      .focus()
-      .insertContent(fileNode(file, 'Original pasted content — preserved as a file'))
-      .run();
+    put(fileNode(file, 'Original pasted content — preserved as a file'));
     notify(
       'Some elements could not be converted. The available original was preserved as a downloadable file.',
     );

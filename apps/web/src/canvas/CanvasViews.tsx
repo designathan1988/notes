@@ -87,6 +87,46 @@ export function CanvasRootView() {
         className="canvas-stage"
         data-tool={c.space ? 'hand' : c.tool}
         ref={c.view.attach}
+        onPasteCapture={(event) => {
+          if (
+            c.readOnly ||
+            (event.target as Element).closest('[data-canvas-rich],input,textarea,select')
+          )
+            return;
+          event.preventDefault();
+          event.stopPropagation();
+          c.capture({
+            text: event.clipboardData.getData('text/plain'),
+            html: event.clipboardData.getData('text/html'),
+            files: [...event.clipboardData.files],
+          });
+        }}
+        onDragOver={(event) => {
+          if (!c.readOnly && !(event.target as Element).closest('[data-canvas-rich]'))
+            event.preventDefault();
+        }}
+        onDropCapture={(event) => {
+          if (
+            c.readOnly ||
+            (event.target as Element).closest('[data-canvas-rich],input,textarea,select')
+          )
+            return;
+          const input = {
+            text:
+              event.dataTransfer.getData('text/plain') ||
+              event.dataTransfer.getData('text/uri-list'),
+            html: event.dataTransfer.getData('text/html'),
+            files: [...event.dataTransfer.files],
+          };
+          if (!input.text && !input.html && !input.files.length) return;
+          event.preventDefault();
+          event.stopPropagation();
+          const bounds = event.currentTarget.getBoundingClientRect();
+          c.capture(
+            input,
+            c.view.toWorld({ x: event.clientX - bounds.left, y: event.clientY - bounds.top }),
+          );
+        }}
         onPointerDown={(event) => {
           if (!(event.target as Element).closest('[data-spatial-control],button,input,textarea')) {
             event.preventDefault();

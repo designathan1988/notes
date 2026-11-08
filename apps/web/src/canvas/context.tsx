@@ -29,6 +29,7 @@ import { freeRect, type Point } from '../spatial/geometry.js';
 import { useWorkspace } from '../state/store.js';
 import { isolatedDocumentEdit } from '../documents/history.js';
 import { flushSync } from 'react-dom';
+import type { ClipboardContent } from '../documents/capture.js';
 
 export interface CanvasApi {
   addNote(point?: Point, content?: JSONContent[], focus?: boolean): string | undefined;
@@ -62,6 +63,7 @@ interface Context extends CanvasApi {
   setInspector(value: boolean): void;
   media(): void;
   link(): void;
+  capture(input: ClipboardContent, point?: Point): void;
 }
 const CanvasContext = createContext<Context | null>(null);
 export function useCanvas() {
@@ -76,6 +78,7 @@ export function CanvasProvider({
   api,
   media,
   link,
+  capture,
   children,
 }: {
   editor: Editor;
@@ -84,6 +87,7 @@ export function CanvasProvider({
   api: { current: CanvasApi | null };
   media(): void;
   link(): void;
+  capture(input: ClipboardContent, point?: Point): void;
   children: ReactNode;
 }) {
   const doc = useEditorState({ editor, selector: ({ editor }) => editor.state.doc });
@@ -284,7 +288,7 @@ export function CanvasProvider({
         });
       }
     }
-    select(id);
+    select(id, false, !focus);
     setTool('select');
     if (focus) {
       const item = canvasItems(editor.state.doc).find((item) => item.id === id);
@@ -453,19 +457,20 @@ export function CanvasProvider({
       duplicate();
       return true;
     }
-    if (event.key.toLowerCase() === 'n' && !event.ctrlKey && !event.metaKey) {
+    const toolKey = !event.ctrlKey && !event.metaKey && !event.altKey;
+    if (event.key.toLowerCase() === 'n' && toolKey) {
       addNote();
       return true;
     }
-    if (event.key.toLowerCase() === 'h') {
+    if (event.key.toLowerCase() === 'h' && toolKey) {
       setTool('hand');
       return true;
     }
-    if (event.key.toLowerCase() === 'v') {
+    if (event.key.toLowerCase() === 'v' && toolKey) {
       setTool('select');
       return true;
     }
-    if (event.key.toLowerCase() === 'c' && !event.ctrlKey && !event.metaKey) {
+    if (event.key.toLowerCase() === 'c' && toolKey) {
       if (!readOnly) setTool('connect');
       return true;
     }
@@ -616,6 +621,7 @@ export function CanvasProvider({
     setInspector,
     media,
     link,
+    capture,
   };
   api.current = value;
   return <CanvasContext.Provider value={value}>{children}</CanvasContext.Provider>;
