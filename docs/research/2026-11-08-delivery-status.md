@@ -9,12 +9,13 @@
 - Isolated separate-site executable previews, current-access checks, owned logical media, failed upload original retention/retry, duplication and native transfer remapping.
 - Static HTML discovery without executing authored code; website ZIP export containing exact source and owned media, independently served and opened without Note authentication.
 - Canvas element colors and complete connection sides/start/end arrows, with canonical persistence and a contextual selection inspector. Label routing avoids endpoint cards and remains clickable on mobile.
+- Concurrent canvas reference reconciliation preserves surviving rich edits when endpoints/groups disappear, and breaks group cycles without discarding notes or groups.
 
 All application styles remain in `apps/web/src/styles.css`; authored CSS remains document content. The root Zustand store owns application state. Preferences, Pages, Documents, Attachments and Transfer keep their existing persistence responsibilities.
 
 ## Verification
 
-The complete behavior suite passed 205 tests across 40 files. Typecheck and production build passed. A broad browser run passed 78/79; its single metadata focus failure was repaired, and all 12 affected browser scenarios then passed. Two independently reviewed Important findings were reproduced and repaired, with real CSS and atomic collaborative-source regressions. The full browser suite was not repeated after these localized fixes. IAB desktop/mobile captures and direct concept/render comparisons are documented in `2026-11-08-web-authoring-verification.md`.
+The latest complete behavior suite passed 212 tests across 42 files. Typecheck and production build passed. All 83 browser scenarios passed in 4.8 minutes after the metadata, CSS scope and atomic-source-caret repairs and the canvas presentation/topology changes. Two independently reviewed Important findings were reproduced and repaired, with real CSS and atomic collaborative-source regressions. IAB desktop/mobile captures and direct concept/render comparisons are documented in `2026-11-08-web-authoring-verification.md` and `2026-11-08-canvas-presentation-verification.md`; current full-gate evidence is in `2026-11-08-canvas-topology-verification.md`.
 
 ## Explicit limits
 

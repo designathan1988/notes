@@ -14,6 +14,7 @@ import {
   emptyDocument,
 } from '../../../../packages/editor/src/schema.js';
 import { emptyCanvas } from '../../../../packages/editor/src/canvas.js';
+import { reconcileCanvasTopology } from '../../../../packages/editor/src/canvas-reconcile.js';
 import { captureCheckpoint } from '../history/checkpoints.js';
 export interface DurableAcknowledgement {
   type: 'durable';
@@ -22,6 +23,10 @@ export interface DurableAcknowledgement {
   version: number;
   stateVector: string;
   snapshot: string;
+}
+interface DocumentCommit {
+  acknowledgement: DurableAcknowledgement;
+  repair?: Uint8Array;
 }
 export class Documents {
   constructor(readonly db: Database) {}
@@ -91,6 +96,14 @@ export class Documents {
     update: Uint8Array,
     generation: number,
   ): Promise<DurableAcknowledgement> {
+    return (await this.merge(actor, pageId, update, generation)).acknowledgement;
+  }
+  async merge(
+    actor: Actor,
+    pageId: string,
+    update: Uint8Array,
+    generation: number,
+  ): Promise<DocumentCommit> {
     if (update.byteLength > MAX_DOCUMENT_BYTES)
       throw new DomainError('LIMIT', 'This document update is too large.');
     return this.db.transaction(async (tx) => {
@@ -104,8 +117,13 @@ export class Documents {
       const doc = await new Documents(tx).load(pageId);
       try {
         const before = Y.encodeStateAsUpdate(doc);
+        let repair: Uint8Array | undefined;
         try {
           Y.applyUpdate(doc, update);
+          if (page.kind === 'canvas') {
+            const vector = Y.encodeStateVector(doc);
+            if (reconcileCanvasTopology(doc)) repair = Y.encodeStateAsUpdate(doc, vector);
+          }
           validateDocument(documentJSON(doc), page.kind);
         } catch {
           throw new DomainError('INVALID', 'This page contains invalid or incompatible content.');
@@ -117,12 +135,15 @@ export class Documents {
             [pageId],
           );
           return {
-            type: 'durable',
-            pageId,
-            generation,
-            version: Number(stored.version),
-            stateVector: Buffer.from(Y.encodeStateVector(doc)).toString('base64'),
-            snapshot: Buffer.from(Y.encodeSnapshot(Y.snapshot(doc))).toString('base64'),
+            acknowledgement: {
+              type: 'durable',
+              pageId,
+              generation,
+              version: Number(stored.version),
+              stateVector: Buffer.from(Y.encodeStateVector(doc)).toString('base64'),
+              snapshot: Buffer.from(Y.encodeSnapshot(Y.snapshot(doc))).toString('base64'),
+            },
+            repair,
           };
         }
         if (state.length > MAX_DOCUMENT_BYTES)
@@ -148,12 +169,15 @@ export class Documents {
           [pageId],
         );
         return {
-          type: 'durable',
-          pageId,
-          generation,
-          version: Number(row.version),
-          stateVector: Buffer.from(Y.encodeStateVector(doc)).toString('base64'),
-          snapshot: Buffer.from(Y.encodeSnapshot(Y.snapshot(doc))).toString('base64'),
+          acknowledgement: {
+            type: 'durable',
+            pageId,
+            generation,
+            version: Number(row.version),
+            stateVector: Buffer.from(Y.encodeStateVector(doc)).toString('base64'),
+            snapshot: Buffer.from(Y.encodeSnapshot(Y.snapshot(doc))).toString('base64'),
+          },
+          repair,
         };
       } finally {
         doc.destroy();

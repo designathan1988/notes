@@ -74,7 +74,7 @@ export async function collaborationRoutes(
       const saving = (async () => {
         for (let attempt = 0; ; attempt++) {
           try {
-            return await documents.save(
+            return await documents.merge(
               context.actor,
               documentIdentity(documentName).pageId,
               payload,
@@ -88,7 +88,10 @@ export async function collaborationRoutes(
       })();
       pending.add(saving);
       try {
-        const ack = await saving;
+        const { acknowledgement: ack, repair } = await saving;
+        // Publish the accepted payload and its reference repair atomically. The
+        // hub's later application of the same payload is idempotent in Yjs.
+        if (repair) Y.applyUpdate(document, Y.mergeUpdates([payload, repair]));
         document.broadcastStateless(JSON.stringify(ack));
       } catch (error) {
         connection.sendStateless(
