@@ -1,4 +1,4 @@
-import type { Page } from '../../../../packages/contracts/src/index.js';
+import type { Page } from '@note/contracts';
 import type { View, WorkspaceState } from '../state/store.js';
 import { browserPreferences, type PreferenceStorage } from './preferences.js';
 import { navigateHistory, type WorkbenchHistory } from './history.js';
@@ -419,7 +419,7 @@ export function workbenchSlice(
     async createWebPage(parentId = null) {
       const user = get().user?.id,
         workspace = get().workspaceId;
-      const { newWebContent } = await import('../../../../packages/editor/src/web.js');
+      const { newWebContent } = await import('@note/editor/web');
       if (get().user?.id !== user || get().workspaceId !== workspace) return;
       const page = await get().createPage(
         {

@@ -3,13 +3,8 @@ import * as Y from 'yjs';
 import type { Database } from '../platform/database.js';
 import { Access } from '../access/service.js';
 import { Documents } from '../documents/service.js';
-import {
-  DomainError,
-  ACTIVITY_PAGE_SIZE,
-  type Actor,
-  type HistoryEntry,
-} from '../../../../packages/contracts/src/index.js';
-import { documentJSON } from '../../../../packages/editor/src/schema.js';
+import { DomainError, ACTIVITY_PAGE_SIZE, type Actor, type HistoryEntry } from '@note/contracts';
+import { documentJSON } from '@note/editor/schema';
 import { captureCheckpoint, checkpointColumns } from './checkpoints.js';
 
 export class History {

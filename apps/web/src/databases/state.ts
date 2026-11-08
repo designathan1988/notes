@@ -4,7 +4,7 @@ import type {
   RecordQuery,
   DatabaseViewConfig,
   SavedDatabaseView,
-} from '../../../../packages/contracts/src/index.js';
+} from '@note/contracts';
 import { api, ApiError, json } from '../state/api.js';
 import type { WorkspaceState } from '../state/store.js';
 export interface TableOptions extends DatabaseViewConfig, RecordQuery {}

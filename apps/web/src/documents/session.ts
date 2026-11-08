@@ -4,11 +4,7 @@ import { api } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
 import { snapshotAcknowledgementCovers } from './durability.js';
 import { openRecovery, type Recovery } from './recovery.js';
-import {
-  DOCUMENT_ACCESS_CHANGED,
-  type Page,
-  type SaveStatus,
-} from '../../../../packages/contracts/src/index.js';
+import { DOCUMENT_ACCESS_CHANGED, type Page, type SaveStatus } from '@note/contracts';
 const activeSessions = new Set<DocumentSession>();
 /** Copy only acknowledged content; retained drafts are never silently omitted or discarded. */
 export async function ensureCopySourcesSaved(

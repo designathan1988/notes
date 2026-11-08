@@ -8,7 +8,6 @@ import {
   Plus,
   UserPlus,
   Settings,
-  Building2,
   FileText,
   Folder,
   LogOut,
@@ -25,7 +24,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '../state/store.js';
 import { IconButton } from '../ui/IconButton.js';
-import type { Page } from '../../../../packages/contracts/src/index.js';
+import type { Page } from '@note/contracts';
 import { useTreeDrag } from './useTreeDrag.js';
 import { PageActions } from './PageActions.js';
 import { Popover } from '../ui/Popover.js';

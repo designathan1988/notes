@@ -5,7 +5,7 @@ import { Transfer } from './service.js';
 import { MAX_ARCHIVE_BYTES } from './archive.js';
 import { Access } from '../access/service.js';
 import { Documents } from '../documents/service.js';
-import { documentJSON, projectDocument } from '../../../../packages/editor/src/schema.js';
+import { documentJSON, projectDocument } from '@note/editor/schema';
 import { exportWebsite } from './website.js';
 export function transferRoutes(app: FastifyInstance, db: Database, storage: Storage) {
   const transfer = new Transfer(db, storage);

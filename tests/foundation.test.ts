@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openDatabase, migrate } from '../apps/server/src/platform/database.js';
 import { createApp } from '../apps/server/src/app.js';
-import { validateTitle } from '../packages/contracts/src/index.js';
+import { validateTitle } from '@note/contracts';
 
 const paths: string[] = [];
 afterEach(async () => {

@@ -4,13 +4,8 @@ import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Placeholder from '@tiptap/extension-placeholder';
 import { initProseMirrorDoc, type ProsemirrorMapping } from '@tiptap/y-tiptap';
-import { documentRoot, pageLink } from '../../../../packages/editor/src/schema.js';
-import {
-  canvasRoot,
-  canvasCard,
-  canvasGroup,
-  canvasEdge,
-} from '../../../../packages/editor/src/canvas.js';
+import { documentRoot, pageLink } from '@note/editor/schema';
+import { canvasRoot, canvasCard, canvasGroup, canvasEdge } from '@note/editor/canvas';
 import type { DocumentSession } from '../documents/session.js';
 import { richEditorExtensions } from '../documents/richExtensions.js';
 import { captureClipboard, fileNode, type ClipboardContent } from '../documents/capture.js';

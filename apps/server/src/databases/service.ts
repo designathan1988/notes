@@ -8,12 +8,12 @@ import {
   type DatabaseViewConfig,
   type RecordQuery,
   validDate,
-} from '../../../../packages/contracts/src/index.js';
+} from '@note/contracts';
 import { Access } from '../access/service.js';
 import { Pages } from '../pages/service.js';
 import { defaultFields, validateFields, validateValues } from './values.js';
 import { DatabaseViews } from './views.js';
-import { compileFormulas } from '../../../../packages/data/src/formulas.js';
+import { compileFormulas } from '@note/data/formulas';
 import { isDeepStrictEqual } from 'node:util';
 interface RecordRow {
   page_id: string;

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { EditorState, NodeSelection } from '@tiptap/pm/state';
-import { editorSchema } from '../packages/editor/src/schema.js';
+import { editorSchema } from '@note/editor/schema';
 import {
   blockAt,
   changeBlock,
@@ -8,7 +8,7 @@ import {
   moveBlock,
   moveBlockTo,
   removeBlock,
-} from '../packages/editor/src/blocks.js';
+} from '@note/editor/blocks';
 
 const schema = editorSchema();
 test('drops a whole block at an arbitrary document boundary and rejects an interior drop', () => {

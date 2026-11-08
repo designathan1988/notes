@@ -1,8 +1,5 @@
 import { useState } from 'react';
-import type {
-  DatabaseViewConfig,
-  SavedDatabaseView,
-} from '../../../../packages/contracts/src/index.js';
+import type { DatabaseViewConfig, SavedDatabaseView } from '@note/contracts';
 import { Dialog } from '../ui/Dialog.js';
 import { api, json } from '../state/api.js';
 

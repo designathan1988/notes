@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Image, Smile, Tag, X, MoreHorizontal, SlidersHorizontal } from 'lucide-react';
-import type { Page, PageUpdate } from '../../../../packages/contracts/src/index.js';
+import type { Page, PageUpdate } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { Popover } from '../ui/Popover.js';
 import { uploadFile } from '../documents/capture.js';

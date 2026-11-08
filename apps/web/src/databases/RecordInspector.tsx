@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useMemo } from 'react';
-import { compileFormulas } from '../../../../packages/data/src/formulas.js';
+import { compileFormulas } from '@note/data/formulas';
 import { ArrowUpRight, X } from 'lucide-react';
-import type { Page, RecordField } from '../../../../packages/contracts/src/index.js';
+import type { Page, RecordField } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { api } from '../state/api.js';
 import { IconButton } from '../ui/IconButton.js';

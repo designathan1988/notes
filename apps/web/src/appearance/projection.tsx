@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import type { AppearanceOverrides } from '../../../../packages/contracts/src/index.js';
+import type { AppearanceOverrides } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 
 export const appearanceVariableNames: Record<string, string> = {

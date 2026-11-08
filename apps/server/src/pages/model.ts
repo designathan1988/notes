@@ -1,4 +1,4 @@
-import type { Page } from '../../../../packages/contracts/src/index.js';
+import type { Page } from '@note/contracts';
 export interface PageRow {
   appearance?: Page['appearance'];
   template_root_id?: string | null;

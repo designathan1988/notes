@@ -1,16 +1,11 @@
 import type { Database } from '../platform/database.js';
-import type {
-  Actor,
-  SearchResult,
-  KnowledgeLink,
-  GraphData,
-} from '../../../../packages/contracts/src/index.js';
+import type { Actor, SearchResult, KnowledgeLink, GraphData } from '@note/contracts';
 import { Access } from '../access/service.js';
-import { documentJSON, projectDocument } from '../../../../packages/editor/src/schema.js';
+import { documentJSON, projectDocument } from '@note/editor/schema';
 import * as Y from 'yjs';
-import { compileFormulas } from '../../../../packages/data/src/formulas.js';
-import { DomainError } from '../../../../packages/contracts/src/index.js';
-import type { PageProperties } from '../../../../packages/contracts/src/index.js';
+import { compileFormulas } from '@note/data/formulas';
+import { DomainError } from '@note/contracts';
+import type { PageProperties } from '@note/contracts';
 export class Knowledge {
   constructor(readonly db: Database) {}
   async references(actor: Actor, workspace: string, ids: unknown): Promise<GraphData['nodes']> {

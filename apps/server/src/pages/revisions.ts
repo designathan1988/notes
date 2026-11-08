@@ -1,6 +1,20 @@
 import type { Database } from '../platform/database.js';
 import { enqueueProjection } from '../knowledge/queue.js';
 
+/** Live document generations for a workspace, or for one page branch. */
+export function pageGenerations(
+  db: Database,
+  workspace: string,
+  pageId?: string,
+): Promise<{ id: string; generation: number }[]> {
+  return db.query<{ id: string; generation: number }>(
+    pageId
+      ? `WITH RECURSIVE branch AS (SELECT id,generation FROM pages WHERE id=$2 AND workspace_id=$1 UNION ALL SELECT p.id,p.generation FROM pages p JOIN branch b ON p.parent_id=b.id) SELECT * FROM branch`
+      : 'SELECT id,generation FROM pages WHERE workspace_id=$1',
+    pageId ? [workspace, pageId] : [workspace],
+  );
+}
+
 /** Pages owns the pages table. Other modules change page counters and metadata only here. */
 
 export async function markPagesChanged(

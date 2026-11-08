@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Search as SearchIcon, FileText, ArrowUpLeft } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
 import { Dialog } from '../ui/Dialog.js';
-import type { SearchResult } from '../../../../packages/contracts/src/index.js';
+import type { SearchResult } from '@note/contracts';
 export function Search() {
   const searched = useWorkspace((state) => state.searchResults);
   const recentIds = useWorkspace((state) => state.recentPageIds);
@@ -27,9 +27,8 @@ export function Search() {
   const showingRecent = !query && !kind && !after && !tag && recent.length > 0;
   const results = showingRecent ? recent : searched;
   useEffect(() => {
-    resultsRef.current
-      ?.querySelectorAll('[role=option]')
-      [active]?.scrollIntoView({ block: 'nearest' });
+    const options = resultsRef.current?.querySelectorAll('[role=option]');
+    options?.[active]?.scrollIntoView({ block: 'nearest' });
   }, [active]);
   useEffect(() => {
     const timer = setTimeout(() => {

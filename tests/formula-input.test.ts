@@ -1,10 +1,6 @@
 import { expect, test } from 'vitest';
-import type { RecordField } from '../packages/contracts/src/index.js';
-import {
-  displayFormula,
-  canonicalFormula,
-  formulaReference,
-} from '../packages/data/src/formula-input.js';
+import type { RecordField } from '@note/contracts';
+import { displayFormula, canonicalFormula, formulaReference } from '@note/data/formula-input';
 
 test('formula input uses property names while durable references survive renames', () => {
   const fields: RecordField[] = [{ id: 'stable-id', name: 'Annual rate', type: 'number' }];

@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
 import * as Y from 'yjs';
 import type { JSONContent } from '@tiptap/core';
-import { documentFromJSON, documentJSON, projectDocument } from '../packages/editor/src/schema.js';
-import { editorSchema } from '../packages/editor/src/schema.js';
+import { documentFromJSON, documentJSON, projectDocument } from '@note/editor/schema';
+import { editorSchema } from '@note/editor/schema';
 import { EditorState } from '@tiptap/pm/state';
-import { canvasBoxes } from '../packages/editor/src/canvas-containment.js';
-import { MAX_CANVAS_ELEMENTS } from '../packages/editor/src/canvas.js';
+import { canvasBoxes } from '@note/editor/canvas-containment';
+import { MAX_CANVAS_ELEMENTS } from '@note/editor/canvas';
 import {
   canvasItems,
   moveCanvas,
@@ -16,7 +16,7 @@ import {
   connectCanvas,
   resizeCanvas,
   orderCanvas,
-} from '../packages/editor/src/canvas-commands.js';
+} from '@note/editor/canvas-commands';
 
 const paragraph = (text: string): JSONContent => ({
   type: 'paragraph',

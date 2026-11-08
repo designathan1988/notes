@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { Database } from '../platform/database.js';
-import { DomainError, type HistoryEntry } from '../../../../packages/contracts/src/index.js';
+import { DomainError, type HistoryEntry } from '@note/contracts';
 import { availableStorage } from '../platform/storage-capacity.js';
 
 export const checkpointColumns = `c.id,c.page_id AS "pageId",c.label,c.kind,c.version::integer,coalesce(u.name,'System') AS "authorName",c.created_at AS "createdAt"`;

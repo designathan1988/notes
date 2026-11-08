@@ -1,20 +1,12 @@
 import type { Database } from '../platform/database.js';
 import type { Storage } from '../attachments/storage.js';
-import {
-  DomainError,
-  type Actor,
-  type RecordField,
-} from '../../../../packages/contracts/src/index.js';
+import { DomainError, type Actor } from '@note/contracts';
 import { Access } from '../access/service.js';
 import { Pages } from '../pages/service.js';
 import { Databases } from '../databases/service.js';
 import { Attachments } from '../attachments/service.js';
 import { Documents } from '../documents/service.js';
-import {
-  documentJSON,
-  documentFromJSON,
-  emptyDocument,
-} from '../../../../packages/editor/src/schema.js';
+import { documentJSON, documentFromJSON } from '@note/editor/schema';
 import * as Y from 'yjs';
 import { randomUUID } from 'node:crypto';
 import { pack, unpack, orderedPages, rewriteContent, type Manifest } from './archive.js';

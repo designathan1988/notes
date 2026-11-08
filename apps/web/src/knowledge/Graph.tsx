@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { ZoomIn, ZoomOut, Focus, Search, RotateCcw } from 'lucide-react';
-import type { GraphData } from '../../../../packages/contracts/src/index.js';
+import type { GraphData } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { IconButton } from '../ui/IconButton.js';
 import { useGraphLayout } from './useGraphLayout.js';

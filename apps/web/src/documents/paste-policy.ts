@@ -16,7 +16,7 @@ export function classifyPaste(input: { text?: string; html?: string; mode?: stri
         ),
     };
   try {
-    if (/^[\[{]/.test(text.trim())) {
+    if (/^[[{]/.test(text.trim())) {
       JSON.parse(text);
       return { mode: 'code', preserveOriginal: false };
     }

@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import { documentJSON } from '../../../../packages/editor/src/schema.js';
+import { documentJSON } from '@note/editor/schema';
 import { openRecovery } from './recovery.js';
 import { useWorkspace } from '../state/store.js';
 

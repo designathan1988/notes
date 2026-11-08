@@ -39,12 +39,24 @@ These are disposable local fixture credentials. Production mode does not run the
 ```text
 apps/web           React application, capability UI, one Zustand store, one authored styles.css
 apps/server        Fastify composition and capability-owned server services
-packages/contracts Shared identifiers, read models, limits, validation, and error vocabulary
-packages/editor    One rich-document schema and projection/import helpers
-tests              Database-backed behavior tests
+packages/contracts @note/contracts: identifiers, read models, limits, validation, error vocabulary
+packages/editor    @note/editor/<module>: one rich-document schema and projection/import helpers
+packages/data      @note/data/<module>: formulas and typed record values
+tests              Database-backed behavior tests, including tests/architecture.test.ts
 e2e                Isolated multi-context browser workflows
 docs               Approved design, research, plan, visual concepts, and execution evidence
 ```
+
+Shared packages are npm workspaces imported by name, never by relative path.
+
+### Ownership rules (enforced)
+
+- **Every table has one owning server module**; only that module writes it. Other modules call the owner's API (`pages/revisions.ts`, `knowledge/queue.ts`, `databases/definitions.ts`, `platform/operations.ts`). The ownership map lives in `tests/architecture.test.ts`; a new table without an owner fails the build.
+- **Route files translate HTTP into service calls** and run no SQL.
+- **Components change the Zustand store only through slice actions**; `useWorkspace.setState` is allowed only inside `*/state.ts` and `state/store.ts`.
+- **Dependency direction:** `packages/*` never import applications; web and server never import each other.
+
+`npm run lint` (ESLint) and `npm test` (architecture test) both enforce these rules. `npm run check` runs typecheck, lint, formatting, tests and build; CI (`.github/workflows/ci.yml`) also runs the browser suite.
 
 The server owns authorization and business invariants. UI controls call commands; they do not write the database directly. The client store composes capability-owned state slices. A document session owns its Yjs document and local recovery; the application store holds status and derived metadata, not another writable copy of its body.
 
@@ -90,11 +102,9 @@ Pasted web applications cannot be cloned by the clipboard. Their scripts do not 
 ## Verify
 
 ```powershell
-npm run typecheck
-npm test
+npm run check
 npm exec playwright -- install chromium
 npm run test:e2e
-npm run build
 ```
 
 Browser tests cover pointer-only block dragging, page-tree dragging, durable reorder, block transformations, root creation, inline editable databases, table row/column operations, typed records and relation selection, sorting/filtering/saved views/columns, favorites, trash restoration, rapid metadata edits, retry states, mobile keyboard focus, two-identity editing, rich-paste safety and source preservation, exact uploaded bytes, body search, graph navigation, ZIP transfer, verified invitation acceptance, live access revocation, disconnected recovery, and offline recovery export. Behavior tests use an actual PostgreSQL engine rather than a mocked persistence layer.

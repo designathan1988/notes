@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Auth } from '../identity/auth.js';
 import type { Access } from './service.js';
 import { requestHeaders } from '../platform/http.js';
-import { assertObject, type Role } from '../../../../packages/contracts/src/index.js';
+import { assertObject, type Role } from '@note/contracts';
 export function accessRoutes(app: FastifyInstance, access: Access, auth: Auth) {
   app.get('/api/session', async (request) => {
     const session = await auth.api.getSession({ headers: requestHeaders(request) });

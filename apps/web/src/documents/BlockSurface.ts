@@ -1,7 +1,7 @@
 import { Extension } from '@tiptap/core';
 import { Plugin } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import { blockAt } from '../../../../packages/editor/src/blocks.js';
+import { blockAt } from '@note/editor/blocks';
 
 // The editor document owns blocks. Decorations only expose their structure in the UI.
 export const BlockSurface = Extension.create({

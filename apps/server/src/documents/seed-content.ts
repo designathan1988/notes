@@ -1,7 +1,7 @@
 import type { JSONContent } from '@tiptap/core';
 import * as Y from 'yjs';
 import type { Database } from '../platform/database.js';
-import { documentFromJSON } from '../../../../packages/editor/src/schema.js';
+import { documentFromJSON } from '@note/editor/schema';
 const p = (text: string): JSONContent => ({ type: 'paragraph', content: [{ type: 'text', text }] });
 const h = (text: string): JSONContent => ({
   type: 'heading',

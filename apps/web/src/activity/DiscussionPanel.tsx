@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Check, CornerDownRight, MessageSquare, RotateCcw, Send, X } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
-import type { DiscussionThread } from '../../../../packages/contracts/src/index.js';
-import { ACTIVITY_PAGE_SIZE } from '../../../../packages/contracts/src/index.js';
+import type { DiscussionThread } from '@note/contracts';
+import { ACTIVITY_PAGE_SIZE } from '@note/contracts';
 
 export const activityTime = (value: string) =>
   new Date(value).toLocaleString('en-US', {

@@ -6,7 +6,7 @@ import type { Database } from '../apps/server/src/platform/database.js';
 import type { Auth } from '../apps/server/src/identity/auth.js';
 import { createApp } from '../apps/server/src/app.js';
 import { Documents } from '../apps/server/src/documents/service.js';
-import { documentFromJSON, documentJSON } from '../packages/editor/src/schema.js';
+import { documentFromJSON, documentJSON } from '@note/editor/schema';
 
 let db: Database, app: FastifyInstance;
 beforeAll(async () => {

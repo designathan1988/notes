@@ -1,13 +1,8 @@
 import { expect, test } from 'vitest';
-import {
-  editorSchema,
-  documentFromJSON,
-  documentJSON,
-  projectDocument,
-} from '../packages/editor/src/schema.js';
-import { findDocumentMatches } from '../packages/editor/src/find.js';
-import { documentTemplates } from '../packages/editor/src/templates.js';
-import { documentStatistics } from '../packages/editor/src/statistics.js';
+import { editorSchema, documentFromJSON, documentJSON, projectDocument } from '@note/editor/schema';
+import { findDocumentMatches } from '@note/editor/find';
+import { documentTemplates } from '@note/editor/templates';
+import { documentStatistics } from '@note/editor/statistics';
 
 test('statistics preserve words across mark boundaries and count Unicode characters', () => {
   const doc = editorSchema().nodeFromJSON({

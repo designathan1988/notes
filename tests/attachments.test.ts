@@ -7,7 +7,7 @@ import type { Database } from '../apps/server/src/platform/database.js';
 import { Attachments } from '../apps/server/src/attachments/service.js';
 import { FileStorage } from '../apps/server/src/attachments/storage.js';
 import { classifyPaste } from '../apps/web/src/documents/paste-policy.js';
-import { safeEmbedSource } from '../packages/editor/src/embeds.js';
+import { safeEmbedSource } from '@note/editor/embeds';
 let db: Database;
 let path: string;
 let attachments: Attachments;

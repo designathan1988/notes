@@ -1,8 +1,9 @@
 import type { FastifyInstance } from 'fastify';
 import type { Database } from '../platform/database.js';
 import { FileMail } from '../identity/mail.js';
+import { emailOf } from '../identity/users.js';
 import { Invitations } from './invitations.js';
-import { assertObject, DomainError, type Role } from '../../../../packages/contracts/src/index.js';
+import { assertObject, DomainError, type Role } from '@note/contracts';
 export function invitationRoutes(app: FastifyInstance, db: Database) {
   const mail = new FileMail();
   const invitations = new Invitations(db, mail);
@@ -39,9 +40,6 @@ export function invitationRoutes(app: FastifyInstance, db: Database) {
   );
   if (process.env.NODE_ENV !== 'production')
     app.get('/api/local-mail', async (request) => {
-      const [user] = await db.query<{ email: string }>('SELECT email FROM "user" WHERE id=$1', [
-        request.actor.userId,
-      ]);
-      return mail.list(user.email);
+      return mail.list(await emailOf(db, request.actor.userId));
     });
 }

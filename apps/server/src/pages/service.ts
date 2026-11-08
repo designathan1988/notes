@@ -8,7 +8,7 @@ import {
   type Page,
   type PageKind,
   type PageUpdate,
-} from '../../../../packages/contracts/src/index.js';
+} from '@note/contracts';
 import { Access } from '../access/service.js';
 import { randomUUID } from 'node:crypto';
 import { toPage, type PageRow } from './model.js';

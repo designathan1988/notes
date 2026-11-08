@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import { FileText, PanelRightOpen } from 'lucide-react';
-import type { DatabaseRecord, RecordField } from '../../../../packages/contracts/src/index.js';
+import type { DatabaseRecord, RecordField } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { IconButton } from '../ui/IconButton.js';
 import { Cell } from './Cell.js';

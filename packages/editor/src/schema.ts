@@ -9,7 +9,7 @@ import { safeEmbedSource } from './embeds.js';
 import { toggleBlock, toggleTitle, toggleContent, highlight } from './structure.js';
 import { canvasExtensions, isCanvas, validateCanvas } from './canvas.js';
 import { webExtensions, validateWeb } from './web.js';
-import type { PageKind } from '../../contracts/src/index.js';
+import type { PageKind } from '@note/contracts';
 export const documentRoot = Node.create({
   name: 'doc',
   topNode: true,

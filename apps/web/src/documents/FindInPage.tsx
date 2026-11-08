@@ -4,11 +4,7 @@ import type { Editor } from '@tiptap/react';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
-import {
-  findDocumentMatches,
-  matchLimit,
-  type DocumentMatch,
-} from '../../../../packages/editor/src/find.js';
+import { findDocumentMatches, matchLimit, type DocumentMatch } from '@note/editor/find';
 import { isolatedDocumentEdit } from './history.js';
 
 interface FindState {

@@ -85,7 +85,7 @@ test('a pending property write retains its draft when a newer navigation reply a
       await rejectionGate;
       await route.fulfill({ response });
     });
-    let remote = await (
+    const remote = await (
       await colleague.request.patch(`/api/pages/${note.id}`, {
         headers,
         data: {

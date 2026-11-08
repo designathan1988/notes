@@ -16,7 +16,7 @@ import {
   Users,
   PanelRight,
 } from 'lucide-react';
-import type { Page } from '../../../../packages/contracts/src/index.js';
+import type { Page } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { Popover } from '../ui/Popover.js';
 import { download } from '../settings/DataSettings.js';

@@ -1,12 +1,8 @@
-import type {
-  DiscussionMessage,
-  DiscussionThread,
-  HistoryEntry,
-} from '../../../../packages/contracts/src/index.js';
+import type { DiscussionMessage, DiscussionThread, HistoryEntry } from '@note/contracts';
 import type { JSONContent } from '@tiptap/core';
 import type { WorkspaceState } from '../state/store.js';
 import { api, json } from '../state/api.js';
-import { ACTIVITY_PAGE_SIZE } from '../../../../packages/contracts/src/index.js';
+import { ACTIVITY_PAGE_SIZE } from '@note/contracts';
 
 export type PagePanelTab = 'details' | 'discussion' | 'history';
 type DiscussionPage = {

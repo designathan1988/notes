@@ -1,9 +1,5 @@
-import {
-  DomainError,
-  validDate,
-  type RecordField,
-} from '../../../../packages/contracts/src/index.js';
-import { compileFormulas } from '../../../../packages/data/src/formulas.js';
+import { DomainError, validDate, type RecordField } from '@note/contracts';
+import { compileFormulas } from '@note/data/formulas';
 export const defaultFields: RecordField[] = [
   { id: 'type', name: 'Type', type: 'select', options: ['Research', 'Document', 'Collection'] },
   {
@@ -108,7 +104,9 @@ export function validateValues(fields: RecordField[], values: Record<string, unk
         try {
           valid =
             typeof value === 'string' && ['https:', 'http:'].includes(new URL(value).protocol);
-        } catch {}
+        } catch {
+          // An unparsable URL stays invalid.
+        }
         break;
       case 'relation':
         valid = typeof value === 'string' && value.length <= 128;

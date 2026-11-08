@@ -1,6 +1,6 @@
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react';
-import { editorExtensions, databaseView } from '../../../../packages/editor/src/schema.js';
-import { toggleBlock } from '../../../../packages/editor/src/structure.js';
+import { editorExtensions, databaseView } from '@note/editor/schema';
+import { toggleBlock } from '@note/editor/structure';
 import { ToggleSection } from './ToggleSection.js';
 import { DatabaseView } from '../databases/DatabaseView.js';
 import { webEditorExtensions } from '../web/extensions.js';

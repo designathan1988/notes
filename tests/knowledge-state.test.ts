@@ -15,13 +15,11 @@ function fixture() {
 test('page-reference reads batch and deduplicate without storing a second writable page', async () => {
   const { get } = fixture(),
     state = get();
-  const fetcher = vi
-    .spyOn(globalThis, 'fetch')
-    .mockResolvedValue(
-      new Response(JSON.stringify([{ id: 'one', title: 'One', kind: 'document' }]), {
-        status: 200,
-      }),
-    );
+  const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    new Response(JSON.stringify([{ id: 'one', title: 'One', kind: 'document' }]), {
+      status: 200,
+    }),
+  );
   await Promise.all([
     state.loadPageReference('one'),
     state.loadPageReference('two'),

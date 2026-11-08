@@ -2,7 +2,7 @@ import type { Editor, JSONContent } from '@tiptap/core';
 import { marked } from 'marked';
 import { api, json } from '../state/api.js';
 import { classifyPaste } from './paste-policy.js';
-import { MAX_FILE_BYTES } from '../../../../packages/contracts/src/index.js';
+import { MAX_FILE_BYTES } from '@note/contracts';
 export interface CapturedFile {
   id: string;
   filename: string;

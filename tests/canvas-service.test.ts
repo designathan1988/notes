@@ -5,8 +5,8 @@ import { migrate, type Database } from '../apps/server/src/platform/database.js'
 import { Pages } from '../apps/server/src/pages/service.js';
 import { PageInstances } from '../apps/server/src/pages/instantiation.js';
 import { Documents } from '../apps/server/src/documents/service.js';
-import { documentFromJSON, documentJSON, emptyDocument } from '../packages/editor/src/schema.js';
-import { emptyCanvas } from '../packages/editor/src/canvas.js';
+import { documentFromJSON, documentJSON, emptyDocument } from '@note/editor/schema';
+import { emptyCanvas } from '@note/editor/canvas';
 import type { JSONContent } from '@tiptap/core';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';

@@ -1,4 +1,4 @@
-import type { Page } from '../../../../packages/contracts/src/index.js';
+import type { Page } from '@note/contracts';
 import type { WorkspaceState } from '../state/store.js';
 import type { CopyInput, PendingCopy } from './commands.js';
 import { commandPreferences, type PreferenceStorage } from '../workbench/preferences.js';

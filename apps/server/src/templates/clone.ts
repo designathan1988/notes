@@ -1,13 +1,8 @@
 import { findOperation, recordOperation } from '../platform/operations.js';
 import { createHash, randomUUID } from 'node:crypto';
-import type {
-  Actor,
-  Page,
-  PageKind,
-  RecordField,
-} from '../../../../packages/contracts/src/index.js';
-import { DomainError, validateTitle } from '../../../../packages/contracts/src/index.js';
-import { documentFromJSON, emptyDocument } from '../../../../packages/editor/src/schema.js';
+import type { Actor, Page, PageKind, RecordField } from '@note/contracts';
+import { DomainError, validateTitle } from '@note/contracts';
+import { documentFromJSON, emptyDocument } from '@note/editor/schema';
 import type { Database } from '../platform/database.js';
 import type { Storage } from '../attachments/storage.js';
 import { Access } from '../access/service.js';
@@ -17,7 +12,7 @@ import { PageDetails } from '../pages/details.js';
 import { PageInstances } from '../pages/instantiation.js';
 import { Databases } from '../databases/service.js';
 import { rewriteContent } from '../transfer/archive.js';
-import { readBlueprint, type Blueprint } from './blueprint.js';
+import { readBlueprint } from './blueprint.js';
 import { markTemplate, templateValues } from './metadata.js';
 import { inspectDefaults } from './defaults.js';
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
-import { projectDocument } from '../../../../packages/editor/src/schema.js';
-import { documentStatistics } from '../../../../packages/editor/src/statistics.js';
+import { projectDocument } from '@note/editor/schema';
+import { documentStatistics } from '@note/editor/statistics';
 import { useWorkspace } from '../state/store.js';
 
 /** Derived UI only. The shared Y.Doc remains the sole writable content owner. */

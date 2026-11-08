@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { GraphData } from '../../../../packages/contracts/src/index.js';
+import type { GraphData } from '@note/contracts';
 import { validPoint, type Point } from '../spatial/geometry.js';
 
 /** The worker owns disposable physics, never canonical pages, titles, or manual placements. */

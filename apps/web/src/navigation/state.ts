@@ -1,4 +1,4 @@
-import type { Page, PageCursor } from '../../../../packages/contracts/src/index.js';
+import type { Page, PageCursor } from '@note/contracts';
 import type { WorkspaceState } from '../state/store.js';
 import { api, ApiError, json } from '../state/api.js';
 export interface NavigationSlice {

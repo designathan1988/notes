@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import * as Y from 'yjs';
-import { documentJSON } from '../../../../packages/editor/src/schema.js';
+import { documentJSON } from '@note/editor/schema';
 import VersionPreview from '../activity/VersionPreview.js';
 export default function TemplatePreview({ state }: { state: string }) {
   const content = useMemo(() => {

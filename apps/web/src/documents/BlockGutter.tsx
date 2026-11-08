@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { GripVertical, Plus } from 'lucide-react';
 import { ySyncPluginKey } from '@tiptap/y-tiptap';
 import type { Editor } from '@tiptap/react';
-import { blockAt, moveBlockTo } from '../../../../packages/editor/src/blocks.js';
+import { blockAt, moveBlockTo } from '@note/editor/blocks';
 
 type Hover = { from: number; left: number; top: number };
 type Drop = { position: number; left: number; top: number; width: number };

@@ -1,6 +1,6 @@
 import { test, expect } from 'vitest';
-import { editorSchema, projectDocument } from '../packages/editor/src/schema.js';
-import { headingPositions } from '../packages/editor/src/outline.js';
+import { editorSchema, projectDocument } from '@note/editor/schema';
+import { headingPositions } from '@note/editor/outline';
 
 test('outline positions keep HTML component headings aligned with subsequent rich headings', () => {
   const schema = editorSchema();

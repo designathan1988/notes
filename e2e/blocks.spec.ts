@@ -80,22 +80,18 @@ test('edits, transforms, reorders and duplicates real blocks with durable reload
     clientY: handle!.y + 8,
     bubbles: true,
   });
-  await page
-    .locator('body')
-    .dispatchEvent('pointermove', {
-      pointerId: 71,
-      clientX: target!.x + 80,
-      clientY: target!.y - 2,
-      bubbles: true,
-    });
-  await page
-    .locator('body')
-    .dispatchEvent('pointerup', {
-      pointerId: 71,
-      clientX: target!.x + 80,
-      clientY: target!.y - 2,
-      bubbles: true,
-    });
+  await page.locator('body').dispatchEvent('pointermove', {
+    pointerId: 71,
+    clientX: target!.x + 80,
+    clientY: target!.y - 2,
+    bubbles: true,
+  });
+  await page.locator('body').dispatchEvent('pointerup', {
+    pointerId: 71,
+    clientX: target!.x + 80,
+    clientY: target!.y - 2,
+    bubbles: true,
+  });
   await expect(content.locator('[data-content-block]').first()).toHaveText('Second block');
   await page.setViewportSize({ width: 390, height: 844 });
   await content.locator('h2').click();

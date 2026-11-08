@@ -1,8 +1,8 @@
 import Fastify from 'fastify';
 import type { Database } from './platform/database.js';
-import { DomainError } from '../../../packages/contracts/src/index.js';
+import { DomainError } from '@note/contracts';
 import { createAuth, type Auth } from './identity/auth.js';
-import { appearanceRoutes } from './identity/appearance.js';
+import { appearanceRoutes } from './identity/appearance-routes.js';
 import { WebPreviews } from './web/service.js';
 import { webRoutes } from './web/routes.js';
 import { Access } from './access/service.js';
@@ -27,8 +27,18 @@ export async function createApp(options: {
   auth?: Auth;
   storage?: Storage;
   previews?: WebPreviews;
+  logLevel?: string;
+  logStream?: { write(line: string): void };
 }) {
-  const app = Fastify({ bodyLimit: 4 * 1024 * 1024, logger: false });
+  const app = Fastify({
+    bodyLimit: 4 * 1024 * 1024,
+    // Structured JSON logs (pino). Credentials never reach the log stream.
+    logger: {
+      level: options.logLevel ?? process.env.LOG_LEVEL ?? (process.env.VITEST ? 'silent' : 'info'),
+      redact: ['req.headers.cookie', 'req.headers.authorization', 'res.headers["set-cookie"]'],
+      ...(options.logStream ? { stream: options.logStream } : {}),
+    },
+  });
   const auth = options.auth ?? createAuth(options.db);
   const access = new Access(options.db);
   const pages = new Pages(options.db, access);
@@ -52,7 +62,7 @@ export async function createApp(options: {
         throw new DomainError('FORBIDDEN', 'This request origin is not allowed.');
     }
   });
-  app.setErrorHandler((error, _request, reply) => {
+  app.setErrorHandler((error, request, reply) => {
     if (error instanceof DomainError) {
       const status = {
         INVALID: 400,
@@ -64,7 +74,7 @@ export async function createApp(options: {
       }[error.code];
       return reply.status(status).send({ code: error.code, message: error.message });
     }
-    app.log.error(error);
+    request.log.error({ err: error }, 'Unhandled request error');
     return reply
       .status(500)
       .send({ code: 'INTERNAL', message: 'The operation could not be completed.' });

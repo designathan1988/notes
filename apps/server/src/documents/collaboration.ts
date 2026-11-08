@@ -1,4 +1,5 @@
 import { Hocuspocus } from '@hocuspocus/server';
+import { pageGenerations } from '../pages/revisions.js';
 import * as Y from 'yjs';
 import websocket from '@fastify/websocket';
 import type { FastifyInstance } from 'fastify';
@@ -6,11 +7,7 @@ import type { Database } from '../platform/database.js';
 import type { Auth } from '../identity/auth.js';
 import { Access } from '../access/service.js';
 import { Documents, type DurableAcknowledgement } from './service.js';
-import {
-  DOCUMENT_ACCESS_CHANGED,
-  DomainError,
-  type Actor,
-} from '../../../../packages/contracts/src/index.js';
+import { DOCUMENT_ACCESS_CHANGED, DomainError, type Actor } from '@note/contracts';
 import { requestHeaders } from '../platform/http.js';
 type Context = { actor: Actor; generation: number };
 function documentIdentity(name: string) {
@@ -150,12 +147,7 @@ export async function collaborationRoutes(
     socket.on('error', () => client.handleClose());
   });
   const invalidate = async (workspace: string, pageId?: string) => {
-    const pages = await db.query<{ id: string; generation: number }>(
-      pageId
-        ? `WITH RECURSIVE branch AS (SELECT id,generation FROM pages WHERE id=$2 AND workspace_id=$1 UNION ALL SELECT p.id,p.generation FROM pages p JOIN branch b ON p.parent_id=b.id) SELECT * FROM branch`
-        : 'SELECT id,generation FROM pages WHERE workspace_id=$1',
-      pageId ? [workspace, pageId] : [workspace],
-    );
+    const pages = await pageGenerations(db, workspace, pageId);
     for (const page of pages)
       for (const connection of hub.documents
         .get(`${page.id}:${page.generation}`)

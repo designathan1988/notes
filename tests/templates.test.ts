@@ -9,7 +9,7 @@ import { Pages } from '../apps/server/src/pages/service.js';
 import { Documents } from '../apps/server/src/documents/service.js';
 import { Attachments } from '../apps/server/src/attachments/service.js';
 import { Databases } from '../apps/server/src/databases/service.js';
-import { documentFromJSON, documentJSON } from '../packages/editor/src/schema.js';
+import { documentFromJSON, documentJSON } from '@note/editor/schema';
 import type { JSONContent } from '@tiptap/core';
 import { Transfer } from '../apps/server/src/transfer/service.js';
 import { Access } from '../apps/server/src/access/service.js';

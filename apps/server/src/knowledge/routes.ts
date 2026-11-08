@@ -2,7 +2,7 @@ import { enqueueMissingProjections } from './queue.js';
 import type { FastifyInstance } from 'fastify';
 import { Knowledge } from './service.js';
 import type { Database } from '../platform/database.js';
-import { assertObject } from '../../../../packages/contracts/src/index.js';
+import { assertObject } from '@note/contracts';
 export async function knowledgeRoutes(app: FastifyInstance, db: Database) {
   const knowledge = new Knowledge(db);
   app.post<{ Params: { workspace: string } }>(

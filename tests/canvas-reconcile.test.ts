@@ -3,8 +3,8 @@ import * as Y from 'yjs';
 import { fixture, rawPage } from './helpers.js';
 import type { Database } from '../apps/server/src/platform/database.js';
 import { Documents } from '../apps/server/src/documents/service.js';
-import { documentFromJSON, documentJSON, validateDocument } from '../packages/editor/src/schema.js';
-import { reconcileCanvasTopology } from '../packages/editor/src/canvas-reconcile.js';
+import { documentFromJSON, documentJSON, validateDocument } from '@note/editor/schema';
+import { reconcileCanvasTopology } from '@note/editor/canvas-reconcile';
 
 let db: Database;
 beforeAll(async () => {

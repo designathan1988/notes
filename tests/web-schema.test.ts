@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest';
-import { documentFromJSON, documentJSON, validateDocument } from '../packages/editor/src/schema.js';
+import { documentFromJSON, documentJSON, validateDocument } from '@note/editor/schema';
 import type { JSONContent } from '@tiptap/core';
 import { rewriteContent } from '../apps/server/src/transfer/archive.js';
-import { webSource } from '../packages/editor/src/web.js';
+import { webSource } from '@note/editor/web';
 
 const file = (path: string, text = ''): JSONContent => ({
   type: 'webFile',

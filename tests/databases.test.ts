@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from 'vitest';
-import { fixture, rawPage } from './helpers.js';
+import { fixture } from './helpers.js';
 import type { Database } from '../apps/server/src/platform/database.js';
 import { Databases } from '../apps/server/src/databases/service.js';
 import { Pages } from '../apps/server/src/pages/service.js';

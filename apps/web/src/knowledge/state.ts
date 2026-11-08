@@ -1,8 +1,4 @@
-import type {
-  SearchResult,
-  GraphData,
-  KnowledgeLink,
-} from '../../../../packages/contracts/src/index.js';
+import type { SearchResult, GraphData, KnowledgeLink } from '@note/contracts';
 import { api, json } from '../state/api.js';
 import type { WorkspaceState } from '../state/store.js';
 export interface KnowledgeSlice {

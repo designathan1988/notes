@@ -10,8 +10,11 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
-    "build": "vite build && esbuild apps/server/src/main.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server/main.js",
-    "start": "node dist/server/main.js"
+    "build": "vite build && node scripts/build-server.mjs",
+    "start": "node dist/server/main.js",
+    "lint": "eslint .",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"tests/**/*.ts\" \"e2e/**/*.ts\" eslint.config.mjs",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
@@ -60,6 +63,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.58.0",
     "@types/d3-force": "3.0.10",
     "@types/node": "^24.0.0",
@@ -69,11 +73,18 @@
     "@types/ws": "8.18.2",
     "@vitejs/plugin-react": "^5.0.0",
     "esbuild": "0.28.2",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.14.0",
     "prettier": "3.9.10",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.1",
     "vite": "^7.3.0",
     "vitest": "5.1.0",
     "ws": "8.22.1"
-  }
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }

@@ -1,21 +1,16 @@
 import { markPagesChanged } from '../pages/revisions.js';
 import * as Y from 'yjs';
 import type { Database } from '../platform/database.js';
-import {
-  DomainError,
-  MAX_DOCUMENT_BYTES,
-  type Actor,
-  type PageKind,
-} from '../../../../packages/contracts/src/index.js';
+import { DomainError, MAX_DOCUMENT_BYTES, type Actor, type PageKind } from '@note/contracts';
 import { Access } from '../access/service.js';
 import {
   documentFromJSON,
   documentJSON,
   validateDocument,
   emptyDocument,
-} from '../../../../packages/editor/src/schema.js';
-import { emptyCanvas } from '../../../../packages/editor/src/canvas.js';
-import { reconcileCanvasTopology } from '../../../../packages/editor/src/canvas-reconcile.js';
+} from '@note/editor/schema';
+import { emptyCanvas } from '@note/editor/canvas';
+import { reconcileCanvasTopology } from '@note/editor/canvas-reconcile';
 import { captureCheckpoint } from '../history/checkpoints.js';
 export interface DurableAcknowledgement {
   type: 'durable';

@@ -4,7 +4,7 @@ import { Dialog } from '../ui/Dialog.js';
 import { api, json } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
 import { DataSettings } from './DataSettings.js';
-import type { Page, Role } from '../../../../packages/contracts/src/index.js';
+import type { Page, Role } from '@note/contracts';
 export function Settings() {
   const state = useWorkspace();
   const [tab, setTab] = useState('members');

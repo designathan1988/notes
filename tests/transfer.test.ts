@@ -11,7 +11,7 @@ import { FileStorage } from '../apps/server/src/attachments/storage.js';
 import { Attachments } from '../apps/server/src/attachments/service.js';
 import { Access } from '../apps/server/src/access/service.js';
 import { Documents } from '../apps/server/src/documents/service.js';
-import { documentFromJSON, documentJSON } from '../packages/editor/src/schema.js';
+import { documentFromJSON, documentJSON } from '@note/editor/schema';
 import { Invitations } from '../apps/server/src/access/invitations.js';
 import { FileMail } from '../apps/server/src/identity/mail.js';
 import { Pages } from '../apps/server/src/pages/service.js';

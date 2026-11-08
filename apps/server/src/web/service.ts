@@ -5,13 +5,9 @@ import type { Storage } from '../attachments/storage.js';
 import { Attachments } from '../attachments/service.js';
 import { Access } from '../access/service.js';
 import { Documents } from '../documents/service.js';
-import { documentJSON, validateDocument } from '../../../../packages/editor/src/schema.js';
-import {
-  sourceFingerprint,
-  webSource,
-  type WebSource,
-} from '../../../../packages/editor/src/web.js';
-import { DomainError, type Actor } from '../../../../packages/contracts/src/index.js';
+import { documentJSON, validateDocument } from '@note/editor/schema';
+import { sourceFingerprint, webSource, type WebSource } from '@note/editor/web';
+import { DomainError, type Actor } from '@note/contracts';
 
 interface PreviewRow {
   id: string;

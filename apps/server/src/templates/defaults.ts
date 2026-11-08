@@ -6,7 +6,7 @@ import {
   type Page,
   type PageUpdate,
   type RecordField,
-} from '../../../../packages/contracts/src/index.js';
+} from '@note/contracts';
 import type { Database } from '../platform/database.js';
 import { Databases } from '../databases/service.js';
 import { Access } from '../access/service.js';

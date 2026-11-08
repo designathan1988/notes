@@ -1,5 +1,5 @@
 import { Crosshair, ExternalLink, PinOff, FileText, Database, X } from 'lucide-react';
-import type { GraphData } from '../../../../packages/contracts/src/index.js';
+import type { GraphData } from '@note/contracts';
 export function GraphInspector({
   node,
   nodes,

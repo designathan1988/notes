@@ -1,9 +1,9 @@
 import { ArrowUp, ArrowDown, Copy, Trash2, X } from 'lucide-react';
 import { useCanvas } from './context.js';
 import { IconButton } from '../ui/IconButton.js';
-import { styleCanvas, type CanvasStyle } from '../../../../packages/editor/src/canvas-commands.js';
-import { canvasColors } from '../../../../packages/editor/src/canvas.js';
-import { canvasSides, canvasEnds } from '../../../../packages/editor/src/canvas-geometry.js';
+import { styleCanvas, type CanvasStyle } from '@note/editor/canvas-commands';
+import { canvasColors } from '@note/editor/canvas';
+import { canvasSides, canvasEnds } from '@note/editor/canvas-geometry';
 
 export function CanvasSelection() {
   const c = useCanvas(),

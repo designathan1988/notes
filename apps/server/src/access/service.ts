@@ -7,7 +7,7 @@ import {
   type Page,
   type Role,
   type Workspace,
-} from '../../../../packages/contracts/src/index.js';
+} from '@note/contracts';
 import { toPage, toVisiblePage, type VisiblePageRow, type PageRow } from '../pages/model.js';
 import { randomUUID } from 'node:crypto';
 export class Access {
@@ -25,6 +25,15 @@ export class Access {
     if (!location) throw new DomainError('FORBIDDEN', 'This page is unavailable.');
     await this.guardWorkspace(location.workspace_id);
     return this.requirePage(actor, id, 'write', includeDeleted);
+  }
+  /** Changes whenever visible pages or the actor's role change; drives live refresh. */
+  async changeSignature(actor: Actor, workspace: string): Promise<string> {
+    const scope = await this.scope(actor, workspace);
+    const [row] = await this.db.query<{ signature: string }>(
+      `${scope.sql} SELECT count(*)::text || ':' || coalesce(sum(index_revision),0)::text || ':' || coalesce(sum(revision),0)::text AS signature FROM visible`,
+      scope.params,
+    );
+    return row.signature + (await this.requireWorkspace(actor, workspace));
   }
   async members(actor: Actor, workspace: string) {
     await this.requireWorkspace(actor, workspace);

@@ -1,5 +1,5 @@
 import type { FastifyRequest } from 'fastify';
-import type { Actor } from '../../../../packages/contracts/src/index.js';
+import type { Actor } from '@note/contracts';
 declare module 'fastify' {
   interface FastifyRequest {
     actor: Actor;

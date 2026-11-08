@@ -5,7 +5,7 @@ import {
   type Page,
   type PageCursor,
   type NavigationSnapshot,
-} from '../../../../packages/contracts/src/index.js';
+} from '@note/contracts';
 import { Access } from '../access/service.js';
 import { toPage, toVisiblePage, type VisiblePageRow, type PageRow } from './model.js';
 export interface Children {

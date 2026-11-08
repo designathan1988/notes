@@ -1,9 +1,6 @@
 import type { PointerEvent } from 'react';
-import {
-  canvasConnection,
-  type CanvasBox,
-} from '../../../../packages/editor/src/canvas-geometry.js';
-import type { CanvasItem } from '../../../../packages/editor/src/canvas-commands.js';
+import { canvasConnection, type CanvasBox } from '@note/editor/canvas-geometry';
+import type { CanvasItem } from '@note/editor/canvas-commands';
 import type { Point } from '../spatial/geometry.js';
 
 export const canvasElementColor = (color: string) =>

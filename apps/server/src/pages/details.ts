@@ -9,7 +9,7 @@ import {
   type PageCover,
   type PageUpdate,
   type PageProperties,
-} from '../../../../packages/contracts/src/index.js';
+} from '@note/contracts';
 import { toPage, type PageRow } from './model.js';
 import { changePageProperties } from './properties.js';
 import { changeDefaults } from '../templates/defaults.js';

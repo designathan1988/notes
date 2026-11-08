@@ -7,7 +7,7 @@ import {
   type Actor,
   type DiscussionMessage,
   type DiscussionThread,
-} from '../../../../packages/contracts/src/index.js';
+} from '@note/contracts';
 
 const text = (value: unknown, max: number, name: string) => {
   if (typeof value !== 'string' || !value.trim() || value.length > max || value.includes('\0'))

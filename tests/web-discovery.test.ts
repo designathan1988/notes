@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { projectDocument } from '../packages/editor/src/projection.js';
+import { projectDocument } from '@note/editor/projection';
 
 test('website discovery indexes static HTML prose, entities, headings and image descriptions without executing code', () => {
   const projection = projectDocument({

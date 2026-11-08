@@ -4,7 +4,7 @@ import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { api, json } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
 import { ensureCopySourcesSaved } from '../documents/session.js';
-import { sourceFingerprint, webSource } from '../../../../packages/editor/src/web.js';
+import { sourceFingerprint, webSource } from '@note/editor/web';
 
 interface Ticket {
   token: string;

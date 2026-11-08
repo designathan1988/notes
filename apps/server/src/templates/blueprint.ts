@@ -7,9 +7,9 @@ import {
   type Page,
   type RecordField,
   type SavedDatabaseView,
-} from '../../../../packages/contracts/src/index.js';
-import { documentJSON, emptyDocument } from '../../../../packages/editor/src/schema.js';
-import { emptyCanvas } from '../../../../packages/editor/src/canvas.js';
+} from '@note/contracts';
+import { documentJSON, emptyDocument } from '@note/editor/schema';
+import { emptyCanvas } from '@note/editor/canvas';
 import type { Database } from '../platform/database.js';
 import { Access } from '../access/service.js';
 import { toPage, type PageRow } from '../pages/model.js';

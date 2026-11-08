@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Database } from '../platform/database.js';
 import { Attachments } from './service.js';
 import { storageFromEnvironment, type Storage } from './storage.js';
-import { assertObject, MAX_FILE_BYTES } from '../../../../packages/contracts/src/index.js';
+import { assertObject, MAX_FILE_BYTES } from '@note/contracts';
 import { sendAttachment } from './http.js';
 export function attachmentRoutes(
   app: FastifyInstance,

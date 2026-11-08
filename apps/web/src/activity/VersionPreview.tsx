@@ -1,9 +1,9 @@
 import { EditorContent, useEditor } from '@tiptap/react';
 import type { JSONContent } from '@tiptap/core';
-import { editorExtensions } from '../../../../packages/editor/src/schema.js';
+import { editorExtensions } from '@note/editor/schema';
 import { BlockSurface } from '../documents/BlockSurface.js';
 import { lazy, Suspense } from 'react';
-import { isCanvas } from '../../../../packages/editor/src/canvas.js';
+import { isCanvas } from '@note/editor/canvas';
 const CanvasPreview = lazy(() => import('../canvas/CanvasPreview.js'));
 
 /** Isolated read-only rendering: no provider, recovery session or application projections. */

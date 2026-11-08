@@ -1,13 +1,8 @@
 import { Unzip, UnzipInflate, zipSync, strToU8, strFromU8 } from 'fflate';
 import type { JSONContent } from '@tiptap/core';
-import { validateDocument } from '../../../../packages/editor/src/schema.js';
-import { isCanvas } from '../../../../packages/editor/src/canvas.js';
-import {
-  DomainError,
-  type PageKind,
-  type RecordField,
-  type Page,
-} from '../../../../packages/contracts/src/index.js';
+import { validateDocument } from '@note/editor/schema';
+import { isCanvas } from '@note/editor/canvas';
+import { DomainError, type PageKind, type RecordField, type Page } from '@note/contracts';
 import { validateFields, validateValues } from '../databases/values.js';
 import { validatePresentation } from '../pages/details.js';
 import { validatePageProperties } from '../pages/properties.js';

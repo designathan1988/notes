@@ -5,7 +5,7 @@ import type { Database } from '../apps/server/src/platform/database.js';
 import type { Storage } from '../apps/server/src/attachments/storage.js';
 import { Attachments } from '../apps/server/src/attachments/service.js';
 import { Documents } from '../apps/server/src/documents/service.js';
-import { documentFromJSON, documentJSON } from '../packages/editor/src/schema.js';
+import { documentFromJSON, documentJSON } from '@note/editor/schema';
 import { exportWebsite } from '../apps/server/src/transfer/website.js';
 import { Transfer } from '../apps/server/src/transfer/service.js';
 import { Access } from '../apps/server/src/access/service.js';

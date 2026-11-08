@@ -1,13 +1,7 @@
 import { create } from 'zustand';
 import type { JSONContent } from '@tiptap/core';
 import { api, ApiError, json } from './api.js';
-import type {
-  Page,
-  PageUpdate,
-  SaveStatus,
-  Workspace,
-  NavigationSnapshot,
-} from '../../../../packages/contracts/src/index.js';
+import type { Page, PageUpdate, SaveStatus, Workspace, NavigationSnapshot } from '@note/contracts';
 import { databaseSlice, type DatabaseSlice } from '../databases/state.js';
 import { knowledgeSlice, type KnowledgeSlice } from '../knowledge/state.js';
 import { navigationSlice, type NavigationSlice } from '../navigation/state.js';

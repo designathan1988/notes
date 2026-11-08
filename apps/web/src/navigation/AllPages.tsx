@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Database, FileText, ArrowUpRight, Plus, SquareDashed, Search } from 'lucide-react';
-import type { Page } from '../../../../packages/contracts/src/index.js';
+import type { Page } from '@note/contracts';
 import { api } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
 import { pageView } from '../workbench/route.js';

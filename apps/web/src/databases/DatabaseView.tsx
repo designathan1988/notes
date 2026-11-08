@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { ArrowUpRight, ChevronLeft, ChevronRight, Database, Plus, X } from 'lucide-react';
-import { compileFormulas } from '../../../../packages/data/src/formulas.js';
+import { compileFormulas } from '@note/data/formulas';
 import { useWorkspace } from '../state/store.js';
 import { Dialog } from '../ui/Dialog.js';
 import { IconButton } from '../ui/IconButton.js';

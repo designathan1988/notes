@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { Database } from '../platform/database.js';
-import { assertObject, DomainError } from '../../../../packages/contracts/src/index.js';
+import { assertObject, DomainError } from '@note/contracts';
 import { Discussions } from './service.js';
 import { pageOffset } from '../platform/pagination.js';
 export function discussionRoutes(app: FastifyInstance, db: Database) {

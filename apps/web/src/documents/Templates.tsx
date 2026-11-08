@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/react';
 import { FileText } from 'lucide-react';
-import { documentTemplates } from '../../../../packages/editor/src/templates.js';
+import { documentTemplates } from '@note/editor/templates';
 import { Popover } from '../ui/Popover.js';
 import { isolatedDocumentEdit } from './history.js';
 

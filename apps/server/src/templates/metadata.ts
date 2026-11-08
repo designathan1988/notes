@@ -1,5 +1,5 @@
 import { setTemplateMetadata } from '../pages/revisions.js';
-import { assertObject, DomainError, type Actor } from '../../../../packages/contracts/src/index.js';
+import { assertObject, DomainError, type Actor } from '@note/contracts';
 import type { Database } from '../platform/database.js';
 import { Access } from '../access/service.js';
 

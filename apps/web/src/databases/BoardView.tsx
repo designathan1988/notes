@@ -1,5 +1,5 @@
 import { GripVertical, Plus } from 'lucide-react';
-import type { DatabaseRecord, RecordField } from '../../../../packages/contracts/src/index.js';
+import type { DatabaseRecord, RecordField } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { RecordProperty } from './RecordProperty.js';
 import { useRecordDrag } from './useRecordDrag.js';

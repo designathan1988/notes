@@ -45,7 +45,7 @@ const app = await createApp({ db, auth, storage, previews });
 const renderer = createWebRenderer(previews);
 await renderer.listen({ host: '127.0.0.1', port: Number(process.env.USER_CONTENT_PORT ?? 3002) });
 await app.listen({ host: '127.0.0.1', port: Number(process.env.PORT ?? 3001) });
-console.log('Note API: http://127.0.0.1:3001');
+app.log.info('Note API: http://127.0.0.1:3001');
 let closing = false;
 for (const signal of ['SIGINT', 'SIGTERM'] as const)
   process.on(signal, async () => {

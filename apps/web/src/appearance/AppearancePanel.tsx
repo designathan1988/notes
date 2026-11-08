@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
-import type { AppearanceOverrides } from '../../../../packages/contracts/src/index.js';
+import type { AppearanceOverrides } from '@note/contracts';
 import { IconButton } from '../ui/IconButton.js';
 import { appearanceVariableNames } from './projection.js';
 

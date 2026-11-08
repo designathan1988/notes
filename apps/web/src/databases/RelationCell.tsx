@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link2, X } from 'lucide-react';
-import type { Page, PageLookup } from '../../../../packages/contracts/src/index.js';
+import type { Page, PageLookup } from '@note/contracts';
 import { api } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
 import { Dialog } from '../ui/Dialog.js';

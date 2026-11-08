@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { useWorkspace } from '../apps/web/src/state/store.js';
-import type { Page } from '../packages/contracts/src/index.js';
+import type { Page } from '@note/contracts';
 const initial = useWorkspace.getState();
 afterEach(() => {
   useWorkspace.setState(initial, true);

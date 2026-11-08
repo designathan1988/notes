@@ -10,24 +10,16 @@ import {
 import type { JSONContent } from '@tiptap/core';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { Expand, Focus, ZoomIn, ZoomOut } from 'lucide-react';
-import { editorExtensions } from '../../../../packages/editor/src/schema.js';
-import { canvasItems } from '../../../../packages/editor/src/canvas-commands.js';
-import {
-  canvasRoot,
-  canvasCard,
-  canvasGroup,
-  canvasEdge,
-} from '../../../../packages/editor/src/canvas.js';
-import {
-  canvasConnection,
-  type CanvasBox,
-} from '../../../../packages/editor/src/canvas-geometry.js';
+import { editorExtensions } from '@note/editor/schema';
+import { canvasItems } from '@note/editor/canvas-commands';
+import { canvasRoot, canvasCard, canvasGroup, canvasEdge } from '@note/editor/canvas';
+import { canvasConnection, type CanvasBox } from '@note/editor/canvas-geometry';
 import { useSpatialView } from '../spatial/useSpatialView.js';
 import { BlockSurface } from '../documents/BlockSurface.js';
 import { IconButton } from '../ui/IconButton.js';
 import { Dialog } from '../ui/Dialog.js';
 import { CanvasConnections, canvasElementColor } from './CanvasConnections.js';
-import { canvasBoxes } from '../../../../packages/editor/src/canvas-containment.js';
+import { canvasBoxes } from '@note/editor/canvas-containment';
 
 // Immutable document identity keys this disposable geometry projection, not another body.
 const geometry = new WeakMap<ProseMirrorNode, ReadonlyMap<string, CanvasBox>>();

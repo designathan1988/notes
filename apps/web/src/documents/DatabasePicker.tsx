@@ -4,7 +4,7 @@ import { Database, Plus } from 'lucide-react';
 import { Dialog } from '../ui/Dialog.js';
 import { api } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
-import type { Page } from '../../../../packages/contracts/src/index.js';
+import type { Page } from '@note/contracts';
 
 export function DatabasePicker({
   editor,

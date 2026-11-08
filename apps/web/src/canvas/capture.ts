@@ -1,5 +1,5 @@
 import type { Editor } from '@tiptap/core';
-import { canvasItems } from '../../../../packages/editor/src/canvas-commands.js';
+import { canvasItems } from '@note/editor/canvas-commands';
 import type { ClipboardInserter } from '../documents/capture.js';
 
 /** Keep asynchronous clipboard conversion in the note created by this capture,

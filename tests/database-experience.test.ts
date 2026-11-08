@@ -3,8 +3,8 @@ import { fixture } from './helpers.js';
 import type { Database } from '../apps/server/src/platform/database.js';
 import { Databases } from '../apps/server/src/databases/service.js';
 import { Pages } from '../apps/server/src/pages/service.js';
-import { compileFormulas } from '../packages/data/src/formulas.js';
-import type { RecordField } from '../packages/contracts/src/index.js';
+import { compileFormulas } from '@note/data/formulas';
+import type { RecordField } from '@note/contracts';
 import { Knowledge } from '../apps/server/src/knowledge/service.js';
 import { Navigation } from '../apps/server/src/pages/navigation.js';
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { RecordField } from '../../../../packages/contracts/src/index.js';
+import type { RecordField } from '@note/contracts';
 import { RelationCell } from './RelationCell.js';
 export function Cell({
   initial,

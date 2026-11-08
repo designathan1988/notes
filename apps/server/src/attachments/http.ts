@@ -18,7 +18,7 @@ export function sendAttachment(
   if (range) {
     const match = /^bytes=(\d*)-(\d*)$/.exec(range);
     const size = file.bytes.length;
-    let start = match?.[1]
+    const start = match?.[1]
       ? Number(match[1])
       : match?.[2]
         ? Math.max(0, size - Number(match[2]))

@@ -6,7 +6,7 @@ import type { Auth } from '../apps/server/src/identity/auth.js';
 import { createApp } from '../apps/server/src/app.js';
 import { Knowledge } from '../apps/server/src/knowledge/service.js';
 import { Databases } from '../apps/server/src/databases/service.js';
-import type { RecordField } from '../packages/contracts/src/index.js';
+import type { RecordField } from '@note/contracts';
 
 let db: Database, app: FastifyInstance;
 const hours: RecordField = { id: 'hours', name: 'Hours', type: 'number' },

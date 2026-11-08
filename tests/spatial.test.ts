@@ -9,7 +9,7 @@ import {
   validPoint,
 } from '../apps/web/src/spatial/geometry.js';
 import { layoutGraph } from '../apps/web/src/knowledge/layout.js';
-import type { GraphData } from '../packages/contracts/src/index.js';
+import type { GraphData } from '@note/contracts';
 import { graphLabels } from '../apps/web/src/knowledge/labels.js';
 
 test('free-space placement keeps an empty preferred position and escapes a completely occupied viewport', () => {

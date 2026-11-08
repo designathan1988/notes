@@ -2,7 +2,7 @@ import * as Y from 'yjs';
 import { yDocToProsemirrorJSON } from 'y-prosemirror';
 import { zipSync, strToU8 } from 'fflate';
 import { openRecovery, type Recovery } from './recovery.js';
-import { projectDocument } from '../../../../packages/editor/src/projection.js';
+import { projectDocument } from '@note/editor/projection';
 import { useWorkspace } from '../state/store.js';
 
 export async function localDraftExcerpt(storage: Recovery, key: string) {

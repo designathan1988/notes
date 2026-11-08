@@ -154,7 +154,9 @@ test('two canvas editors merge concurrent geometry and text, then recover a clos
     queued.splice(0).forEach((send) => {
       try {
         send();
-      } catch {}
+      } catch {
+        // The socket may already be closed by the offline transition.
+      }
     });
     await colleague.setOffline(false).catch(() => {});
     await owner.request.delete(`/api/pages/${source.id}`, { headers }).catch(() => {});
@@ -197,10 +199,9 @@ test('an offline draft survives reopening as a viewer and synchronizes only afte
     await colleague.setOffline(false);
     b = await colleague.newPage();
     await b.goto(`/#${source.id}/canvas`);
-    await expect(note(b).getByRole('textbox', { name: 'Note content', exact: true })).toHaveAttribute(
-      'aria-readonly',
-      'true',
-    );
+    await expect(
+      note(b).getByRole('textbox', { name: 'Note content', exact: true }),
+    ).toHaveAttribute('aria-readonly', 'true');
     await expect.poll(() => plain(b)).toBe(retained);
     await expect(b.locator('.save-status')).toHaveText('Read only');
     await expect.poll(() => plain(a)).toBe('Shared research');
@@ -299,7 +300,6 @@ test('clicking a populated note keeps text shortcuts in the note instead of the 
   try {
     await page.goto(`/#${source.id}/canvas`);
     await note(page).locator('p').click();
-    const body = note(page).getByRole('textbox', { name: 'Note content', exact: true });
     await expect(page.getByRole('group', { name: 'Page content', exact: true })).toBeFocused();
     await page.keyboard.press('Control+End');
     await page.keyboard.type(' new human connections have value');

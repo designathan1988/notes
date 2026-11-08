@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
-import type { DatabaseRecord } from '../../../../packages/contracts/src/index.js';
+import type { DatabaseRecord } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { calendarDate, calendarDays } from './calendar.js';
 import { useRecordDrag } from './useRecordDrag.js';

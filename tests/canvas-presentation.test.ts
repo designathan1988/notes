@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest';
 import { EditorState } from '@tiptap/pm/state';
-import { editorSchema } from '../packages/editor/src/schema.js';
-import { canvasConnection } from '../packages/editor/src/canvas-geometry.js';
-import { styleCanvas, canvasItems } from '../packages/editor/src/canvas-commands.js';
+import { editorSchema } from '@note/editor/schema';
+import { canvasConnection } from '@note/editor/canvas-geometry';
+import { styleCanvas, canvasItems } from '@note/editor/canvas-commands';
 
 const a = { x: 0, y: 0, width: 120, height: 60 },
   b = { x: 300, y: 200, width: 120, height: 60 };

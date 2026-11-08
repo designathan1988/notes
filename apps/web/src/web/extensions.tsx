@@ -1,5 +1,5 @@
 import { ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react';
-import { webPage, webComponent, webFile } from '../../../../packages/editor/src/web.js';
+import { webPage, webComponent, webFile } from '@note/editor/web';
 import { WebAuthoring } from './WebAuthoring.js';
 import { LazySourceView } from './LazySourceView.js';
 export function webEditorExtensions(pageId: string) {

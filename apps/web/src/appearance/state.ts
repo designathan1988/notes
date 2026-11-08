@@ -1,7 +1,4 @@
-import type {
-  AppearanceOverrides,
-  AppearancePreference,
-} from '../../../../packages/contracts/src/index.js';
+import type { AppearanceOverrides, AppearancePreference } from '@note/contracts';
 import type { WorkspaceState } from '../state/store.js';
 import { api, ApiError, json } from '../state/api.js';
 

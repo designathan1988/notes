@@ -1,10 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { PageInstances } from './instantiation.js';
-import {
-  assertObject,
-  DomainError,
-  type PageUpdate,
-} from '../../../../packages/contracts/src/index.js';
+import { assertObject, DomainError, type PageUpdate } from '@note/contracts';
 import type { Pages } from './service.js';
 import { Navigation } from './navigation.js';
 export function pageRoutes(app: FastifyInstance, pages: Pages) {

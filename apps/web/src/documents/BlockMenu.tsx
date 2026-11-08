@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
-import { newWebContent } from '../../../../packages/editor/src/web.js';
+import { newWebContent } from '@note/editor/web';
 import {
   ArrowDown,
   ArrowUp,
@@ -17,7 +17,6 @@ import {
   MessageSquareQuote,
   Minus,
   Paperclip,
-  Plus,
   Quote,
   Search,
   Table2,
@@ -27,14 +26,7 @@ import {
   Link,
   ChevronRight,
 } from 'lucide-react';
-import {
-  blockAt,
-  changeBlock,
-  duplicateBlock,
-  moveBlock,
-  removeBlock,
-  type BlockKind,
-} from '../../../../packages/editor/src/blocks.js';
+import { blockAt, changeBlock, duplicateBlock, moveBlock, removeBlock } from '@note/editor/blocks';
 
 const choices = [
   {

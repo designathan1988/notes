@@ -1,4 +1,4 @@
-import type { RecordField } from '../../../../packages/contracts/src/index.js';
+import type { RecordField } from '@note/contracts';
 import { PropertyManager as FieldEditor } from '../properties/PropertyManager.js';
 import { api, json } from '../state/api.js';
 

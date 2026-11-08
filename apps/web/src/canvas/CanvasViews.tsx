@@ -11,12 +11,11 @@ import {
   ZoomOut,
   Focus,
   GripVertical,
-  Layers2,
 } from 'lucide-react';
 import { useCanvas } from './context.js';
 import { IconButton } from '../ui/IconButton.js';
 import { PageHeader } from '../workspace/PageHeader.js';
-import { canvasConnection } from '../../../../packages/editor/src/canvas-geometry.js';
+import { canvasConnection } from '@note/editor/canvas-geometry';
 import { CanvasSelection } from './CanvasSelection.js';
 import { CanvasConnections, canvasElementColor as elementColor } from './CanvasConnections.js';
 export function CanvasRootView() {

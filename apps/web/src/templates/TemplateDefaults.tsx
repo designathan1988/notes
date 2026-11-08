@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { Page, RecordField } from '../../../../packages/contracts/src/index.js';
-import { compileFormulas } from '../../../../packages/data/src/formulas.js';
+import type { Page, RecordField } from '@note/contracts';
+import { compileFormulas } from '@note/data/formulas';
 import { useWorkspace } from '../state/store.js';
 import { Cell } from '../databases/Cell.js';
 function DefaultCell({

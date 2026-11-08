@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
-import type { Page } from '../../../../packages/contracts/src/index.js';
-import { compileFormulas } from '../../../../packages/data/src/formulas.js';
+import type { Page } from '@note/contracts';
+import { compileFormulas } from '@note/data/formulas';
 import { useWorkspace } from '../state/store.js';
 import { RecordProperty } from './RecordProperty.js';
 import { PropertyManager } from './PropertyManager.js';

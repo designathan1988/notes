@@ -4,7 +4,7 @@ import { useWorkspace } from '../state/store.js';
 import { Dialog } from '../ui/Dialog.js';
 import type { VersionPreview as Preview } from './state.js';
 import { activityTime } from './DiscussionPanel.js';
-import { ACTIVITY_PAGE_SIZE } from '../../../../packages/contracts/src/index.js';
+import { ACTIVITY_PAGE_SIZE } from '@note/contracts';
 const VersionPreview = lazy(() => import('./VersionPreview.js'));
 export function HistoryPanel({ pageId, canWrite }: { pageId: string; canWrite: boolean }) {
   const data = useWorkspace((state) => state.histories[pageId]),

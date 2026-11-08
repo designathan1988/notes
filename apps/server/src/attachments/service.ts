@@ -1,10 +1,6 @@
 import type { Database } from '../platform/database.js';
 import type { Storage } from './storage.js';
-import {
-  DomainError,
-  MAX_FILE_BYTES,
-  type Actor,
-} from '../../../../packages/contracts/src/index.js';
+import { DomainError, MAX_FILE_BYTES, type Actor } from '@note/contracts';
 import { Access } from '../access/service.js';
 import { randomUUID } from 'node:crypto';
 import { availableStorage } from '../platform/storage-capacity.js';

@@ -1,5 +1,5 @@
 import { LayoutTemplate, ArrowLeft } from 'lucide-react';
-import type { Page } from '../../../../packages/contracts/src/index.js';
+import type { Page } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { useEffect } from 'react';
 export function TemplateBanner({ page }: { page: Page }) {

@@ -3,8 +3,7 @@ import { activitySlice } from '../apps/web/src/activity/state.js';
 import type { WorkspaceState } from '../apps/web/src/state/store.js';
 afterEach(() => vi.unstubAllGlobals());
 function fixture() {
-  let state: WorkspaceState;
-  state = {
+  const state: WorkspaceState = {
     ...activitySlice(
       (patch) => Object.assign(state, patch),
       () => state,

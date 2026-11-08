@@ -18,7 +18,7 @@ import { Popover } from '../ui/Popover.js';
 import { PageHeader } from '../workspace/PageHeader.js';
 import { isolatedDocumentEdit } from '../documents/history.js';
 import { useUploads, FailedFile } from '../documents/useUploads.js';
-import { validWebPath } from '../../../../packages/editor/src/web.js';
+import { validWebPath } from '@note/editor/web';
 import { Preview, type PreviewControls } from './Preview.js';
 import { ensureCopySourcesSaved } from '../documents/session.js';
 import { download } from '../settings/DataSettings.js';

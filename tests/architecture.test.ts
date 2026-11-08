@@ -65,10 +65,11 @@ test('only the owning module writes each table', () => {
   expect(violations).toEqual([]);
 });
 
-test('route files delegate to services instead of running SQL', () => {
+test('files that register HTTP routes delegate to services instead of running SQL', () => {
   const offenders = serverFiles
-    .filter(({ path }) => /(^|[/-])routes\.ts$/.test(path))
-    .filter(({ text }) => /\.(query|exec)\(/.test(text))
+    .filter(({ path }) => path !== 'app.ts') // owns only the database health probe
+    .filter(({ text }) => /\bapp\.(get|post|put|patch|delete|register)\b/.test(text))
+    .filter(({ text }) => /\b(?:db|tx)\s*\.(query|exec)\s*(<[^>]*>)?\s*\(/.test(text))
     .map(({ path }) => path);
   expect(offenders).toEqual([]);
 });

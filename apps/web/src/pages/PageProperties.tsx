@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, SlidersHorizontal } from 'lucide-react';
-import type { Page, RecordField } from '../../../../packages/contracts/src/index.js';
-import { compileFormulas } from '../../../../packages/data/src/formulas.js';
-import { displayFormula } from '../../../../packages/data/src/formula-input.js';
+import type { Page, RecordField } from '@note/contracts';
+import { compileFormulas } from '@note/data/formulas';
+import { displayFormula } from '@note/data/formula-input';
 import { useWorkspace } from '../state/store.js';
 import { Cell } from '../databases/Cell.js';
 import { PropertyManager } from '../properties/PropertyManager.js';

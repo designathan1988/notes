@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { Database } from '../platform/database.js';
-import { assertObject } from '../../../../packages/contracts/src/index.js';
+import { assertObject } from '@note/contracts';
 import { pageOffset } from '../platform/pagination.js';
 import { History } from './service.js';
 import type { DurableAcknowledgement } from '../documents/service.js';

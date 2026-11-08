@@ -7,7 +7,7 @@ import {
   type PageProperties,
   type PageUpdate,
   type RecordField,
-} from '../../../../packages/contracts/src/index.js';
+} from '@note/contracts';
 import { validateFields, validateValues } from '../databases/values.js';
 import type { Database } from '../platform/database.js';
 import { Access } from '../access/service.js';

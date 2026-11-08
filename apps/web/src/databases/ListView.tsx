@@ -1,5 +1,5 @@
 import { FileText } from 'lucide-react';
-import type { DatabaseRecord, RecordField } from '../../../../packages/contracts/src/index.js';
+import type { DatabaseRecord, RecordField } from '@note/contracts';
 import { RecordProperty } from './RecordProperty.js';
 
 export function ListView({

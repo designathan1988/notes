@@ -25,13 +25,7 @@ export function workspaceEvents(app: FastifyInstance, access: Access) {
         if (busy || closed) return;
         busy = true;
         try {
-          const scope = await access.scope(request.actor, request.params.workspace);
-          const [row] = await access.db.query<{ signature: string }>(
-            `${scope.sql} SELECT count(*)::text || ':' || coalesce(sum(index_revision),0)::text || ':' || coalesce(sum(revision),0)::text AS signature FROM visible`,
-            scope.params,
-          );
-          const role = await access.requireWorkspace(request.actor, request.params.workspace);
-          const current = row.signature + role;
+          const current = await access.changeSignature(request.actor, request.params.workspace);
           if (!signature || current !== signature) reply.raw.write('event: refresh\ndata: {}\n\n');
           else reply.raw.write(': heartbeat\n\n');
           signature = current;

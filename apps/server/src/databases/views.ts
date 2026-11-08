@@ -7,7 +7,7 @@ import {
   type DatabaseViewConfig,
   type RecordField,
   type SavedDatabaseView,
-} from '../../../../packages/contracts/src/index.js';
+} from '@note/contracts';
 import { defaultFields } from './values.js';
 
 export class DatabaseViews {

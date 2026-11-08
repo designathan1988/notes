@@ -11,7 +11,7 @@ import {
 import { useEditorState, type Editor } from '@tiptap/react';
 import { TextSelection, type Transaction } from '@tiptap/pm/state';
 import type { JSONContent } from '@tiptap/core';
-import type { Page } from '../../../../packages/contracts/src/index.js';
+import type { Page } from '@note/contracts';
 import {
   addCanvasCard,
   canvasDescendants,
@@ -24,15 +24,15 @@ import {
   orderCanvas,
   resizeCanvas,
   type CanvasItem,
-} from '../../../../packages/editor/src/canvas-commands.js';
+} from '@note/editor/canvas-commands';
 import { useSpatialView } from '../spatial/useSpatialView.js';
 import { freeRect, fitCamera, type Point } from '../spatial/geometry.js';
 import { useWorkspace } from '../state/store.js';
 import { isolatedDocumentEdit } from '../documents/history.js';
 import { flushSync } from 'react-dom';
 import type { ClipboardContent } from '../documents/capture.js';
-import { canvasBoxes } from '../../../../packages/editor/src/canvas-containment.js';
-import { headingPositions } from '../../../../packages/editor/src/outline.js';
+import { canvasBoxes } from '@note/editor/canvas-containment';
+import { headingPositions } from '@note/editor/outline';
 
 export interface CanvasApi {
   addNote(point?: Point, content?: JSONContent[], focus?: boolean): string | undefined;

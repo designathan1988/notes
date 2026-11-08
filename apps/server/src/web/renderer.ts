@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import { parse, serialize, defaultTreeAdapter, html, type DefaultTreeAdapterTypes } from 'parse5';
-import { DomainError } from '../../../../packages/contracts/src/index.js';
+import { DomainError } from '@note/contracts';
 import type { WebPreviews } from './service.js';
 import { sendAttachment } from '../attachments/http.js';
 

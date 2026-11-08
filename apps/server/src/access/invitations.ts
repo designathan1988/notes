@@ -1,6 +1,6 @@
 import type { Database } from '../platform/database.js';
 import type { MailTransport } from '../identity/mail.js';
-import { DomainError, type Actor, type Role } from '../../../../packages/contracts/src/index.js';
+import { DomainError, type Actor, type Role } from '@note/contracts';
 import { Access } from './service.js';
 import { randomUUID } from 'node:crypto';
 interface Invite {

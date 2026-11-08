@@ -3,8 +3,8 @@ import { fixture, rawPage } from './helpers.js';
 import type { Database } from '../apps/server/src/platform/database.js';
 import type { Storage } from '../apps/server/src/attachments/storage.js';
 import { Documents } from '../apps/server/src/documents/service.js';
-import { documentFromJSON } from '../packages/editor/src/schema.js';
-import { newWebContent, webSource, sourceFingerprint } from '../packages/editor/src/web.js';
+import { documentFromJSON } from '@note/editor/schema';
+import { newWebContent, webSource, sourceFingerprint } from '@note/editor/web';
 import { WebPreviews } from '../apps/server/src/web/service.js';
 import { createWebRenderer } from '../apps/server/src/web/renderer.js';
 

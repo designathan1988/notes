@@ -1,4 +1,4 @@
-import type { GraphData } from '../../../../packages/contracts/src/index.js';
+import type { GraphData } from '@note/contracts';
 import type { Point } from '../spatial/geometry.js';
 import {
   forceSimulation,

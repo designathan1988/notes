@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { BlockGutter } from './BlockGutter.js';
 import { Plus } from 'lucide-react';
 import type { Editor } from '@tiptap/react';
-import { blockAt } from '../../../../packages/editor/src/blocks.js';
+import { blockAt } from '@note/editor/blocks';
 import { BlockMenu, insertBlock } from './BlockMenu.js';
 
 export function BlockControls({

@@ -5,8 +5,8 @@ import type { Database } from '../apps/server/src/platform/database.js';
 import type { Auth } from '../apps/server/src/identity/auth.js';
 import { createApp } from '../apps/server/src/app.js';
 import { Documents } from '../apps/server/src/documents/service.js';
-import { documentJSON } from '../packages/editor/src/schema.js';
-import { documentFromJSON } from '../packages/editor/src/schema.js';
+import { documentJSON } from '@note/editor/schema';
+import { documentFromJSON } from '@note/editor/schema';
 import { Pages } from '../apps/server/src/pages/service.js';
 
 let db: Database, app: FastifyInstance;

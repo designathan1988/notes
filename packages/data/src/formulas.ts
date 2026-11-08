@@ -1,4 +1,4 @@
-import { DomainError, type RecordField } from '../../contracts/src/index.js';
+import { DomainError, type RecordField } from '@note/contracts';
 
 type Expression =
   | { kind: 'number'; value: number }

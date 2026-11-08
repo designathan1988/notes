@@ -1,11 +1,7 @@
 import { useState } from 'react';
-import type { RecordField } from '../../../../packages/contracts/src/index.js';
+import type { RecordField } from '@note/contracts';
 import { Dialog } from '../ui/Dialog.js';
-import {
-  canonicalFormula,
-  displayFormula,
-  formulaReference,
-} from '../../../../packages/data/src/formula-input.js';
+import { canonicalFormula, displayFormula, formulaReference } from '@note/data/formula-input';
 
 export function PropertyManager({
   label,

@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import type { DatabaseRecord, RecordField } from '../../../../packages/contracts/src/index.js';
+import type { DatabaseRecord, RecordField } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { Cell } from './Cell.js';
-import { displayFormula } from '../../../../packages/data/src/formula-input.js';
+import { displayFormula } from '@note/data/formula-input';
 
 export function RecordProperty({
   databaseId,

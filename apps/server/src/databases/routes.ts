@@ -1,12 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { Database } from '../platform/database.js';
 import { Databases } from './service.js';
-import {
-  assertObject,
-  DomainError,
-  type RecordField,
-  type RecordQuery,
-} from '../../../../packages/contracts/src/index.js';
+import { assertObject, DomainError, type RecordField, type RecordQuery } from '@note/contracts';
 export function databaseRoutes(app: FastifyInstance, db: Database) {
   const databases = new Databases(db);
   app.get<{ Params: { id: string; page: string } }>(

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { assertObject } from '../../../../packages/contracts/src/index.js';
+import { assertObject } from '@note/contracts';
 import type { WebPreviews } from './service.js';
 export function webRoutes(app: FastifyInstance, previews: WebPreviews) {
   app.post<{ Params: { id: string } }>('/api/pages/:id/web-preview', (request) => {

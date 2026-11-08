@@ -8,16 +8,11 @@ import { Pages } from './service.js';
 import { Documents } from '../documents/service.js';
 import { Databases } from '../databases/service.js';
 import type { Storage } from '../attachments/storage.js';
-import type { Page, PageKind } from '../../../../packages/contracts/src/index.js';
+import type { Page, PageKind } from '@note/contracts';
 import type { CloneInput } from '../templates/clone.js';
-import { documentFromJSON, documentJSON } from '../../../../packages/editor/src/schema.js';
-import { isCanvas } from '../../../../packages/editor/src/canvas.js';
-import {
-  DomainError,
-  MAX_DOCUMENT_BYTES,
-  validateTitle,
-  type Actor,
-} from '../../../../packages/contracts/src/index.js';
+import { documentFromJSON, documentJSON } from '@note/editor/schema';
+import { isCanvas } from '@note/editor/canvas';
+import { DomainError, MAX_DOCUMENT_BYTES, validateTitle, type Actor } from '@note/contracts';
 
 export interface ContentInstanceInput {
   title: unknown;

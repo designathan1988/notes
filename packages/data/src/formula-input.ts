@@ -1,4 +1,4 @@
-import { DomainError, type RecordField } from '../../contracts/src/index.js';
+import { DomainError, type RecordField } from '@note/contracts';
 
 export function formulaReference(field: RecordField, fields: RecordField[]) {
   const ambiguous = fields.filter((item) => item.name === field.name).length > 1;

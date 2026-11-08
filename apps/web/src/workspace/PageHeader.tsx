@@ -1,5 +1,5 @@
 import { Clock3, FileText, Database, Network, SquareDashed, ChevronDown } from 'lucide-react';
-import type { Page } from '../../../../packages/contracts/src/index.js';
+import type { Page } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { PagePresentation, PageTags } from '../pages/PagePresentation.js';
