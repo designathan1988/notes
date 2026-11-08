@@ -50,7 +50,8 @@ export function appearanceSlice(
 ): AppearanceSlice {
   let flight: Promise<void> | null = null,
     timer: ReturnType<typeof setTimeout> | undefined,
-    generation = 0;
+    generation = 0,
+    loadSequence = 0;
   const pageTimers = new Map<string, ReturnType<typeof setTimeout>>(),
     pageFlights = new Set<string>();
   return {
@@ -126,18 +127,20 @@ export function appearanceSlice(
       }
     },
     async loadAppearance(identity) {
-      const token = ++generation;
+      const token = ++loadSequence;
+      const changingIdentity = get().appearanceOwner !== identity;
+      if (changingIdentity) generation++;
+      const epoch = generation;
       clearTimeout(timer);
       set({
         appearanceOwner: identity,
-        appearance: {},
-        appearancePending: {},
+        ...(changingIdentity ? { appearance: {}, appearancePending: {} } : {}),
         appearanceStatus: 'loading',
         appearanceError: '',
       });
       try {
         const preference = await api<AppearancePreference>('/preferences/appearance');
-        if (generation !== token || get().user?.id !== identity) return;
+        if (generation !== epoch || loadSequence !== token || get().user?.id !== identity) return;
         let pending: Patch = {};
         try {
           pending = JSON.parse(localStorage.getItem(cacheKey(identity)) ?? '{}');
@@ -152,7 +155,7 @@ export function appearanceSlice(
         });
         if (Object.keys(pending).length) void get().saveAppearance();
       } catch (error) {
-        if (generation === token)
+        if (generation === epoch && loadSequence === token)
           set({ appearanceStatus: 'error', appearanceError: (error as Error).message });
       }
     },
@@ -241,6 +244,7 @@ export function appearanceSlice(
     },
     clearAppearance() {
       generation++;
+      loadSequence++;
       clearTimeout(timer);
       for (const timer of pageTimers.values()) clearTimeout(timer);
       pageTimers.clear();

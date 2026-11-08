@@ -49,7 +49,14 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
   });
   app.get<{
     Params: { workspace: string };
-    Querystring: { offset?: string; kind?: string; q?: string; template?: string };
+    Querystring: {
+      offset?: string;
+      kind?: string;
+      q?: string;
+      template?: string;
+      sort?: string;
+      direction?: string;
+    };
   }>('/api/workspaces/:workspace/page-list', (request) =>
     navigation.flat(
       request.actor,
@@ -62,6 +69,8 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
       typeof request.query.template === 'string' && /^[\w-]{1,128}$/.test(request.query.template)
         ? request.query.template
         : null,
+      request.query.sort,
+      request.query.direction,
     ),
   );
   app.get<{ Params: { workspace: string } }>(

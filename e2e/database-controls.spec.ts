@@ -71,7 +71,8 @@ test('database controls save typed values, relations, filtered views, sorting, f
   await page.getByRole('button', { name: 'Focused view', exact: true }).click();
   await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(1);
   await expect(page.getByRole('columnheader', { name: 'Effort', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Add to favorites', exact: true }).click();
+  await page.getByRole('button', { name: 'Page actions', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Add to favorites', exact: true }).click();
   await page.reload();
   await page.getByRole('button', { name: 'Focused view', exact: true }).click();
   await expect(page.getByRole('button', { name: `Related for ${alpha}`, exact: true })).toHaveText(

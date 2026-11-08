@@ -120,7 +120,10 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
   };
   const inspect = useCallback((pageId: string) => setInspected(pageId), []);
   return (
-    <div className={`database-view ${compact ? 'compact' : ''}`} contentEditable={false}>
+    <div
+      className={`database-view ${compact ? 'compact' : ''}${inspected ? ' has-inspector' : ''}`}
+      contentEditable={false}
+    >
       {compact ? (
         <div className="embedded-table-title">
           <Database size={15} />

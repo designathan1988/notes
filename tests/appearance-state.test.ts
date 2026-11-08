@@ -99,3 +99,49 @@ test('failed appearance writes remain recoverable and late account responses can
   expect(get().appearance).toEqual({ bodyFont: 'Georgia' });
   expect(get().appearancePending).toEqual({});
 });
+
+test('retrying personal preference loading does not abandon an in-flight page style write', async () => {
+  vi.useFakeTimers();
+  const { get, set } = fixture();
+  request.mockResolvedValue({ revision: 0, overrides: {} });
+  await get().loadAppearance('alice');
+  set({ pages: [{ id: 'note', revision: 1 }] as WorkspaceState['pages'] });
+  let finish!: () => void;
+  set({
+    updatePage: vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = () => {
+            set({ pages: [{ id: 'note', revision: 2 }] as WorkspaceState['pages'] });
+            resolve();
+          };
+        }),
+    ),
+  });
+  get().changePageAppearance('note', { bodyFont: 'Georgia' });
+  const saving = get().savePageAppearance('note');
+  await get().loadAppearance('alice');
+  finish();
+  await saving;
+  expect(get().pageAppearanceDrafts).toEqual({});
+});
+
+test('a late personal preference response cannot project the previous account into the new one', async () => {
+  const { get, set } = fixture();
+  let finish!: (result: unknown) => void;
+  request.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const first = get().loadAppearance('alice');
+  get().clearAppearance();
+  set({ user: { id: 'bob' } as WorkspaceState['user'] });
+  request.mockResolvedValueOnce({ revision: 0, overrides: { bodyFont: 'Verdana' } });
+  await get().loadAppearance('bob');
+  finish({ revision: 20, overrides: { bodyFont: 'Georgia' } });
+  await first;
+  expect(get().appearance).toEqual({ bodyFont: 'Verdana' });
+  expect(get().appearanceOwner).toBe('bob');
+});

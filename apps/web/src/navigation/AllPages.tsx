@@ -1,21 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Database, FileText, ArrowUpRight, Plus, SquareDashed } from 'lucide-react';
+import { Database, FileText, ArrowUpRight, Plus, SquareDashed, Search } from 'lucide-react';
 import type { Page } from '../../../../packages/contracts/src/index.js';
 import { api } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
 import { pageView } from '../workbench/route.js';
 export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
+  const [input, setInput] = useState(''),
+    [query, setQuery] = useState(''),
+    [type, setType] = useState(''),
+    [sort, setSort] = useState('updated:desc');
+  useEffect(() => {
+    const timer = setTimeout(() => setQuery(input), 200);
+    return () => clearTimeout(timer);
+  }, [input]);
   const title = kind === 'canvas' ? 'Canvases' : kind === 'database' ? 'Databases' : 'All pages';
   const workspace = useWorkspace((state) => state.workspaceId);
   const identity = useWorkspace((state) => state.user?.id);
   const version = useWorkspace((state) => state.knowledgeVersion);
-  const scope = `${identity}:${workspace}:${kind ?? ''}:${version}`;
+  const scope = `${identity}:${workspace}:${kind ?? type}:${version}:${query}:${sort}`;
   const readOnly = useWorkspace(
     (state) => state.workspaces.find((item) => item.id === state.workspaceId)?.role === 'viewer',
   );
   const [result, setResult] = useState<{
     scope: string;
-    pages: Page[];
+    pages: (Page & { parentTitle?: string })[];
     more: boolean;
     busy: boolean;
     error: string;
@@ -45,8 +53,9 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
         return;
       }
       try {
-        const next = await api<{ pages: Page[]; more: boolean }>(
-          `/workspaces/${workspace}/page-list?offset=${offset}&kind=${kind ?? ''}`,
+        const [order, direction] = sort.split(':');
+        const next = await api<{ pages: (Page & { parentTitle?: string })[]; more: boolean }>(
+          `/workspaces/${workspace}/page-list?${new URLSearchParams({ offset: String(offset), kind: kind ?? type, q: query, sort: order, direction })}`,
         );
         if (!current()) return;
         setResult((previous) => ({
@@ -62,7 +71,7 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
           setResult((previous) => ({ ...previous, busy: false, error: (error as Error).message }));
       }
     },
-    [workspace, identity, version, kind, scope],
+    [workspace, identity, version, kind, type, query, sort, scope],
   );
   useEffect(() => {
     void load(0);
@@ -81,13 +90,6 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
       <div className="page-index-heading">
         <div>
           <h1>{title}</h1>
-          <p className="muted-text">
-            {kind === 'canvas'
-              ? 'Space to connect notes, media, and ideas.'
-              : kind
-                ? 'Structured information, connected to your pages.'
-                : 'Your workspace, connected.'}
-          </p>
         </div>
         <button
           disabled={readOnly}
@@ -103,15 +105,56 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
           {kind === 'canvas' ? 'New canvas' : kind === 'database' ? 'New database' : 'New page'}
         </button>
       </div>
+      <div className="explorer-toolbar">
+        <label className="explorer-search">
+          <Search size={15} />
+          <input
+            aria-label="Search pages"
+            placeholder="Find a page…"
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+          />
+        </label>
+        {!kind && (
+          <select
+            aria-label="Page type"
+            value={type}
+            onChange={(event) => setType(event.target.value)}
+          >
+            <option value="">All types</option>
+            <option value="document">Documents</option>
+            <option value="database">Databases</option>
+            <option value="canvas">Canvases</option>
+            <option value="record">Records</option>
+          </select>
+        )}
+        <select
+          aria-label="Sort pages"
+          value={sort}
+          onChange={(event) => setSort(event.target.value)}
+        >
+          <option value="updated:desc">Last edited</option>
+          <option value="updated:asc">Oldest edited</option>
+          <option value="title:asc">Name A–Z</option>
+          <option value="title:desc">Name Z–A</option>
+        </select>
+      </div>
       {error && (
         <p className="form-error" role="alert">
           {error}
         </p>
       )}
       <div className="page-index-list">
+        <div className="explorer-columns" aria-hidden="true">
+          <span>Name</span>
+          <span>Location</span>
+          <span>Type</span>
+          <span>Edited</span>
+        </div>
         {pages.map((page) => (
           <button
             key={page.id}
+            aria-label={`${page.title} ${page.kind}`}
             onClick={() => useWorkspace.getState().navigate(page.id, pageView(page.kind))}
           >
             {page.icon ? (
@@ -125,12 +168,31 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
             ) : (
               <FileText />
             )}
-            <span>{page.title}</span>
-            <small>{page.kind}</small>
-            <ArrowUpRight size={14} />
+            <span className="explorer-name">{page.title}</span>
+            <small className="explorer-location">{page.parentTitle ?? 'Workspace'}</small>
+            <small className="explorer-kind">
+              {page.kind === 'document'
+                ? 'Document'
+                : page.kind === 'canvas'
+                  ? 'Canvas'
+                  : page.kind === 'database'
+                    ? 'Database'
+                    : 'Record'}
+            </small>
+            <time dateTime={page.updatedAt}>
+              {new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(
+                new Date(page.updatedAt),
+              )}
+            </time>
+            <ArrowUpRight className="explorer-open" size={14} />
           </button>
         ))}
       </div>
+      {!busy && !pages.length && !error && (
+        <p className="explorer-empty">
+          {query || type ? 'No pages match these filters.' : 'No pages yet.'}
+        </p>
+      )}
       {busy && <p className="muted-text">Loading pages…</p>}
       {more && (
         <button className="button" disabled={busy} onClick={() => void load(pages.length)}>

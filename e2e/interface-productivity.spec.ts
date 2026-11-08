@@ -136,3 +136,59 @@ test('desktop tools have their own compact navigation without displacing the pag
     await context.close();
   }
 });
+
+test('the page explorer filters and sorts real pages with compact readable locations on desktop and mobile', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const parent = await createWritingPage(context),
+    suffix = crypto.randomUUID();
+  const children = [];
+  for (const name of ['Alpha', 'Zulu']) {
+    const response = await context.request.post(`/api/workspaces/${parent.workspaceId}/pages`, {
+      headers,
+      data: { title: `${name} ${suffix}`, parentId: parent.id },
+    });
+    expect(response.ok()).toBe(true);
+    children.push(await response.json());
+  }
+  const page = await context.newPage();
+  try {
+    await page.goto(`/#${parent.id}/document`);
+    await expect(page.locator('.save-status')).toHaveText('Saved');
+    await page.getByRole('button', { name: 'All pages', exact: true }).click();
+    for (const width of [1487, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      const catalog = page.getByRole('region', { name: 'All pages', exact: true });
+      await catalog.getByRole('textbox', { name: 'Search pages', exact: true }).fill(suffix);
+      await catalog
+        .getByRole('combobox', { name: 'Sort pages', exact: true })
+        .selectOption('title:asc');
+      const rows = catalog.locator('.page-index-list > button');
+      await expect(rows).toHaveCount(2);
+      await expect(rows.first()).toContainText('Alpha');
+      await expect(rows.first().locator('.explorer-location')).toHaveText(parent.title);
+      const icon = await catalog.locator('.explorer-search svg').boundingBox(),
+        input = await catalog
+          .getByRole('textbox', { name: 'Search pages', exact: true })
+          .boundingBox();
+      expect(Math.abs(icon!.y + icon!.height / 2 - input!.y - input!.height / 2)).toBeLessThan(5);
+      if (width === 390) {
+        const name = await rows.first().locator('.explorer-name').boundingBox(),
+          location = await rows.first().locator('.explorer-location').boundingBox();
+        expect(Math.abs(name!.x - location!.x)).toBeLessThan(2);
+      }
+      await catalog
+        .getByRole('combobox', { name: 'Sort pages', exact: true })
+        .selectOption('title:desc');
+      await expect(rows.first()).toContainText('Zulu');
+    }
+    await page.getByRole('button', { name: `${children[0].title} document`, exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Page title', exact: true })).toHaveValue(
+      children[0].title,
+    );
+  } finally {
+    await context.request.delete(`/api/pages/${parent.id}`, { headers });
+    await context.close();
+  }
+});

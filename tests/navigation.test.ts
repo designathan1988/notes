@@ -67,3 +67,37 @@ test('refresh removes cached pages whose visibility changed and forbids cross-wo
     code: 'FORBIDDEN',
   });
 });
+
+test('the page explorer filters and sorts the authorized collection before pagination', async () => {
+  const parent = await rawPage(db, { title: 'Explorer parent' });
+  const alpha = await rawPage(db, { title: 'Explorer Alpha', parent });
+  const zulu = await rawPage(db, { title: 'Explorer Zulu' });
+  await rawPage(db, { title: 'Explorer private', visibility: 'private', creator: 'admin' });
+  const result = await navigation.flat(
+    { userId: 'owner' },
+    'studio',
+    0,
+    'document',
+    'Explorer',
+    null,
+    'title',
+    'asc',
+  );
+  expect(result.pages.map((page) => page.title)).toEqual([
+    'Explorer Alpha',
+    'Explorer parent',
+    'Explorer Zulu',
+  ]);
+  expect(result.pages.find((page) => page.id === alpha)?.parentTitle).toBe('Explorer parent');
+  const reverse = await navigation.flat(
+    { userId: 'owner' },
+    'studio',
+    0,
+    'document',
+    'Explorer',
+    null,
+    'title',
+    'desc',
+  );
+  expect(reverse.pages[0].id).toBe(zulu);
+});
