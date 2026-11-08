@@ -2,6 +2,33 @@ import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import type { Transaction } from '@tiptap/pm/state';
 import { validateCanvas } from './canvas.js';
 import type { JSONContent } from '@tiptap/core';
+import type { CanvasSide, CanvasEnd } from './canvas-geometry.js';
+export interface CanvasStyle {
+  color?: string;
+  fromSide?: CanvasSide;
+  toSide?: CanvasSide;
+  fromEnd?: CanvasEnd;
+  toEnd?: CanvasEnd;
+}
+export function styleCanvas(tr: Transaction, ids: string[], patch: CanvasStyle) {
+  if (
+    Object.keys(patch).some(
+      (key) => !['color', 'fromSide', 'toSide', 'fromEnd', 'toEnd'].includes(key),
+    )
+  )
+    throw new Error('Unsupported canvas style.');
+  for (const item of canvasItems(tr.doc)) {
+    if (!ids.includes(item.id)) continue;
+    const style =
+      item.node.type.name === 'canvasEdge'
+        ? patch
+        : patch.color === undefined
+          ? {}
+          : { color: patch.color };
+    tr.setNodeMarkup(item.pos, undefined, { ...item.node.attrs, ...style });
+  }
+  return checked(tr);
+}
 export function addCanvasCard(
   tr: Transaction,
   id: string,

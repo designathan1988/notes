@@ -42,7 +42,7 @@ interface Context extends CanvasApi {
   readOnly: boolean;
   items: CanvasItem[];
   selected: string[];
-  select(id: string, extend?: boolean): void;
+  select(id: string, extend?: boolean, inspect?: boolean): void;
   focusStage(): void;
   clear(): void;
   tool: 'select' | 'hand' | 'connect';
@@ -113,9 +113,9 @@ export function CanvasProvider({
       return false;
     }
   }
-  function select(id: string, extend = false) {
+  function select(id: string, extend = false, inspect = true) {
     setSelected((ids) => (extend ? [...new Set([...ids, id])] : [id]));
-    setInspector(true);
+    setInspector(inspect);
   }
   function focusStage() {
     view.ref.current

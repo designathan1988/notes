@@ -12,51 +12,15 @@ import {
   Focus,
   GripVertical,
   Layers2,
-  Copy,
-  Trash2,
-  X,
-  ArrowUp,
-  ArrowDown,
 } from 'lucide-react';
 import { useCanvas } from './context.js';
 import { IconButton } from '../ui/IconButton.js';
 import { PageHeader } from '../workspace/PageHeader.js';
+import { canvasConnection } from '../../../../packages/editor/src/canvas-geometry.js';
+import { CanvasSelection } from './CanvasSelection.js';
 
-type Box = { x: number; y: number; width: number; height: number };
-function curve(a: Box, b: Box, self = false) {
-  const from = { x: a.x + a.width / 2, y: a.y + a.height },
-    to = { x: b.x + b.width / 2, y: b.y };
-  if (self)
-    return {
-      path: `M${a.x + a.width},${a.y + a.height / 2} C${a.x + a.width + 120},${a.y + a.height / 2} ${a.x + a.width + 120},${a.y - 80} ${a.x + a.width / 2},${a.y}`,
-      x: a.x + a.width + 60,
-      y: a.y - 20,
-    };
-  if (Math.abs(a.x - b.x) > Math.abs(a.y - b.y)) {
-    from.x = a.x + (b.x >= a.x ? a.width : 0);
-    from.y = a.y + a.height / 2;
-    to.x = b.x + (b.x >= a.x ? 0 : b.width);
-    to.y = b.y + b.height / 2;
-    const bend = Math.max(50, Math.abs(to.x - from.x) / 2),
-      sign = b.x >= a.x ? 1 : -1;
-    return {
-      path: `M${from.x},${from.y} C${from.x + bend * sign},${from.y} ${to.x - bend * sign},${to.y} ${to.x},${to.y}`,
-      x: (from.x + to.x) / 2,
-      y: (from.y + to.y) / 2,
-    };
-  }
-  if (b.y < a.y) {
-    from.y = a.y;
-    to.y = b.y + b.height;
-  }
-  const bend = Math.max(50, Math.abs(to.y - from.y) / 2),
-    sign = b.y >= a.y ? 1 : -1;
-  return {
-    path: `M${from.x},${from.y} C${from.x},${from.y + bend * sign} ${to.x},${to.y - bend * sign} ${to.x},${to.y}`,
-    x: (from.x + to.x) / 2,
-    y: (from.y + to.y) / 2,
-  };
-}
+const elementColor = (color: string) =>
+  /^#[a-f0-9]{6}$/i.test(color) ? color : `var(--canvas-color-${color})`;
 export function CanvasRootView() {
   const c = useCanvas(),
     { camera, size } = c.view;
@@ -157,52 +121,74 @@ export function CanvasRootView() {
             {
               transform: `translate(${size.width / 2 - camera.x * camera.zoom}px,${size.height / 2 - camera.y * camera.zoom}px) scale(${camera.zoom})`,
               '--canvas-zoom': camera.zoom,
+              '--canvas-label-layer':
+                20 + Math.max(0, ...c.items.map((item) => Number(item.node.attrs.z) || 0)),
             } as React.CSSProperties
           }
         >
           <svg className="canvas-connections" aria-label="Canvas connections">
-            <defs>
-              <marker
-                id="canvas-arrow"
-                viewBox="0 -4 8 8"
-                refX="8"
-                markerWidth={8 / camera.zoom}
-                markerHeight={8 / camera.zoom}
-                orient="auto"
-                markerUnits="userSpaceOnUse"
-              >
-                <path d="M0,-3L8,0L0,3Z" />
-              </marker>
-            </defs>
             {c.items
               .filter((item) => item.node.type.name === 'canvasEdge')
               .map((item) => {
                 const a = c.box(item.node.attrs.fromNode),
                   b = c.box(item.node.attrs.toNode);
                 if (!a || !b) return null;
+                const marker = `canvas-${c.page.id}-${item.id}`;
                 return (
-                  <path
-                    key={item.id}
-                    data-canvas-connection={item.id}
-                    data-spatial-control
-                    className={c.selected.includes(item.id) ? 'selected' : ''}
-                    d={curve(a, b, item.node.attrs.fromNode === item.node.attrs.toNode).path}
-                    markerEnd={item.node.attrs.toEnd === 'arrow' ? 'url(#canvas-arrow)' : undefined}
-                    vectorEffect="non-scaling-stroke"
-                    onPointerDown={(event) => {
-                      event.stopPropagation();
-                      event.preventDefault();
-                      c.select(item.id, event.shiftKey);
-                    }}
-                  />
+                  <g key={item.id} style={{ color: elementColor(item.node.attrs.color) }}>
+                    <defs>
+                      {(['start', 'end'] as const).map((end) => (
+                        <marker
+                          key={end}
+                          id={`${marker}-${end}`}
+                          viewBox="0 -4 8 8"
+                          refX="8"
+                          markerWidth={8 / camera.zoom}
+                          markerHeight={8 / camera.zoom}
+                          orient="auto-start-reverse"
+                          markerUnits="userSpaceOnUse"
+                        >
+                          <path d="M0,-3L8,0L0,3Z" fill="currentColor" />
+                        </marker>
+                      ))}
+                    </defs>
+                    <path
+                      key={item.id}
+                      data-canvas-connection={item.id}
+                      data-spatial-control
+                      className={c.selected.includes(item.id) ? 'selected' : ''}
+                      d={
+                        canvasConnection(a, b, {
+                          fromSide: item.node.attrs.fromSide,
+                          toSide: item.node.attrs.toSide,
+                          self: item.node.attrs.fromNode === item.node.attrs.toNode,
+                        }).path
+                      }
+                      markerStart={
+                        item.node.attrs.fromEnd === 'arrow' ? `url(#${marker}-start)` : undefined
+                      }
+                      markerEnd={
+                        item.node.attrs.toEnd === 'arrow' ? `url(#${marker}-end)` : undefined
+                      }
+                      vectorEffect="non-scaling-stroke"
+                      onPointerDown={(event) => {
+                        event.stopPropagation();
+                        event.preventDefault();
+                        c.select(item.id, event.shiftKey);
+                      }}
+                    />
+                  </g>
                 );
               })}
             {c.connection && c.box(c.connection.source) && (
               <path
                 className="canvas-connection-draft"
                 d={
-                  curve(c.box(c.connection.source)!, { ...c.connection.point, width: 0, height: 0 })
-                    .path
+                  canvasConnection(c.box(c.connection.source)!, {
+                    ...c.connection.point,
+                    width: 0,
+                    height: 0,
+                  }).path
                 }
                 vectorEffect="non-scaling-stroke"
               />
@@ -230,40 +216,7 @@ export function CanvasRootView() {
             </button>
           </div>
         )}
-        {c.inspector && c.selected.length > 0 && (
-          <aside
-            className="canvas-inspector"
-            contentEditable={false}
-            data-spatial-control
-            aria-label="Canvas selection"
-          >
-            <header>
-              <strong>Selection</strong>
-              <IconButton label="Close selection" onClick={() => c.setInspector(false)}>
-                <X />
-              </IconButton>
-            </header>
-            <p>
-              {c.selected.length} {c.selected.length === 1 ? 'element' : 'elements'} selected
-            </p>
-            <button disabled={c.readOnly} onClick={() => c.order('front')}>
-              <ArrowUp />
-              Bring forward
-            </button>
-            <button disabled={c.readOnly} onClick={() => c.order('back')}>
-              <ArrowDown />
-              Send backward
-            </button>
-            <button disabled={c.readOnly} onClick={c.duplicate}>
-              <Copy />
-              Duplicate
-            </button>
-            <button disabled={c.readOnly} onClick={c.remove}>
-              <Trash2 />
-              Delete
-            </button>
-          </aside>
-        )}
+        <CanvasSelection />
         <div className="canvas-zoom" contentEditable={false} data-spatial-control>
           <IconButton label="Zoom out canvas" onClick={() => c.view.zoom(1 / 1.2)}>
             <ZoomOut />
@@ -297,14 +250,18 @@ export function CanvasCardView({ node }: NodeViewProps) {
       data-canvas-card={id}
       data-canvas-element={id}
       data-selected={c.selected.includes(id) || undefined}
+      data-canvas-colored={node.attrs.color !== 'neutral' || undefined}
       className="canvas-card"
-      style={{
-        left: box.x,
-        top: box.y,
-        width: box.width,
-        height: box.height,
-        zIndex: 10 + Number(node.attrs.z),
-      }}
+      style={
+        {
+          left: box.x,
+          top: box.y,
+          width: box.width,
+          height: box.height,
+          zIndex: 10 + Number(node.attrs.z),
+          '--canvas-item-color': elementColor(node.attrs.color),
+        } as React.CSSProperties
+      }
     >
       <span
         className="canvas-move"
@@ -331,7 +288,7 @@ export function CanvasCardView({ node }: NodeViewProps) {
         contentEditable={c.readOnly ? false : undefined}
         aria-readonly={c.readOnly}
         aria-multiline="true"
-        onPointerDown={() => c.select(id)}
+        onPointerDown={() => c.select(id, false, false)}
       />
       {c.selected.includes(id) && !c.readOnly && (
         <span
@@ -358,7 +315,16 @@ export function CanvasGroupView({ node }: NodeViewProps) {
       data-canvas-element={id}
       data-selected={c.selected.includes(id) || undefined}
       className="canvas-group"
-      style={{ left: box.x, top: box.y, width: box.width, height: box.height }}
+      data-canvas-colored={node.attrs.color !== 'neutral' || undefined}
+      style={
+        {
+          left: box.x,
+          top: box.y,
+          width: box.width,
+          height: box.height,
+          '--canvas-item-color': elementColor(node.attrs.color),
+        } as React.CSSProperties
+      }
     >
       <div className="canvas-group-heading">
         <span
@@ -394,7 +360,12 @@ export function CanvasEdgeView({ node }: NodeViewProps) {
     a = c.box(node.attrs.fromNode),
     b = c.box(node.attrs.toNode);
   if (!a || !b) return null;
-  const label = curve(a, b, node.attrs.fromNode === node.attrs.toNode);
+  const label = canvasConnection(a, b, {
+    fromSide: node.attrs.fromSide,
+    toSide: node.attrs.toSide,
+    self: node.attrs.fromNode === node.attrs.toNode,
+    label: node.textContent,
+  }).label;
   return (
     <NodeViewWrapper
       data-canvas-edge={node.attrs.id}

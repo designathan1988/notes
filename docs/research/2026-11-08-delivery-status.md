@@ -8,6 +8,7 @@
 - Canonical Yjs collaboration, independent undo, offline close/reopen recovery, live access changes and identity guards. Code and rich notes share the existing document owner.
 - Isolated separate-site executable previews, current-access checks, owned logical media, failed upload original retention/retry, duplication and native transfer remapping.
 - Static HTML discovery without executing authored code; website ZIP export containing exact source and owned media, independently served and opened without Note authentication.
+- Canvas element colors and complete connection sides/start/end arrows, with canonical persistence and a contextual selection inspector. Label routing avoids endpoint cards and remains clickable on mobile.
 
 All application styles remain in `apps/web/src/styles.css`; authored CSS remains document content. The root Zustand store owns application state. Preferences, Pages, Documents, Attachments and Transfer keep their existing persistence responsibilities.
 

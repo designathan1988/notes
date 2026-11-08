@@ -5716,27 +5716,24 @@
     pointer-events: none;
     z-index: 5;
   }
-  .canvas-connections > path {
+  .canvas-connections > g > path,
+  .canvas-connections > .canvas-connection-draft {
     fill: none;
-    stroke: #879cb9;
+    stroke: currentColor;
     stroke-width: 1.5;
     pointer-events: stroke;
     cursor: pointer;
   }
-  .canvas-connections > path.selected {
-    stroke: var(--accent);
+  .canvas-connections > g > path.selected {
     stroke-width: 2.5;
   }
   .canvas-connections .canvas-connection-draft {
     stroke-dasharray: 4 4;
     pointer-events: none;
   }
-  #canvas-arrow path {
-    fill: #879cb9;
-  }
   .canvas-edge-label {
     position: absolute;
-    z-index: 8;
+    z-index: var(--canvas-label-layer, 20);
     transform: translate(-50%, -50%);
     background: var(--canvas);
     padding: 1px 7px;
@@ -7617,5 +7614,174 @@
   }
   .editor-wrap:has(.web-authoring-page) > :not(:has(> .note-editor)) {
     display: none;
+  }
+}
+
+@layer workbench {
+  .canvas-document {
+    --canvas-color-neutral: var(--muted);
+    --canvas-color-blue: #527ba7;
+    --canvas-color-green: #668473;
+    --canvas-color-amber: #a7803e;
+    --canvas-color-rose: #a96e7c;
+    --canvas-color-violet: #81709f;
+  }
+  .canvas-card,
+  .canvas-group {
+    border-color: var(--rule);
+  }
+  .canvas-card[data-canvas-colored],
+  .canvas-group[data-canvas-colored] {
+    border-color: color-mix(in srgb, var(--canvas-item-color) 65%, var(--rule));
+    background: color-mix(in srgb, var(--canvas-item-color) 5%, var(--canvas));
+  }
+  .canvas-card[data-selected],
+  .canvas-group[data-selected] {
+    border-color: var(--accent);
+  }
+  .canvas-inspector {
+    overflow-y: auto;
+  }
+  .canvas-style-controls {
+    margin: 16px 0 8px;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  .canvas-style-controls legend {
+    font: 500 0.86rem/1.5 var(--ui);
+    margin-bottom: 10px;
+  }
+  .canvas-color-options {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .canvas-color-option {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--swatch);
+    border: 2px solid var(--canvas);
+    box-shadow: 0 0 0 1px var(--rule);
+    padding: 0;
+  }
+  .canvas-color-option[aria-pressed='true'] {
+    box-shadow: 0 0 0 2px var(--ink);
+  }
+  .canvas-color-option:hover {
+    background: var(--swatch);
+  }
+  .canvas-custom-color {
+    display: block;
+    margin: 0 0 0 auto;
+    width: 25px;
+    height: 25px;
+  }
+  .canvas-custom-color input {
+    padding: 1px;
+    width: 25px;
+    height: 25px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .canvas-edge-options {
+    display: grid;
+    gap: 12px 10px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    margin: 18px 0 14px;
+  }
+  .canvas-edge-options label {
+    margin: 0;
+    min-width: 0;
+    font: 400 0.79rem/1.5 var(--ui);
+    color: var(--muted);
+    display: grid;
+    gap: 5px;
+  }
+  .canvas-edge-options select {
+    width: 100%;
+    min-width: 0;
+    min-height: 30px;
+    padding: 3px 5px;
+    font: 400 0.86rem/1.4 var(--ui);
+    color: var(--ink);
+    background: var(--canvas);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+  }
+  .canvas-selection-actions > button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    font: 400 0.86rem/1.4 var(--ui);
+    padding: 11px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .canvas-selection-actions svg {
+    width: 16px;
+    height: 16px;
+  }
+  @media (max-width: 700px) {
+    .canvas-inspector {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      max-height: min(380px, 55%);
+    }
+    .canvas-inspector header {
+      order: 0;
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .canvas-style-controls {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      margin: 0;
+    }
+    .canvas-style-controls legend {
+      display: none;
+    }
+    .canvas-color-options {
+      gap: 2px;
+      padding: 3px;
+    }
+    .canvas-color-option {
+      width: 44px;
+      height: 44px;
+      border-width: 12px;
+      box-shadow: none;
+    }
+    .canvas-color-option[aria-pressed='true'] {
+      outline: 1px solid var(--ink);
+      outline-offset: -9px;
+    }
+    .canvas-custom-color,
+    .canvas-custom-color input {
+      width: 44px;
+      height: 44px;
+    }
+    .canvas-edge-options {
+      margin: 12px 0 0;
+      gap: 8px 12px;
+    }
+    .canvas-edge-options select {
+      min-height: 40px;
+    }
+    .canvas-selection-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-between;
+    }
+    .canvas-selection-actions > button {
+      width: 44px;
+      min-height: 44px;
+      padding: 10px;
+      border: 0;
+      font-size: 0;
+    }
   }
 }

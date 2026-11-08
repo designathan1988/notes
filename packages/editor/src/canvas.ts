@@ -1,4 +1,5 @@
 import { Node, type JSONContent } from '@tiptap/core';
+import { canvasSides, canvasEnds } from './canvas-geometry.js';
 
 const geometry = () =>
   Object.fromEntries(
@@ -102,10 +103,10 @@ export function validateCanvas(content: JSONContent) {
       if (
         !validId(attrs.fromNode) ||
         !validId(attrs.toNode) ||
-        !['auto', 'top', 'right', 'bottom', 'left'].includes(attrs.fromSide) ||
-        !['auto', 'top', 'right', 'bottom', 'left'].includes(attrs.toSide) ||
-        !['none', 'arrow'].includes(attrs.fromEnd) ||
-        !['none', 'arrow'].includes(attrs.toEnd)
+        !canvasSides.includes(attrs.fromSide) ||
+        !canvasSides.includes(attrs.toSide) ||
+        !canvasEnds.includes(attrs.fromEnd) ||
+        !canvasEnds.includes(attrs.toEnd)
       )
         throw new Error('Invalid canvas connection.');
     } else {
