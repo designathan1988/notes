@@ -101,3 +101,15 @@ The current shell tokens have already been changed to this neutral direction. Th
 ## Next implementation sequence
 
 Finish and commit the verified neutral-shell checkpoint separately. Add a compatibility spike and executable acceptance tests for canonical source integration and renderer isolation. Then implement the shared source model, editing adapter and renderer, followed by whole-page presentation, assets, projections and portability. Keep the existing workbench plan and its unfinished acceptance items authoritative; add this capability as a named supplemental track rather than silently replacing them.
+
+## Observed source-adapter experiment
+
+A disposable experiment outside the product checkout now uses the installed Tiptap Yjs bridge and independently created Alice/Bob Y.Docs. CodeMirror forwards granular changes into ProseMirror transactions; no direct CodeMirror-to-Yjs binding or separate persisted string buffer is used. Three text nodes represent the three source channels. This simplified experimental schema is not the proposed production webRoot/component validator.
+
+Actual IAB keyboard editing verified buffered concurrent insertions into the same HTML source, convergence with both authors' characters, local undo retaining the other author's text, independent CSS/JS edits, read-only presentation and an equal Yjs encode/reopen result. No browser warnings or errors were recorded for that experiment.
+
+A separate automated Chromium check then verified four conditions: browser composition input (`Input.imeSetComposition` and commit) while a remote prefix arrives, focused-caret mapping over that prefix, removal of the focused source without corrupting the remaining channels, and a read-only view continuing to receive remote text. All four passed with no page errors. Browser composition simulation is not an end-to-end operating-system IME certification. IAB was used first; Chromium's composition protocol was used for the input case that the IAB API does not expose.
+
+Artifacts are retained in the session visualization directory: `web-source-spike/{spike.js,verify.mjs,verification.json,package-lock.json}` and `interface-implementation/{web-source-spike.jpg,web-source-spike-observation.json}`. Installed experimental CodeMirror versions: view 6.43.15, state 6.7.6, commands 6.11.1, HTML 6.4.12, CSS 6.3.1, JavaScript 6.2.5 and language 6.13.1. Only the external experiment has these dependencies; the application's package manifest and runtime have not been changed.
+
+Conclusion: the canonical transaction-adapter approach is viable enough to implement the production model. This evidence does not establish the entire product integration, ACL transport, IndexedDB recovery, root conversion, renderer isolation, export or source-authoring UX. Those remain explicit tasks in `docs/superpowers/plans/2026-11-08-web-page-authoring.md`.
