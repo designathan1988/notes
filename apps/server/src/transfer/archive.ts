@@ -24,6 +24,7 @@ export interface ArchivePage {
   icon?: Page['icon'];
   cover?: Page['cover'];
   tags?: Page['tags'];
+  appearance?: Page['appearance'];
   id: string;
   parentId: string | null;
   title: string;

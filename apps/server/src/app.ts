@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import type { Database } from './platform/database.js';
 import { DomainError } from '../../../packages/contracts/src/index.js';
 import { createAuth, type Auth } from './identity/auth.js';
+import { appearanceRoutes } from './identity/appearance.js';
 import { Access } from './access/service.js';
 import { Pages } from './pages/service.js';
 import { accessRoutes } from './access/routes.js';
@@ -90,6 +91,7 @@ export async function createApp(options: { db: Database; auth?: Auth; storage?: 
     },
   });
   accessRoutes(app, access, auth);
+  appearanceRoutes(app, options.db);
   pageRoutes(app, pages);
   const collaboration = await collaborationRoutes(app, options.db, auth, access);
   discussionRoutes(app, options.db);

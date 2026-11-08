@@ -3,6 +3,7 @@ import { Access } from '../access/service.js';
 import {
   DomainError,
   validateTitle,
+  validateAppearance,
   type Actor,
   type PageCover,
   type PageUpdate,
@@ -13,8 +14,9 @@ import { changePageProperties } from './properties.js';
 import { changeDefaults } from '../templates/defaults.js';
 
 const controls = /[\u0000-\u001f\u007f]/u;
-export function validatePresentation(input: { icon?: unknown; cover?: unknown; tags?: unknown }) {
-  const result: Pick<PageUpdate, 'icon' | 'cover' | 'tags'> = {};
+export function validatePresentation(input: { icon?: unknown; cover?: unknown; tags?: unknown; appearance?: unknown }) {
+  const result: Pick<PageUpdate, 'icon' | 'cover' | 'tags' | 'appearance'> = {};
+  if (input.appearance !== undefined) result.appearance = validateAppearance(input.appearance);
   if (input.icon !== undefined) {
     if (
       input.icon !== null &&
@@ -123,7 +125,7 @@ export class PageDetails {
           throw new DomainError('INVALID', 'Choose an uploaded image belonging to this page.');
       }
       const [updated] = await tx.query<PageRow>(
-        'UPDATE pages SET title=$2,description=$3,icon=$4,cover=$5,tags=$6,page_properties=$8,template_values=$9,revision=revision+1,index_revision=index_revision+1,updated_at=now() WHERE id=$1 AND revision=$7 RETURNING *',
+        'UPDATE pages SET title=$2,description=$3,icon=$4,cover=$5,tags=$6,page_properties=$8,template_values=$9,appearance=$10,revision=revision+1,index_revision=index_revision+1,updated_at=now() WHERE id=$1 AND revision=$7 RETURNING *',
         [
           id,
           title,
@@ -136,6 +138,7 @@ export class PageDetails {
           input.revision,
           JSON.stringify(properties),
           JSON.stringify(defaults),
+          JSON.stringify(presentation.appearance ?? page.appearance ?? {}),
         ],
       );
       await tx.query(

@@ -71,5 +71,7 @@ CREATE TABLE IF NOT EXISTS outbox (id bigserial PRIMARY KEY, page_id text NOT NU
 CREATE INDEX IF NOT EXISTS pending_outbox ON outbox(page_id,version) WHERE processed_at IS NULL;
 CREATE TABLE IF NOT EXISTS operation_keys (id text PRIMARY KEY, result jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE IF NOT EXISTS favorites (user_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE, page_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE, PRIMARY KEY(user_id,page_id));
+CREATE TABLE IF NOT EXISTS appearance_preferences (user_id text PRIMARY KEY REFERENCES "user"(id) ON DELETE CASCADE, revision integer NOT NULL DEFAULT 1, overrides jsonb NOT NULL DEFAULT '{}');
+ALTER TABLE pages ADD COLUMN IF NOT EXISTS appearance jsonb NOT NULL DEFAULT '{}';
 CREATE TABLE IF NOT EXISTS beta_entitlements (workspace_id text PRIMARY KEY REFERENCES organization(id) ON DELETE CASCADE, plan text NOT NULL DEFAULT 'beta', storage_limit bigint NOT NULL DEFAULT 1073741824);
 CREATE TABLE IF NOT EXISTS transfer_jobs (id text PRIMARY KEY, workspace_id text NOT NULL REFERENCES organization(id) ON DELETE CASCADE, user_id text NOT NULL REFERENCES "user"(id), object_key text NOT NULL, archive_size integer NOT NULL, stage text NOT NULL DEFAULT 'pages', offset_value integer NOT NULL DEFAULT 0, mapping jsonb NOT NULL, warnings jsonb NOT NULL DEFAULT '[]', page_count integer NOT NULL, created_at timestamptz NOT NULL DEFAULT now());

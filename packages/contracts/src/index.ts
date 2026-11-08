@@ -1,5 +1,8 @@
 export type Role = 'owner' | 'admin' | 'editor' | 'viewer';
+export * from './appearance.js';
+import type { AppearanceOverrides } from './appearance.js';
 export type PageKind = 'document' | 'database' | 'record' | 'canvas';
+export const DOCUMENT_ACCESS_CHANGED = 'document-access-changed';
 export interface Actor {
   userId: string;
 }
@@ -9,6 +12,7 @@ export interface Workspace {
   role: Role;
 }
 export interface Page {
+  appearance?: AppearanceOverrides;
   templateRootId?: string | null;
   templateDatabaseId?: string | null;
   templateValues?: Record<string, unknown>;
@@ -35,6 +39,7 @@ export interface Page {
 export type PageCover =
   { type: 'color'; color: string } | { type: 'image'; attachmentId: string; positionY: number };
 export interface PageUpdate {
+  appearance?: AppearanceOverrides;
   templateDefaults?: {
     fieldsRevision: number;
     property?: NonNullable<PageUpdate['property']>;

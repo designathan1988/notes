@@ -1,5 +1,6 @@
 import type { Page } from '../../../../packages/contracts/src/index.js';
 export interface PageRow {
+  appearance?: Page['appearance'];
   template_root_id?: string | null;
   template_database_id?: string | null;
   template_values?: Record<string, unknown>;
@@ -25,6 +26,7 @@ export interface PageRow {
 }
 export function toPage(row: PageRow): Page {
   return {
+    appearance: row.appearance ?? {},
     templateRootId: row.template_root_id ?? null,
     templateDatabaseId: row.template_database_id ?? null,
     ...(row.template_database_id ? { templateValues: row.template_values ?? {} } : {}),

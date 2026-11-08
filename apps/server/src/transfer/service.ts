@@ -78,6 +78,7 @@ export class Transfer {
         description: page.description,
         icon: page.icon ?? null,
         cover: page.cover ?? null,
+        appearance: page.appearance ?? {},
         tags: page.tags ?? [],
         templateRootId: page.templateRootId ?? null,
         templateDatabaseId: page.templateDatabaseId ?? null,
@@ -374,6 +375,7 @@ export class Transfer {
                       attachmentId: job.mapping.attachments[page.cover.attachmentId],
                     }
                   : (page.cover ?? null),
+              appearance: page.appearance ?? {},
             });
             if (page.properties && !page.templateDatabaseId) {
               const properties = structuredClone(page.properties);

@@ -135,6 +135,7 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
       description: request.body.description as string | undefined,
       icon: request.body.icon as PageUpdate['icon'],
       cover: request.body.cover as PageUpdate['cover'],
+      appearance: request.body.appearance as PageUpdate['appearance'],
       tags: request.body.tags as PageUpdate['tags'],
       fields: request.body.fields as PageUpdate['fields'],
       property: request.body.property as PageUpdate['property'],

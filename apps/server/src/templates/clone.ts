@@ -303,6 +303,7 @@ export class TemplateClone {
             revision: current.revision,
             description: node.page.description,
             icon: node.page.icon ?? null,
+            appearance: node.page.appearance ?? {},
             tags: node.page.tags ?? [],
             cover:
               node.page.cover?.type === 'image'
