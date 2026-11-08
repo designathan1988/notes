@@ -18,6 +18,7 @@ import {
 
 interface Options {
   saved?: Camera;
+  fitPadding?: number;
   points: Point[];
   commitCamera(camera: Camera): void;
   commitItem(id: string, point: Point): void;
@@ -54,7 +55,7 @@ export function useSpatialView(options: Options) {
   }, []);
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
   const [ownCamera, setOwnCamera] = useState<Camera | null>(options.saved ?? null);
-  const camera = ownCamera ?? fitCamera(options.points, size);
+  const camera = ownCamera ?? fitCamera(options.points, size, options.fitPadding);
   const [draft, setDraft] = useState<{ id: string; point: Point } | null>(null);
   const [dragging, setDragging] = useState(false);
   const live = useRef({ options, size, camera });
@@ -88,8 +89,8 @@ export function useSpatialView(options: Options) {
   }, [attached]);
   useEffect(() => {
     if (ownCamera === null && options.points.length && size.width > 0 && size.height > 0)
-      setOwnCamera(fitCamera(options.points, size));
-  }, [ownCamera, options.points, size]);
+      setOwnCamera(fitCamera(options.points, size, options.fitPadding));
+  }, [ownCamera, options.points, size, options.fitPadding]);
   const cancel = () => {
     if (gesture.current?.type === 'select') gesture.current.selection.cancel();
     if (gesture.current) {
@@ -288,7 +289,7 @@ export function useSpatialView(options: Options) {
     changeCamera,
     zoom,
     fit: (points = live.current.options.points) =>
-      changeCamera(fitCamera(points, live.current.size)),
+      changeCamera(fitCamera(points, live.current.size, live.current.options.fitPadding)),
     toWorld: (point: Point) => screenToWorld(point, live.current.camera, live.current.size),
     suppressClick: () => ignoreClick.current,
     handlers: {

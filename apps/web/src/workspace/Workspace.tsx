@@ -65,7 +65,9 @@ export function Workspace() {
   useEffect(() => {
     const narrow = matchMedia('(max-width:1050px)');
     const resize = () => {
-      if (narrow.matches) useWorkspace.setState({ contextOpen: false });
+      // A responsive change must not unmount work already open in a native dialog.
+      if (narrow.matches && !document.querySelector('dialog[open]'))
+        useWorkspace.setState({ contextOpen: false });
     };
     resize();
     narrow.addEventListener('change', resize);

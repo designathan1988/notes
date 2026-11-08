@@ -18,9 +18,7 @@ import { IconButton } from '../ui/IconButton.js';
 import { PageHeader } from '../workspace/PageHeader.js';
 import { canvasConnection } from '../../../../packages/editor/src/canvas-geometry.js';
 import { CanvasSelection } from './CanvasSelection.js';
-
-const elementColor = (color: string) =>
-  /^#[a-f0-9]{6}$/i.test(color) ? color : `var(--canvas-color-${color})`;
+import { CanvasConnections, canvasElementColor as elementColor } from './CanvasConnections.js';
 export function CanvasRootView() {
   const c = useCanvas(),
     { camera, size } = c.view;
@@ -166,74 +164,19 @@ export function CanvasRootView() {
             } as React.CSSProperties
           }
         >
-          <svg className="canvas-connections" aria-label="Canvas connections">
-            {c.items
-              .filter((item) => item.node.type.name === 'canvasEdge')
-              .map((item) => {
-                const a = c.box(item.node.attrs.fromNode),
-                  b = c.box(item.node.attrs.toNode);
-                if (!a || !b) return null;
-                const marker = `canvas-${c.page.id}-${item.id}`;
-                return (
-                  <g key={item.id} style={{ color: elementColor(item.node.attrs.color) }}>
-                    <defs>
-                      {(['start', 'end'] as const).map((end) => (
-                        <marker
-                          key={end}
-                          id={`${marker}-${end}`}
-                          viewBox="0 -4 8 8"
-                          refX="8"
-                          markerWidth={8 / camera.zoom}
-                          markerHeight={8 / camera.zoom}
-                          orient="auto-start-reverse"
-                          markerUnits="userSpaceOnUse"
-                        >
-                          <path d="M0,-3L8,0L0,3Z" fill="currentColor" />
-                        </marker>
-                      ))}
-                    </defs>
-                    <path
-                      key={item.id}
-                      data-canvas-connection={item.id}
-                      data-spatial-control
-                      className={c.selected.includes(item.id) ? 'selected' : ''}
-                      d={
-                        canvasConnection(a, b, {
-                          fromSide: item.node.attrs.fromSide,
-                          toSide: item.node.attrs.toSide,
-                          self: item.node.attrs.fromNode === item.node.attrs.toNode,
-                        }).path
-                      }
-                      markerStart={
-                        item.node.attrs.fromEnd === 'arrow' ? `url(#${marker}-start)` : undefined
-                      }
-                      markerEnd={
-                        item.node.attrs.toEnd === 'arrow' ? `url(#${marker}-end)` : undefined
-                      }
-                      vectorEffect="non-scaling-stroke"
-                      onPointerDown={(event) => {
-                        event.stopPropagation();
-                        event.preventDefault();
-                        c.select(item.id, event.shiftKey);
-                      }}
-                    />
-                  </g>
-                );
-              })}
-            {c.connection && c.box(c.connection.source) && (
-              <path
-                className="canvas-connection-draft"
-                d={
-                  canvasConnection(c.box(c.connection.source)!, {
-                    ...c.connection.point,
-                    width: 0,
-                    height: 0,
-                  }).path
-                }
-                vectorEffect="non-scaling-stroke"
-              />
-            )}
-          </svg>
+          <CanvasConnections
+            items={c.items}
+            box={c.box}
+            zoom={camera.zoom}
+            scope={c.page.id}
+            selected={c.selected}
+            draft={c.connection}
+            select={(id, event) => {
+              event.stopPropagation();
+              event.preventDefault();
+              c.select(id, event.shiftKey);
+            }}
+          />
           <NodeViewContent className="canvas-items" />
           {c.marquee && (
             <div

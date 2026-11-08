@@ -5459,6 +5459,69 @@
 }
 
 @layer components {
+  .version-canvas {
+    margin: 16px 0;
+    min-width: 0;
+  }
+  .canvas-preview-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 12px;
+    margin-bottom: 8px;
+  }
+  .canvas-preview-heading small {
+    color: var(--muted);
+    font: 0.78571rem/1.5 var(--ui);
+  }
+  .canvas-preview-heading button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+  }
+  .canvas-snapshot-host {
+    height: 320px;
+    min-width: 0;
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .canvas-snapshot-host > div,
+  .canvas-snapshot-editor,
+  .canvas-snapshot-editor > .react-renderer {
+    height: 100%;
+    min-height: 0;
+    outline: none;
+  }
+  .dialog-wide > .canvas-snapshot-host {
+    height: min(72dvh, 760px);
+    min-height: 300px;
+  }
+  .dialog-wide:has(> .canvas-snapshot-host) {
+    width: min(1200px, calc(100vw - 32px));
+    padding: 16px;
+  }
+  .canvas-snapshot .canvas-connections > g > path {
+    pointer-events: none;
+    cursor: inherit;
+  }
+  .canvas-snapshot .canvas-group-heading {
+    padding: 0 8px;
+  }
+  .canvas-snapshot .canvas-card-rich > [data-node-view-content-react] > :first-child {
+    padding-left: 0;
+  }
+  @media (max-width: 650px) {
+    .canvas-preview-heading button {
+      min-height: 40px;
+    }
+    .canvas-snapshot .canvas-zoom .icon-button {
+      width: 40px;
+      height: 40px;
+    }
+  }
   .canvas-page {
     flex: 1;
     min-height: 0;

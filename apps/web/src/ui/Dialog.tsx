@@ -16,8 +16,14 @@ export function Dialog({
   const ref = useRef<HTMLDialogElement>(null);
   const id = useId();
   useEffect(() => {
-    ref.current?.showModal();
-    ref.current?.querySelector<HTMLElement>('input:not([type=hidden]),textarea,select')?.focus();
+    const dialog = ref.current!;
+    const previous = document.activeElement as HTMLElement | null;
+    dialog.showModal();
+    dialog.querySelector<HTMLElement>('input:not([type=hidden]),textarea,select')?.focus();
+    return () => {
+      if (dialog.open) dialog.close();
+      if (previous?.isConnected) previous.focus({ preventScroll: true });
+    };
   }, []);
   return createPortal(
     <dialog
