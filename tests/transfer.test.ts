@@ -56,6 +56,12 @@ test('workspace archive round trip remaps pages and retains attachment bytes and
     tags: ['Field research'],
     cover: { type: 'image', attachmentId: cover.id, positionY: 38 },
   });
+  const related = { id: 'related-page', name: 'Related page', type: 'relation' as const };
+  await new Pages(db).update(actor, source, { revision: 2, fields: [related] });
+  await new Pages(db).update(actor, source, {
+    revision: 3,
+    property: { id: related.id, value: target, expectedValue: null, expectedField: related },
+  });
   const doc = documentFromJSON({
     type: 'doc',
     content: [
@@ -78,6 +84,7 @@ test('workspace archive round trip remaps pages and retains attachment bytes and
   const restored = pages.find((page) => page.title === 'Original note')!;
   const linked = pages.find((page) => page.title === 'Link target')!;
   expect(restored.id).not.toBe(source);
+  expect(restored.properties).toEqual({ fields: [related], values: { [related.id]: linked.id } });
   expect(restored).toMatchObject({
     icon: '🧭',
     tags: ['field research'],

@@ -62,10 +62,15 @@ export function RecordProperty({
       field={field}
       readOnly={readOnly}
       label={label}
-      save={async (value) => {
+      save={async (value, original, originalField) => {
         await useWorkspace
           .getState()
-          .editRecord(databaseId, record.pageId, { values: { [field.id]: value } });
+          .editRecord(
+            databaseId,
+            record.pageId,
+            { values: { [field.id]: value } },
+            { id: field.id, value: original, field: originalField ?? field },
+          );
         await refresh?.();
       }}
     />

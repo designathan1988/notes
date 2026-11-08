@@ -3,6 +3,7 @@ import type { Page } from '../../../../packages/contracts/src/index.js';
 import { useWorkspace } from '../state/store.js';
 import { useLayoutEffect, useRef } from 'react';
 import { PagePresentation, PageTags } from '../pages/PagePresentation.js';
+import { PageProperties } from '../pages/PageProperties.js';
 function fit(element: HTMLTextAreaElement) {
   element.style.height = 'auto';
   element.style.height = element.scrollHeight + 'px';
@@ -101,6 +102,7 @@ export function PageHeader({ page, connections = 0 }: { page: Page; connections?
         </span>
       </div>
       <PageTags key={`tags-${page.id}`} page={page} readOnly={readOnly} />
+      <PageProperties key={`properties-${page.id}`} page={page} readOnly={readOnly} />
     </header>
   );
 }

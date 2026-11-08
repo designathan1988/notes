@@ -18,6 +18,7 @@ import {
 import * as Y from 'yjs';
 import { randomUUID } from 'node:crypto';
 import { pack, unpack, orderedPages, rewriteContent, type Manifest } from './archive.js';
+import { PageDetails } from '../pages/details.js';
 export interface ImportReport {
   jobId: string;
   complete: boolean;
@@ -77,6 +78,7 @@ export class Transfer {
         icon: page.icon ?? null,
         cover: page.cover ?? null,
         tags: page.tags ?? [],
+        ...(page.properties ? { properties: page.properties } : {}),
         kind: page.kind,
         visibility: page.visibility,
         content: documentJSON(doc),
@@ -338,6 +340,23 @@ export class Transfer {
                     }
                   : (page.cover ?? null),
             });
+            if (page.properties) {
+              const properties = structuredClone(page.properties);
+              for (const field of properties.fields.filter((field) => field.type === 'relation')) {
+                const previous = properties.values[field.id];
+                if (!previous) continue;
+                properties.values[field.id] = job.mapping.pages[String(previous)] ?? null;
+                if (!properties.values[field.id])
+                  warnings.push(`An unavailable page relation was omitted from ${page.title}.`);
+              }
+              const current = await service.get(actor, created.id);
+              await new PageDetails(tx).importProperties(
+                actor,
+                created.id,
+                properties,
+                current.revision,
+              );
+            }
             let doc: Y.Doc;
             try {
               doc = documentFromJSON(

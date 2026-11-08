@@ -6,8 +6,10 @@ import {
   type Actor,
   type PageCover,
   type PageUpdate,
+  type PageProperties,
 } from '../../../../packages/contracts/src/index.js';
 import { toPage, type PageRow } from './model.js';
+import { changePageProperties } from './properties.js';
 
 const controls = /[\u0000-\u001f\u007f]/u;
 export function validatePresentation(input: { icon?: unknown; cover?: unknown; tags?: unknown }) {
@@ -81,6 +83,17 @@ export function validatePresentation(input: { icon?: unknown; cover?: unknown; t
 export class PageDetails {
   constructor(readonly db: Database) {}
   async update(actor: Actor, id: string, input: PageUpdate & { revision: number }) {
+    return this.write(actor, id, input);
+  }
+  async importProperties(actor: Actor, id: string, properties: PageProperties, revision: number) {
+    return this.write(actor, id, { revision }, properties);
+  }
+  private async write(
+    actor: Actor,
+    id: string,
+    input: PageUpdate & { revision: number },
+    imported?: PageProperties,
+  ) {
     return this.db.transaction(async (tx) => {
       const page = await new Access(tx).lockPage(actor, id);
       if (page.revision !== input.revision)
@@ -88,6 +101,7 @@ export class PageDetails {
       const title = input.title === undefined ? page.title : validateTitle(input.title),
         description = input.description ?? page.description,
         presentation = validatePresentation(input);
+      const properties = await changePageProperties(tx, actor, page, input, imported);
       if (
         typeof description !== 'string' ||
         description.length > 2000 ||
@@ -107,7 +121,7 @@ export class PageDetails {
           throw new DomainError('INVALID', 'Choose an uploaded image belonging to this page.');
       }
       const [updated] = await tx.query<PageRow>(
-        'UPDATE pages SET title=$2,description=$3,icon=$4,cover=$5,tags=$6,revision=revision+1,index_revision=index_revision+1,updated_at=now() WHERE id=$1 AND revision=$7 RETURNING *',
+        'UPDATE pages SET title=$2,description=$3,icon=$4,cover=$5,tags=$6,page_properties=$8,revision=revision+1,index_revision=index_revision+1,updated_at=now() WHERE id=$1 AND revision=$7 RETURNING *',
         [
           id,
           title,
@@ -118,6 +132,7 @@ export class PageDetails {
           ),
           presentation.tags ?? page.tags ?? [],
           input.revision,
+          JSON.stringify(properties),
         ],
       );
       await tx.query(

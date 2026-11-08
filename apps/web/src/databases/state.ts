@@ -20,6 +20,41 @@ export interface TableSnapshot extends TableDefinition {
   records: DatabaseRecord[];
   total: number;
 }
+function mergeDefinition(
+  previous: TableDefinition | undefined,
+  result: TableDefinition,
+): TableDefinition {
+  return {
+    title:
+      !previous || result.pageRevision >= previous.pageRevision ? result.title : previous.title,
+    pageRevision: Math.max(previous?.pageRevision ?? 0, result.pageRevision),
+    fields:
+      !previous || result.fieldsRevision > previous.fieldsRevision
+        ? result.fields
+        : previous.fields,
+    fieldsRevision: Math.max(previous?.fieldsRevision ?? 0, result.fieldsRevision),
+    viewsRevision: Math.max(previous?.viewsRevision ?? 0, result.viewsRevision ?? 0),
+    views:
+      !previous || (result.viewsRevision ?? 0) >= (previous.viewsRevision ?? 0)
+        ? result.views
+        : previous.views,
+  };
+}
+function mergeRecord(current: DatabaseRecord | undefined, record: DatabaseRecord) {
+  if (!current) return record;
+  const values =
+    record.revision > current.revision ||
+    (record.revision === current.revision && record.updatedAt >= current.updatedAt)
+      ? record
+      : current;
+  const details = (record.pageRevision ?? 0) >= (current.pageRevision ?? 0) ? record : current;
+  return {
+    ...values,
+    title: details.title,
+    pageRevision: Math.max(record.pageRevision ?? 0, current.pageRevision ?? 0),
+    updatedAt: record.updatedAt >= current.updatedAt ? record.updatedAt : current.updatedAt,
+  };
+}
 export const tableQueryKey = (id: string, options: TableOptions = {}) =>
   JSON.stringify([
     id,
@@ -44,10 +79,12 @@ export interface DatabaseSlice {
   ): Promise<DatabaseRecord | null>;
   runRecordAction(databaseId: string, pageId: string, fieldId: string): Promise<void>;
   loadTable(id: string, options?: TableOptions): Promise<void>;
+  loadRecord(databaseId: string, pageId: string): Promise<void>;
   editRecord(
     databaseId: string,
     pageId: string,
     patch: { title?: string; values?: Record<string, unknown> },
+    expected?: { id: string; value: unknown; field: RecordField },
   ): Promise<void>;
 }
 export function databaseSlice(
@@ -70,7 +107,12 @@ export function databaseSlice(
         if (!record) throw new Error('Reload the record before editing.');
         const updated = await request(record);
         if (user === get().user?.id && workspace === get().workspaceId)
-          set({ recordEntities: { ...get().recordEntities, [pageId]: updated } });
+          set({
+            recordEntities: {
+              ...get().recordEntities,
+              [pageId]: mergeRecord(get().recordEntities[pageId], updated),
+            },
+          });
       });
     writes.set(pageId, operation);
     try {
@@ -83,6 +125,39 @@ export function databaseSlice(
     tables: {},
     tableQueries: {},
     recordEntities: {},
+    async loadRecord(id, pageId) {
+      const user = get().user?.id,
+        workspace = get().workspaceId,
+        version = get().knowledgeVersion,
+        key = `record:${pageId}`,
+        sequence = (sequences.get(key) ?? 0) + 1;
+      sequences.set(key, sequence);
+      const current = () =>
+        user === get().user?.id &&
+        workspace === get().workspaceId &&
+        version === get().knowledgeVersion &&
+        sequence === sequences.get(key);
+      try {
+        const result = await api<TableDefinition & { record: DatabaseRecord }>(
+          `/databases/${id}/records/${pageId}`,
+        );
+        if (!current()) return;
+        set({
+          tables: { ...get().tables, [id]: mergeDefinition(get().tables[id], result) },
+          recordEntities: {
+            ...get().recordEntities,
+            [pageId]: mergeRecord(get().recordEntities[pageId], result.record),
+          },
+        });
+      } catch (error) {
+        if (current() && error instanceof ApiError && [401, 403, 404].includes(error.status)) {
+          const records = { ...get().recordEntities };
+          delete records[pageId];
+          set({ recordEntities: records });
+        }
+        throw error;
+      }
+    },
     async createRecord(id, title, values = {}) {
       const user = get().user?.id,
         workspace = get().workspaceId;
@@ -121,36 +196,10 @@ export function databaseSlice(
           sequence !== sequences.get(key)
         )
           return;
-        const previous = get().tables[id];
-        const definition: TableDefinition = {
-          title:
-            !previous || result.pageRevision >= previous.pageRevision
-              ? result.title
-              : previous.title,
-          pageRevision: Math.max(previous?.pageRevision ?? 0, result.pageRevision),
-          fields:
-            !previous || result.fieldsRevision > previous.fieldsRevision
-              ? result.fields
-              : previous.fields,
-          fieldsRevision: Math.max(previous?.fieldsRevision ?? 0, result.fieldsRevision),
-          viewsRevision: Math.max(previous?.viewsRevision ?? 0, result.viewsRevision ?? 0),
-          views:
-            !previous || (result.viewsRevision ?? 0) >= (previous.viewsRevision ?? 0)
-              ? result.views
-              : previous.views,
-        };
+        const definition = mergeDefinition(get().tables[id], result);
         const entities = { ...get().recordEntities };
         for (const record of result.records) {
-          const current = entities[record.pageId];
-          if (
-            !current ||
-            record.revision > current.revision ||
-            (record.revision === current.revision &&
-              ((record.pageRevision ?? 0) > (current.pageRevision ?? 0) ||
-                ((record.pageRevision ?? 0) === (current.pageRevision ?? 0) &&
-                  record.updatedAt >= current.updatedAt)))
-          )
-            entities[record.pageId] = record;
+          entities[record.pageId] = mergeRecord(entities[record.pageId], record);
         }
         set({
           tables: { ...get().tables, [id]: definition },
@@ -178,13 +227,14 @@ export function databaseSlice(
         throw error;
       }
     },
-    editRecord(id, pageId, patch) {
+    editRecord(id, pageId, patch, expected) {
       return mutate(pageId, (record) =>
         api<DatabaseRecord>(`/databases/${id}/records/${pageId}`, {
           method: 'PATCH',
           body: json({
             ...patch,
             values: patch.values ?? {},
+            expected,
             revision: record.revision,
             ...(patch.title !== undefined ? { pageRevision: record.pageRevision } : {}),
           }),

@@ -20,6 +20,7 @@ ALTER TABLE pages ADD COLUMN IF NOT EXISTS private_owner_id text REFERENCES "use
 ALTER TABLE pages ADD COLUMN IF NOT EXISTS icon text;
 ALTER TABLE pages ADD COLUMN IF NOT EXISTS cover jsonb;
 ALTER TABLE pages ADD COLUMN IF NOT EXISTS tags text[] NOT NULL DEFAULT '{}';
+ALTER TABLE pages ADD COLUMN IF NOT EXISTS page_properties jsonb NOT NULL DEFAULT '{"fields":[],"values":{}}';
 CREATE INDEX IF NOT EXISTS pages_tags ON pages USING GIN(tags);
 CREATE TABLE IF NOT EXISTS documents (page_id text PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE, state bytea NOT NULL, version bigint NOT NULL DEFAULT 1, updated_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE IF NOT EXISTS document_checkpoints (id text PRIMARY KEY, page_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE, state bytea NOT NULL, created_at timestamptz NOT NULL DEFAULT now());

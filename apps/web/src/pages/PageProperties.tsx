@@ -1,0 +1,139 @@
+import { useMemo, useState } from 'react';
+import { Plus, SlidersHorizontal } from 'lucide-react';
+import type { Page, RecordField } from '../../../../packages/contracts/src/index.js';
+import { compileFormulas } from '../../../../packages/data/src/formulas.js';
+import { displayFormula } from '../../../../packages/data/src/formula-input.js';
+import { useWorkspace } from '../state/store.js';
+import { Cell } from '../databases/Cell.js';
+import { PropertyManager } from '../properties/PropertyManager.js';
+import { RecordPageProperties } from '../databases/RecordPageProperties.js';
+
+function PageProperty({
+  page,
+  field,
+  readOnly,
+  computed,
+}: {
+  page: Page;
+  field: RecordField;
+  readOnly: boolean;
+  computed: Record<string, number | null>;
+}) {
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState('');
+  const label = `${field.name} for ${page.title}`;
+  if (field.type === 'formula')
+    return (
+      <output
+        className="computed-value"
+        aria-label={label}
+        title={displayFormula(field.formula ?? '', page.properties?.fields ?? [])}
+      >
+        {computed[field.id] ?? '—'}
+      </output>
+    );
+  if (field.type === 'button')
+    return (
+      <span className="record-action">
+        <button
+          className="button"
+          aria-label={label}
+          disabled={readOnly || busy}
+          onClick={async () => {
+            setBusy(true);
+            setError('');
+            try {
+              await useWorkspace
+                .getState()
+                .updatePage(page.id, { propertyAction: field.id }, page.revision);
+            } catch (failure) {
+              setError((failure as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {field.name}
+        </button>
+        {error && <small role="alert">{error}</small>}
+      </span>
+    );
+  return (
+    <Cell
+      initial={page.properties?.values[field.id]}
+      field={field}
+      readOnly={readOnly}
+      relationKind="page"
+      label={label}
+      save={(value, original, originalField) =>
+        useWorkspace
+          .getState()
+          .updatePage(page.id, {
+            property: {
+              id: field.id,
+              value,
+              expectedValue: original,
+              expectedField: originalField ?? field,
+            },
+          })
+      }
+    />
+  );
+}
+
+function DocumentProperties({ page, readOnly }: { page: Page; readOnly: boolean }) {
+  const properties = page.properties ?? { fields: [], values: {} },
+    [manager, setManager] = useState<'add' | 'manage' | null>(null),
+    calculate = useMemo(() => compileFormulas(properties.fields), [properties.fields]),
+    computed = calculate(properties.values);
+  return (
+    <section className="page-properties" aria-label="Page properties">
+      {!!properties.fields.filter((field) => !field.archived).length && (
+        <dl className="record-properties">
+          {properties.fields
+            .filter((field) => !field.archived)
+            .map((field) => (
+              <div key={field.id}>
+                <dt>{field.name}</dt>
+                <dd>
+                  <PageProperty page={page} field={field} readOnly={readOnly} computed={computed} />
+                </dd>
+              </div>
+            ))}
+        </dl>
+      )}
+      {!readOnly && (
+        <div className="page-property-tools">
+          <button aria-label="Add page property" onClick={() => setManager('add')}>
+            <Plus size={12} />
+            Add property
+          </button>
+          {!!properties.fields.length && (
+            <button aria-label="Manage page properties" onClick={() => setManager('manage')}>
+              <SlidersHorizontal size={12} />
+              Properties
+            </button>
+          )}
+        </div>
+      )}
+      {manager && (
+        <PropertyManager
+          label="Page properties"
+          fields={properties.fields}
+          revision={page.revision}
+          initialAdd={manager === 'add'}
+          close={() => setManager(null)}
+          commit={(fields, revision) =>
+            useWorkspace.getState().updatePage(page.id, { fields }, revision)
+          }
+        />
+      )}
+    </section>
+  );
+}
+
+export function PageProperties({ page, readOnly }: { page: Page; readOnly: boolean }) {
+  if (page.kind === 'record') return <RecordPageProperties page={page} readOnly={readOnly} />;
+  if (page.kind !== 'document') return null;
+  return <DocumentProperties page={page} readOnly={readOnly} />;
+}

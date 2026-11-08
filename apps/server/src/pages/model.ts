@@ -1,5 +1,6 @@
 import type { Page } from '../../../../packages/contracts/src/index.js';
 export interface PageRow {
+  page_properties?: Page['properties'];
   icon?: string | null;
   cover?: Page['cover'];
   tags?: string[];
@@ -21,6 +22,9 @@ export interface PageRow {
 }
 export function toPage(row: PageRow): Page {
   return {
+    ...(row.kind === 'document'
+      ? { properties: row.page_properties ?? { fields: [], values: {} } }
+      : {}),
     icon: row.icon ?? null,
     cover: row.cover ?? null,
     tags: row.tags ?? [],

@@ -9,6 +9,16 @@ import {
 } from '../../../../packages/contracts/src/index.js';
 export function databaseRoutes(app: FastifyInstance, db: Database) {
   const databases = new Databases(db);
+  app.get<{ Params: { id: string; page: string } }>(
+    '/api/databases/:id/records/:page',
+    async (request) => {
+      const [definition, record] = await Promise.all([
+        databases.definition(request.actor, request.params.id),
+        databases.record(request.actor, request.params.id, request.params.page),
+      ]);
+      return { ...definition, record };
+    },
+  );
   app.get<{
     Params: { id: string };
     Querystring: RecordQuery;
@@ -47,6 +57,8 @@ export function databaseRoutes(app: FastifyInstance, db: Database) {
         pageRevision: request.body.pageRevision as number | undefined,
         values: (request.body.values ?? {}) as Record<string, unknown>,
         revision: Number(request.body.revision),
+        expected: request.body.expected as
+          { id: string; value: unknown; field: RecordField } | undefined,
       });
     },
   );

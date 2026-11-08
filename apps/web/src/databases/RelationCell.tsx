@@ -9,11 +9,17 @@ export function RelationCell({
   label,
   readOnly,
   change,
+  kind = 'record',
+  begin,
+  end,
 }: {
   value: string;
   label: string;
   readOnly: boolean;
   change(value: string | null): void;
+  kind?: 'record' | 'page';
+  begin?(): void;
+  end?(): void;
 }) {
   const [open, setOpen] = useState(false),
     [query, setQuery] = useState(''),
@@ -30,19 +36,19 @@ export function RelationCell({
           if (active) setTitle(page.title);
         })
         .catch(() => {
-          if (active) setTitle('Unavailable record');
+          if (active) setTitle(kind === 'record' ? 'Unavailable record' : 'Unavailable page');
         });
     return () => {
       active = false;
     };
-  }, [value]);
+  }, [value, kind]);
   useEffect(() => {
     if (!open) return;
     let active = true;
     const timer = setTimeout(
       () =>
         void api<{ pages: PageLookup[] }>(
-          `/workspaces/${workspace}/page-list?kind=record&q=${encodeURIComponent(query)}`,
+          `/workspaces/${workspace}/page-list?kind=${kind === 'record' ? 'record' : ''}&q=${encodeURIComponent(query)}`,
         )
           .then((result) => {
             if (active) {
@@ -69,20 +75,27 @@ export function RelationCell({
         onClick={() => {
           if (readOnly && value) useWorkspace.getState().navigate(value);
           else setOpen(true);
+          begin?.();
         }}
       >
         <Link2 size={13} />
-        {value ? title || 'Loading…' : 'Link a record'}
+        {value ? title || 'Loading…' : kind === 'record' ? 'Link a record' : 'Link a page'}
       </button>
       {open && (
-        <Dialog title="Link a record" onClose={() => setOpen(false)}>
+        <Dialog
+          title={kind === 'record' ? 'Link a record' : 'Link a page'}
+          onClose={() => {
+            setOpen(false);
+            end?.();
+          }}
+        >
           <label>
-            Find a record
+            {kind === 'record' ? 'Find a record' : 'Find a page'}
             <input
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search record names…"
+              placeholder={kind === 'record' ? 'Search record names…' : 'Search page names…'}
             />
           </label>
           <div className="link-results">
@@ -90,7 +103,9 @@ export function RelationCell({
               <button
                 key={page.id}
                 aria-label={page.title}
-                aria-description={page.parentTitle ?? 'Workspace record'}
+                aria-description={
+                  page.parentTitle ?? (kind === 'record' ? 'Workspace record' : 'Workspace page')
+                }
                 onClick={() => {
                   change(page.id);
                   setTitle(page.title);
@@ -100,12 +115,19 @@ export function RelationCell({
                 <Link2 size={15} />
                 <span className="relation-result-context">
                   <strong>{page.title}</strong>
-                  <small>{page.parentTitle ?? 'Workspace record'}</small>
+                  <small>
+                    {page.parentTitle ??
+                      (kind === 'record' ? 'Workspace record' : 'Workspace page')}
+                  </small>
                 </span>
               </button>
             ))}
           </div>
-          {!results.length && <p className="muted-text">No matching records.</p>}
+          {!results.length && (
+            <p className="muted-text">
+              {kind === 'record' ? 'No matching records.' : 'No matching pages.'}
+            </p>
+          )}
           {value && (
             <button
               className="text-button"

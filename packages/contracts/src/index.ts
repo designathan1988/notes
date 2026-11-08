@@ -9,6 +9,7 @@ export interface Workspace {
   role: Role;
 }
 export interface Page {
+  properties?: PageProperties;
   icon?: string | null;
   cover?: PageCover | null;
   tags?: string[];
@@ -29,14 +30,20 @@ export interface Page {
   deletedAt: string | null;
 }
 export type PageCover =
-  | { type: 'color'; color: string }
-  | { type: 'image'; attachmentId: string; positionY: number };
+  { type: 'color'; color: string } | { type: 'image'; attachmentId: string; positionY: number };
 export interface PageUpdate {
+  fields?: RecordField[];
+  property?: { id: string; value: unknown; expectedValue: unknown; expectedField: RecordField };
+  propertyAction?: string;
   title?: string;
   description?: string;
   icon?: string | null;
   cover?: PageCover | null;
   tags?: string[];
+}
+export interface PageProperties {
+  fields: RecordField[];
+  values: Record<string, unknown>;
 }
 export type SaveStatus = 'connecting' | 'saving' | 'saved' | 'local' | 'error' | 'read-only';
 export interface PageCursor {

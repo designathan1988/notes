@@ -7,28 +7,47 @@ export function Cell({
   readOnly,
   label,
   save,
+  relationKind = 'record',
 }: {
   initial: unknown;
   field?: RecordField;
   readOnly: boolean;
   label: string;
-  save(value: unknown): Promise<void>;
+  save(value: unknown, original: unknown, field?: RecordField): Promise<void>;
+  relationKind?: 'record' | 'page';
 }) {
   const [value, setValue] = useState(initial ?? '');
   const [error, setError] = useState('');
   const focused = useRef(false);
+  const baseline = useRef<{ value: unknown; field?: RecordField }>({
+    value: initial ?? null,
+    field,
+  });
+  const begin = () => {
+    focused.current = true;
+    baseline.current = { value: initial ?? null, field };
+  };
   const cancelled = useRef(false);
   useEffect(() => {
-    if (!focused.current && !error) setValue(initial ?? '');
-  }, [JSON.stringify(initial)]);
+    if (!focused.current && !error) {
+      setValue(initial ?? '');
+      baseline.current = { value: initial ?? null, field };
+    }
+  }, [JSON.stringify(initial), JSON.stringify(field)]);
   async function commit(next: unknown) {
     if (cancelled.current) {
       cancelled.current = false;
       return;
     }
-    if (JSON.stringify(next) === JSON.stringify(initial ?? '')) return;
+    const original = baseline.current;
+    if (JSON.stringify(next ?? '') === JSON.stringify(original.value ?? '')) {
+      setValue(initial ?? '');
+      baseline.current = { value: initial ?? null, field };
+      return;
+    }
     try {
-      await save(next);
+      await save(next, original.value, original.field);
+      baseline.current = { value: next, field };
       setError('');
     } catch (error) {
       setError('Not saved: ' + (error as Error).message);
@@ -38,12 +57,21 @@ export function Cell({
     return (
       <div className="cell-control">
         <RelationCell
+          kind={relationKind}
           value={String(value || '')}
           label={label}
           readOnly={readOnly}
+          begin={begin}
+          end={() => {
+            focused.current = false;
+            setValue(initial ?? '');
+            baseline.current = { value: initial ?? null, field };
+          }}
           change={(next) => {
             setValue(next ?? '');
-            void commit(next);
+            void commit(next).finally(() => {
+              focused.current = false;
+            });
           }}
         />
         {error && (
@@ -66,6 +94,10 @@ export function Cell({
           type="checkbox"
           aria-label={label}
           checked={Boolean(value)}
+          onFocus={begin}
+          onBlur={() => {
+            focused.current = false;
+          }}
           onChange={(event) => {
             setValue(event.target.checked);
             void commit(event.target.checked);
@@ -85,6 +117,10 @@ export function Cell({
           aria-label={label}
           className="status-label"
           value={String(value)}
+          onFocus={begin}
+          onBlur={() => {
+            focused.current = false;
+          }}
           onChange={(event) => {
             setValue(event.target.value);
             void commit(event.target.value);
@@ -101,7 +137,7 @@ export function Cell({
           type={field?.type === 'number' ? 'number' : field?.type === 'date' ? 'date' : 'text'}
           value={Array.isArray(value) ? value.join(', ') : String(value)}
           onFocus={() => {
-            focused.current = true;
+            begin();
           }}
           onChange={(event) => setValue(event.target.value)}
           onBlur={() => {

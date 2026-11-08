@@ -1,0 +1,88 @@
+import { useEffect, useMemo, useState } from 'react';
+import { SlidersHorizontal } from 'lucide-react';
+import type { Page } from '../../../../packages/contracts/src/index.js';
+import { compileFormulas } from '../../../../packages/data/src/formulas.js';
+import { useWorkspace } from '../state/store.js';
+import { RecordProperty } from './RecordProperty.js';
+import { PropertyManager } from './PropertyManager.js';
+
+/** Full-page and inspector views read the same normalized record and database definition. */
+export function RecordPageProperties({ page, readOnly }: { page: Page; readOnly: boolean }) {
+  const version = useWorkspace((state) => state.knowledgeVersion),
+    record = useWorkspace((state) => state.recordEntities[page.id]),
+    definition = useWorkspace((state) => state.tables[page.parentId ?? '']),
+    [manager, setManager] = useState(false),
+    [error, setError] = useState('');
+  const calculate = useMemo(() => compileFormulas(definition?.fields ?? []), [definition?.fields]);
+  const refresh = () => useWorkspace.getState().loadRecord(page.parentId!, page.id);
+  useEffect(() => {
+    let active = true;
+    void refresh()
+      .then(() => {
+        if (active) setError('');
+      })
+      .catch((failure) => {
+        if (active) setError(failure.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [page.id, page.parentId, version]);
+  if (error)
+    return (
+      <p className="activity-error" role="alert">
+        {error}{' '}
+        <button
+          onClick={() =>
+            void refresh()
+              .then(() => setError(''))
+              .catch((failure) => setError(failure.message))
+          }
+        >
+          Retry properties
+        </button>
+      </p>
+    );
+  if (!definition || !record) return <p className="muted-text">Loading properties…</p>;
+  const current = { ...record, computedValues: calculate(record.values) };
+  return (
+    <section className="page-properties" aria-label="Record properties">
+      <dl className="record-properties">
+        {definition.fields
+          .filter((field) => !field.archived)
+          .map((field) => (
+            <div key={field.id}>
+              <dt>{field.name}</dt>
+              <dd>
+                <RecordProperty
+                  databaseId={page.parentId!}
+                  record={current}
+                  field={field}
+                  readOnly={readOnly}
+                  refresh={refresh}
+                />
+              </dd>
+            </div>
+          ))}
+      </dl>
+      {!readOnly && (
+        <div className="page-property-tools">
+          <button aria-label="Manage database properties" onClick={() => setManager(true)}>
+            <SlidersHorizontal size={12} />
+            Database properties
+          </button>
+        </div>
+      )}
+      {manager && (
+        <PropertyManager
+          id={page.parentId!}
+          fields={definition.fields}
+          revision={definition.fieldsRevision}
+          initialAdd={false}
+          close={() => setManager(false)}
+          refresh={refresh}
+        />
+      )}
+    </section>
+  );
+}

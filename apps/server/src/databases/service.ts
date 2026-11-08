@@ -13,6 +13,7 @@ import { Pages } from '../pages/service.js';
 import { defaultFields, validateFields, validateValues } from './values.js';
 import { DatabaseViews } from './views.js';
 import { compileFormulas } from '../../../../packages/data/src/formulas.js';
+import { isDeepStrictEqual } from 'node:util';
 interface RecordRow {
   page_id: string;
   page_revision: number;
@@ -33,6 +34,30 @@ const map = (row: RecordRow): DatabaseRecord => ({
 });
 export class Databases {
   constructor(readonly db: Database) {}
+  async record(actor: Actor, id: string, pageId: string): Promise<DatabaseRecord> {
+    const access = new Access(this.db);
+    await access.requirePage(actor, id, 'read');
+    const page = await access.requirePage(actor, pageId, 'read');
+    if (page.kind !== 'record' || page.parentId !== id)
+      throw new DomainError('NOT_FOUND', 'Record not found in this database.');
+    const [row] = await this.db.query<RecordRow>(
+      'SELECT r.*,p.title,p.updated_at,p.revision AS page_revision FROM records r JOIN pages p ON p.id=r.page_id WHERE r.page_id=$1 AND r.database_id=$2',
+      [pageId, id],
+    );
+    if (!row) throw new DomainError('NOT_FOUND', 'Record not found.');
+    const record = map(row);
+    for (const field of (await this.fields(actor, id)).filter(
+      (field) => field.type === 'relation',
+    )) {
+      if (!record.values[field.id]) continue;
+      try {
+        await access.requirePage(actor, String(record.values[field.id]), 'read');
+      } catch {
+        record.values = { ...record.values, [field.id]: null };
+      }
+    }
+    return record;
+  }
   async fields(actor: Actor, id: string) {
     return (await this.definition(actor, id)).fields;
   }
@@ -174,6 +199,7 @@ export class Databases {
       pageRevision?: number;
       values: Record<string, unknown>;
       revision: number;
+      expected?: { id: string; value: unknown; field: RecordField };
     },
   ): Promise<DatabaseRecord> {
     if (
@@ -188,6 +214,30 @@ export class Databases {
         [pageId, id],
       );
       if (!current) throw new DomainError('NOT_FOUND', 'Record not found.');
+      if (input.expected !== undefined) {
+        const expected = input.expected,
+          field = (await new Databases(tx).fields(actor, id)).find(
+            (field) => field.id === expected?.id,
+          );
+        if (
+          Object.keys(input.values).length !== 1 ||
+          !Object.hasOwn(input.values, expected?.id ?? '') ||
+          !field ||
+          field.archived
+        )
+          throw new DomainError('INVALID', 'Choose an active record property.');
+        if (
+          !isDeepStrictEqual(field, expected.field) ||
+          !isDeepStrictEqual(
+            Object.hasOwn(current.values, field.id) ? current.values[field.id] : null,
+            expected.value,
+          )
+        )
+          throw new DomainError(
+            'CONFLICT',
+            'This property changed while you were editing. Review the latest value before saving.',
+          );
+      }
       const values = { ...current.values, ...input.values };
       await new Databases(tx).check(actor, id, values);
       const computedValues = compileFormulas(await new Databases(tx).fields(actor, id))(values);

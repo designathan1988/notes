@@ -16,6 +16,7 @@ import { workbenchSlice, type WorkbenchSlice } from '../workbench/state.js';
 import { activitySlice, type ActivitySlice } from '../activity/state.js';
 type User = { id: string; name: string; email: string };
 const pageWrites = new Map<string, Promise<void>>();
+let navigationSequence = 0;
 export type View = 'document' | 'database' | 'graph' | 'all';
 export type Dialog = 'search' | 'new-page' | 'page-menu' | 'settings' | 'invite' | 'move' | null;
 export interface WorkspaceState
@@ -128,6 +129,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     }
   },
   async chooseWorkspace(workspaceId) {
+    navigationSequence++;
     get().clearActivity();
     set({
       workspaceId,
@@ -175,9 +177,12 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   async reload() {
     const id = get().workspaceId;
     if (!id) return;
+    const user = get().user?.id,
+      selected = get().selectedId,
+      sequence = ++navigationSequence;
+    const current = () =>
+      sequence === navigationSequence && get().workspaceId === id && get().user?.id === user;
     try {
-      const user = get().user?.id;
-      const selected = get().selectedId;
       const [snapshot, session] = await Promise.all([
         api<NavigationSnapshot>(`/workspaces/${id}/navigation`, {
           method: 'POST',
@@ -195,7 +200,19 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
         }),
         api<{ workspaces: Workspace[] }>('/session'),
       ]);
-      if (get().workspaceId === id && get().user?.id === user && get().selectedId === selected) {
+      if (current() && get().selectedId === selected) {
+        const known = new Map(get().pages.map((page) => [page.id, page]));
+        snapshot.pages = snapshot.pages.map((page) => {
+          const previous = known.get(page.id);
+          return previous && previous.revision > page.revision
+            ? {
+                ...previous,
+                visibility: page.visibility,
+                accessOwnerId: page.accessOwnerId,
+                ...(page.hasChildren !== undefined ? { hasChildren: page.hasChildren } : {}),
+              }
+            : page;
+        });
         const cursors = { ...get().navigationCursors };
         for (const [key, cursor] of Object.entries(snapshot.cursors))
           if (!cursors[key] || !cursor) cursors[key] = cursor;
@@ -227,6 +244,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
           get().navigate(selectedPage.id, 'database', 'replace', { preserveOverlays: true });
       }
     } catch (error) {
+      if (!current()) return;
       if (error instanceof ApiError && [401, 403].includes(error.status)) {
         get().clearActivity();
         set({
@@ -312,7 +330,11 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
           body: json({ ...patch, revision: expectedRevision ?? current.revision }),
         });
         if (user === get().user?.id && workspace === get().workspaceId)
-          set({ pages: get().pages.map((item) => (item.id === id ? { ...item, ...page } : item)) });
+          set({
+            pages: get().pages.map((item) =>
+              item.id === id && item.revision <= page.revision ? { ...item, ...page } : item,
+            ),
+          });
       });
     pageWrites.set(id, operation);
     try {

@@ -8,11 +8,13 @@ import {
 } from '../../../../packages/contracts/src/index.js';
 import { validateFields, validateValues } from '../databases/values.js';
 import { validatePresentation } from '../pages/details.js';
+import { validatePageProperties } from '../pages/properties.js';
 export const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024;
 export const MAX_MANIFEST_BYTES = 32 * 1024 * 1024;
 export const MAX_ARCHIVED_PAGE_BYTES = 8 * 1024 * 1024;
 const MAX_EXPANDED_BYTES = 128 * 1024 * 1024;
 export interface ArchivePage {
+  properties?: Page['properties'];
   icon?: Page['icon'];
   cover?: Page['cover'];
   tags?: Page['tags'];
@@ -184,6 +186,11 @@ function validateManifest(manifest: Manifest, files: Record<string, Uint8Array>)
       throw new DomainError('INVALID', 'An archived page is invalid or too large.');
     ids.add(page.id);
     validatePresentation(page);
+    if (page.properties !== undefined) {
+      if (page.kind !== 'document')
+        throw new DomainError('INVALID', 'Record properties must use their database schema.');
+      validatePageProperties(page.properties);
+    }
   }
   orderedPages(manifest.pages);
   const databases = new Set<string>();

@@ -1,6 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import { PageInstances } from './instantiation.js';
-import { assertObject, DomainError, type PageUpdate } from '../../../../packages/contracts/src/index.js';
+import {
+  assertObject,
+  DomainError,
+  type PageUpdate,
+} from '../../../../packages/contracts/src/index.js';
 import type { Pages } from './service.js';
 import { Navigation } from './navigation.js';
 export function pageRoutes(app: FastifyInstance, pages: Pages) {
@@ -126,6 +130,9 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
       icon: request.body.icon as PageUpdate['icon'],
       cover: request.body.cover as PageUpdate['cover'],
       tags: request.body.tags as PageUpdate['tags'],
+      fields: request.body.fields as PageUpdate['fields'],
+      property: request.body.property as PageUpdate['property'],
+      propertyAction: request.body.propertyAction as PageUpdate['propertyAction'],
       revision: Number(request.body.revision),
     });
   });

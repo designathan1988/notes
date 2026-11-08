@@ -3195,6 +3195,14 @@
     border-radius: 3px;
     min-width: 60px;
   }
+  .cell-control > input[type='checkbox'] {
+    width: 16px;
+    min-width: 16px;
+    height: 16px;
+    margin: 4px 2px;
+    padding: 0;
+    vertical-align: middle;
+  }
   .cell-control > input:hover {
     border-color: #d8dfef;
   }
@@ -4455,5 +4463,70 @@
   .page-icon.page-emoji {
     width: 1em;
     height: 1em;
+  }
+  .page-properties {
+    margin-top: 14px;
+  }
+  .page-properties .record-properties {
+    margin: 0;
+    padding: 0;
+  }
+  .page-properties .record-properties > div {
+    grid-template-columns: minmax(90px, 150px) minmax(0, 1fr);
+    min-height: 32px;
+    padding: 4px 0;
+  }
+  .page-properties .record-properties dt {
+    overflow-wrap: anywhere;
+    color: #8a8e96;
+    font-size: 11px;
+  }
+  .page-properties .record-properties dd {
+    min-width: 0;
+  }
+  .page-properties .cell-control input:not([type='checkbox']),
+  .page-properties .cell-control select {
+    width: min(100%, 330px);
+    font-size: 12px;
+    background: transparent;
+    border-color: transparent;
+    padding: 3px 5px;
+    border-radius: 3px;
+  }
+  .page-properties .cell-control input:hover,
+  .page-properties .cell-control select:hover {
+    background: #f6f7f6;
+  }
+  .page-properties .cell-control input:focus,
+  .page-properties .cell-control select:focus {
+    border-color: #b8c6dc;
+    outline: 1px solid #d7e2f2;
+    background: white;
+  }
+  .page-property-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 4px;
+  }
+  .page-property-tools button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 0;
+    border: 0;
+    background: transparent;
+    font: 400 11px/1.5 var(--ui);
+    color: #92969d;
+    cursor: pointer;
+  }
+  .page-property-tools button:hover {
+    color: #424a55;
+  }
+  @media (max-width: 650px) {
+    .page-properties .cell-control input:not([type='checkbox']),
+    .page-properties .cell-control select {
+      font-size: 16px;
+    }
   }
 }

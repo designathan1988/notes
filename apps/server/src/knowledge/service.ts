@@ -8,6 +8,8 @@ import type {
 import { Access } from '../access/service.js';
 import { documentJSON, projectDocument } from '../../../../packages/editor/src/schema.js';
 import * as Y from 'yjs';
+import { compileFormulas } from '../../../../packages/data/src/formulas.js';
+import type { PageProperties } from '../../../../packages/contracts/src/index.js';
 export class Knowledge {
   constructor(readonly db: Database) {}
   async applyProjection(
@@ -46,11 +48,12 @@ export class Knowledge {
       index_revision: string | number;
       description: string;
       tags: string[];
+      page_properties: PageProperties;
       state: Uint8Array | null;
       values: Record<string, unknown> | null;
       computed_values: Record<string, unknown> | null;
     }>(
-      `SELECT p.index_revision,p.description,p.tags,d.state,r.values,r.computed_values FROM pages p LEFT JOIN documents d ON d.page_id=p.id LEFT JOIN records r ON r.page_id=p.id WHERE p.id=$1`,
+      `SELECT p.index_revision,p.description,p.tags,p.page_properties,d.state,r.values,r.computed_values FROM pages p LEFT JOIN documents d ON d.page_id=p.id LEFT JOIN records r ON r.page_id=p.id WHERE p.id=$1`,
       [id],
     );
     if (!page) return;
@@ -68,6 +71,13 @@ export class Knowledge {
       text: [
         page.description,
         ...page.tags,
+        ...page.page_properties.fields.map((field) => field.name),
+        ...Object.values(page.page_properties.values)
+          .filter((value) => value !== null)
+          .map(String),
+        ...Object.values(compileFormulas(page.page_properties.fields)(page.page_properties.values))
+          .filter((value) => value !== null)
+          .map(String),
         projection.text,
         ...Object.values(page.values ?? {})
           .filter((value) => value !== null)
@@ -76,7 +86,16 @@ export class Knowledge {
           .filter((value) => value !== null)
           .map(String),
       ].join('\n'),
-      links: projection.links,
+      links: [
+        ...projection.links,
+        ...page.page_properties.fields
+          .filter((field) => field.type === 'relation' && !field.archived)
+          .flatMap((field) =>
+            page.page_properties.values[field.id]
+              ? [String(page.page_properties.values[field.id])]
+              : [],
+          ),
+      ],
     });
     await this.db.query(
       'UPDATE outbox SET processed_at=now() WHERE page_id=$1 AND version<=$2 AND processed_at IS NULL',
