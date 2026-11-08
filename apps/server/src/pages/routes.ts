@@ -55,7 +55,7 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
       request.actor,
       request.params.workspace,
       Number(request.query.offset) || 0,
-      ['document', 'database', 'record'].includes(request.query.kind ?? '')
+      ['document', 'database', 'record', 'canvas'].includes(request.query.kind ?? '')
         ? request.query.kind!
         : '',
       request.query.q ?? '',
@@ -112,12 +112,15 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
           kind: request.body.kind,
           expectedUserId: request.body.expectedUserId,
         });
-      if (request.body.kind && !['document', 'database'].includes(String(request.body.kind)))
+      if (
+        request.body.kind &&
+        !['document', 'database', 'canvas'].includes(String(request.body.kind))
+      )
         throw new DomainError('INVALID', 'Use the database record command for records.');
       return pages.create(request.actor, request.params.workspace, {
         title: String(request.body.title ?? 'Untitled'),
         parentId: request.body.parentId as string | undefined,
-        kind: request.body.kind as 'document' | 'database',
+        kind: request.body.kind as 'document' | 'database' | 'canvas',
         visibility: request.body.visibility as 'workspace' | 'private',
       });
     },

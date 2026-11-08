@@ -5110,3 +5110,519 @@
     }
   }
 }
+
+@layer components {
+  .canvas-page {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .canvas-editor-host {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+  }
+  .canvas-editor,
+  .canvas-editor > .react-renderer {
+    height: 100%;
+    min-height: 0;
+    outline: none;
+  }
+  .canvas-document {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .canvas-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--rule);
+    background: white;
+    flex-shrink: 0;
+    overflow-x: auto;
+  }
+  .canvas-toolbar > button,
+  .canvas-tool-group > button {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font: 12px var(--ui);
+    white-space: nowrap;
+  }
+  .canvas-toolbar button svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+  }
+  .canvas-toolbar button:hover {
+    background: var(--soft);
+  }
+  .canvas-tool-group {
+    display: flex;
+    align-items: center;
+    border-left: 1px solid var(--rule);
+    border-right: 1px solid var(--rule);
+    padding: 0 10px;
+  }
+  .canvas-tool-group > button[aria-pressed='true'] {
+    color: var(--accent);
+    background: var(--selected);
+  }
+  .page-heading-compact {
+    margin: 0;
+    padding: 0;
+    min-width: 160px;
+    width: 190px;
+    flex-shrink: 0;
+  }
+  .page-heading-compact .title-row {
+    align-items: center;
+    gap: 8px;
+  }
+  .page-heading-compact .page-title {
+    font-size: 14px;
+    line-height: 24px;
+    margin: 0;
+    padding: 0;
+    height: 24px;
+    min-height: 24px;
+    letter-spacing: -0.2px;
+  }
+  .page-heading-compact .page-icon {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .canvas-stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    touch-action: none;
+    outline-offset: -3px;
+    background-color: white;
+    background-image: radial-gradient(#c5cdd8 0.65px, transparent 0.65px);
+    background-size: 24px 24px;
+    user-select: none;
+  }
+  .canvas-stage[data-tool='hand'] {
+    cursor: grab;
+  }
+  .canvas-stage[data-tool='connect'] {
+    cursor: crosshair;
+  }
+  .canvas-world {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    transform-origin: 0 0;
+  }
+  .canvas-items {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+  }
+  .canvas-card {
+    position: absolute;
+    box-sizing: border-box;
+    border: calc(1px / var(--canvas-zoom)) solid #d9dee6;
+    border-radius: 6px;
+    background: white;
+    box-shadow: 0 2px 4px #13284608;
+  }
+  .canvas-card[data-selected] {
+    border-color: var(--accent);
+    outline: calc(1px / var(--canvas-zoom)) solid var(--accent);
+  }
+  .canvas-card-rich.note-editor {
+    width: 100%;
+    height: 100%;
+    padding: 14px 18px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    box-sizing: border-box;
+    outline: none;
+    user-select: text;
+  }
+  .canvas-card-rich > [data-node-view-content-react] > :first-child {
+    padding-left: 18px;
+  }
+  .canvas-card-rich .attachment-block {
+    margin: 8px 0;
+  }
+  .canvas-card-rich .attachment-block img,
+  .canvas-card-rich .attachment-block video {
+    width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  .canvas-card-rich pre {
+    margin: 0;
+    overflow: auto;
+    font-size: 12px;
+  }
+  .canvas-move {
+    position: absolute;
+    left: 2px;
+    top: 8px;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    color: #87919f;
+    cursor: grab;
+    z-index: 2;
+  }
+  .canvas-move svg,
+  .canvas-group-move svg {
+    width: 16px;
+    height: 16px;
+  }
+  .canvas-move:focus-visible,
+  .canvas-group-move:focus-visible {
+    outline: 2px solid var(--accent);
+  }
+  .canvas-resize {
+    position: absolute;
+    right: -12px;
+    bottom: -12px;
+    width: 24px;
+    height: 24px;
+    cursor: nwse-resize;
+    z-index: 4;
+  }
+  .canvas-resize::after {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    background: white;
+    border: 1px solid var(--accent);
+  }
+  .canvas-group {
+    position: absolute;
+    box-sizing: border-box;
+    border: calc(1px / var(--canvas-zoom)) solid #c9d1dc;
+    border-radius: 6px;
+    pointer-events: none;
+  }
+  .canvas-group[data-selected] {
+    border-color: var(--accent);
+  }
+  .canvas-group-heading {
+    position: absolute;
+    left: 12px;
+    top: -14px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 26px;
+    background: white;
+    border-radius: 4px;
+    padding: 0 8px 0 2px;
+    pointer-events: auto;
+  }
+  .canvas-group-heading [data-canvas-rich] {
+    min-width: 40px;
+    max-width: 500px;
+    display: inline-block;
+    outline: none;
+    user-select: text;
+    font-size: 13px;
+    line-height: 24px;
+  }
+  .canvas-group-move {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 26px;
+    cursor: grab;
+    color: var(--muted);
+  }
+  .canvas-connections {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .canvas-connections > path {
+    fill: none;
+    stroke: #879cb9;
+    stroke-width: 1.5;
+    pointer-events: stroke;
+    cursor: pointer;
+  }
+  .canvas-connections > path.selected {
+    stroke: var(--accent);
+    stroke-width: 2.5;
+  }
+  .canvas-connections .canvas-connection-draft {
+    stroke-dasharray: 4 4;
+    pointer-events: none;
+  }
+  #canvas-arrow path {
+    fill: #879cb9;
+  }
+  .canvas-edge-label {
+    position: absolute;
+    z-index: 8;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 1px 7px;
+    border-radius: 5px;
+    border: 1px solid transparent;
+  }
+  .canvas-edge-label.selected {
+    border-color: var(--accent);
+  }
+  .canvas-edge-label [data-canvas-rich] {
+    display: inline-block;
+    min-width: 22px;
+    min-height: 20px;
+    max-width: 400px;
+    font-size: 12px;
+    line-height: 20px;
+    outline: none;
+    user-select: text;
+  }
+  .canvas-inspector {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 220px;
+    border-left: 1px solid var(--rule);
+    background: white;
+    padding: 12px 16px;
+    z-index: 80;
+    box-sizing: border-box;
+  }
+  .canvas-inspector header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+  }
+  .canvas-inspector p {
+    font-size: 11px;
+    color: var(--muted);
+    margin: 12px 0;
+  }
+  .canvas-inspector > button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    font-size: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .canvas-inspector > button svg {
+    width: 16px;
+    height: 16px;
+  }
+  .canvas-zoom {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    z-index: 85;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: white;
+    padding: 3px;
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+  }
+  .canvas-zoom output {
+    font-size: 11px;
+    min-width: 38px;
+    text-align: center;
+  }
+  .canvas-help {
+    position: absolute;
+    bottom: 18px;
+    left: 20px;
+    margin: 0;
+    font-size: 10px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .canvas-empty {
+    position: absolute;
+    left: 50%;
+    top: 42%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    width: min(400px, calc(100% - 32px));
+    color: var(--muted);
+  }
+  .canvas-empty h2 {
+    font-size: 20px;
+    color: var(--ink);
+    font-weight: 500;
+    margin: 0 0 8px;
+  }
+  .canvas-empty p {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .canvas-marquee {
+    position: absolute;
+    border: calc(1px / var(--canvas-zoom)) solid var(--accent);
+    background: #2468c414;
+    pointer-events: none;
+    z-index: 10000;
+  }
+  .canvas-upload-status {
+    position: absolute;
+    left: 20px;
+    bottom: 52px;
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 12px;
+  }
+}
+@layer editor {
+  .canvas-card-rich.note-editor {
+    font: 14px/1.6 var(--ui);
+    min-height: 0;
+  }
+  .canvas-card-rich.note-editor h1,
+  .canvas-card-rich.note-editor h2,
+  .canvas-card-rich.note-editor h3 {
+    font-size: 17px;
+    line-height: 1.4;
+    margin: 0 0 12px;
+    letter-spacing: -0.2px;
+  }
+  .canvas-card-rich.note-editor p {
+    margin: 0 0 8px;
+  }
+}
+@layer responsive {
+  @media (max-width: 700px) {
+    .canvas-toolbar {
+      padding: 8px 10px;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .canvas-toolbar .page-heading-compact {
+      display: block;
+      flex-basis: 100%;
+      min-width: 0;
+      width: 100%;
+      padding-bottom: 4px;
+    }
+    .canvas-toolbar .page-title {
+      font-size: 14px;
+      line-height: 24px;
+      min-height: 24px;
+      letter-spacing: -0.2px;
+    }
+    .canvas-toolbar .page-icon {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+    }
+    .canvas-toolbar button {
+      padding: 10px;
+    }
+    .canvas-toolbar button span {
+      display: none;
+    }
+    .canvas-tool-group {
+      padding: 0 4px;
+    }
+    .canvas-inspector {
+      top: auto;
+      bottom: 64px;
+      left: 12px;
+      right: 12px;
+      width: auto;
+      padding: 8px 12px;
+      border: 1px solid var(--rule);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .canvas-inspector header strong,
+    .canvas-inspector p {
+      display: none;
+    }
+    .canvas-inspector header {
+      order: 2;
+      margin-left: auto;
+    }
+    .canvas-inspector > button {
+      font-size: 0;
+      width: 36px;
+      height: 36px;
+      padding: 8px;
+      border: 0;
+      flex-shrink: 0;
+    }
+    .canvas-help {
+      display: none;
+    }
+  }
+}
+@layer components {
+  .canvas-page-reference {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    align-items: center;
+    gap: 6px 10px;
+    padding: 20px 6px 6px;
+  }
+  .canvas-page-reference > svg {
+    width: 22px;
+    height: 22px;
+    grid-row: span 2;
+    color: var(--muted);
+  }
+  .canvas-page-reference strong {
+    font-size: 16px;
+    line-height: 1.4;
+    font-weight: 600;
+  }
+  .canvas-page-reference small {
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .canvas-page-reference button {
+    grid-column: span 2;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border-top: 1px solid var(--rule);
+    margin-top: 14px;
+    padding: 9px 0;
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .canvas-page-reference button svg {
+    width: 14px;
+    height: 14px;
+  }
+}

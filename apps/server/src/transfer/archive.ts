@@ -1,5 +1,7 @@
 import { Unzip, UnzipInflate, zipSync, strToU8, strFromU8 } from 'fflate';
 import type { JSONContent } from '@tiptap/core';
+import { validateDocument } from '../../../../packages/editor/src/schema.js';
+import { isCanvas } from '../../../../packages/editor/src/canvas.js';
 import {
   DomainError,
   type PageKind,
@@ -177,7 +179,7 @@ function validateManifest(manifest: Manifest, files: Record<string, Uint8Array>)
       typeof page.id !== 'string' ||
       !/^[\w-]{1,128}$/.test(page.id) ||
       ids.has(page.id) ||
-      !['document', 'database', 'record'].includes(page.kind) ||
+      !['document', 'database', 'record', 'canvas'].includes(page.kind) ||
       !['private', 'workspace'].includes(page.visibility) ||
       typeof page.title !== 'string' ||
       !page.title.trim() ||
@@ -189,9 +191,19 @@ function validateManifest(manifest: Manifest, files: Record<string, Uint8Array>)
     )
       throw new DomainError('INVALID', 'An archived page is invalid or too large.');
     ids.add(page.id);
+    if (page.kind === 'canvas' || isCanvas(page.content)) {
+      try {
+        validateDocument(page.content, page.kind);
+      } catch {
+        throw new DomainError(
+          'INVALID',
+          'An archived canvas contains invalid or incompatible content.',
+        );
+      }
+    }
     validatePresentation(page);
     if (page.properties !== undefined) {
-      if (page.kind !== 'document')
+      if (!['document', 'canvas'].includes(page.kind))
         throw new DomainError('INVALID', 'Record properties must use their database schema.');
       validatePageProperties(page.properties);
     }

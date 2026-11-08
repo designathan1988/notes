@@ -314,7 +314,7 @@ export class TemplateClone {
             properties &&
             !node.page.templateDatabaseId &&
             Object.keys(properties.values).length + properties.fields.length &&
-            current.kind === 'document'
+            ['document', 'canvas'].includes(current.kind)
           ) {
             const values = structuredClone(properties.values);
             for (const field of properties.fields.filter((field) => field.type === 'relation'))

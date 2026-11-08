@@ -32,7 +32,7 @@ export default function App() {
         .getState()
         .navigate(
           id || null,
-          ['document', 'database', 'graph', 'all', 'templates'].includes(view)
+          ['document', 'database', 'graph', 'all', 'templates', 'canvas'].includes(view)
             ? (view as import('./state/store.js').View)
             : 'document',
           'none',

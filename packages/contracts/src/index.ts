@@ -1,5 +1,5 @@
 export type Role = 'owner' | 'admin' | 'editor' | 'viewer';
-export type PageKind = 'document' | 'database' | 'record';
+export type PageKind = 'document' | 'database' | 'record' | 'canvas';
 export interface Actor {
   userId: string;
 }

@@ -1,12 +1,5 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import {
-  EditorContent,
-  useEditor,
-  useEditorState,
-  NodeViewWrapper,
-  ReactNodeViewRenderer,
-  type NodeViewProps,
-} from '@tiptap/react';
+import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -24,32 +17,26 @@ import {
   Maximize2,
   Minimize2,
 } from 'lucide-react';
-import { editorExtensions, databaseView } from '../../../../packages/editor/src/schema.js';
 import { DocumentSession } from './session.js';
 import { useWorkspace } from '../state/store.js';
 import { IconButton } from '../ui/IconButton.js';
 import { Dialog } from '../ui/Dialog.js';
 import type { Page } from '../../../../packages/contracts/src/index.js';
-import {
-  captureClipboard,
-  uploadFile,
-  fileNode,
-  UploadError,
-  type CapturedFile,
-} from './capture.js';
+import { captureClipboard, fileNode } from './capture.js';
 import { safeEmbedSource } from '../../../../packages/editor/src/embeds.js';
-import { DatabaseView } from '../databases/DatabaseView.js';
 import { LinkPicker } from './LinkPicker.js';
 import { BlockSurface } from './BlockSurface.js';
 import { BlockControls } from './BlockControls.js';
 import { TableTools } from './TableTools.js';
 import { DatabasePicker } from './DatabasePicker.js';
 import { toggleBlock } from '../../../../packages/editor/src/structure.js';
-import { ToggleSection } from './ToggleSection.js';
 import { SelectionToolbar } from './SelectionToolbar.js';
 import { Templates } from './Templates.js';
 import { DocumentFind, FindInPage } from './FindInPage.js';
 import { useDocumentProjection } from './useDocumentProjection.js';
+import { richEditorExtensions } from './richExtensions.js';
+import { useUploads, FailedFile } from './useUploads.js';
+const CanvasEditor = lazy(() => import('../canvas/CanvasEditor.js'));
 
 export function DocumentEditor({ page, embedded = false }: { page: Page; embedded?: boolean }) {
   const [session, setSession] = useState<DocumentSession | null>(null);
@@ -86,7 +73,11 @@ export function DocumentEditor({ page, embedded = false }: { page: Page; embedde
         </button>
       </div>
     );
-  return session ? (
+  return session && page.kind === 'canvas' ? (
+    <Suspense fallback={<p className="editor-prompt">Opening canvas…</p>}>
+      <CanvasEditor session={session} />
+    </Suspense>
+  ) : session ? (
     <ConnectedEditor session={session} embedded={embedded} />
   ) : (
     <p className="editor-prompt">Opening document…</p>
@@ -105,41 +96,14 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
   const request = useWorkspace((state) => state.editorRequest);
   const focusMode = useWorkspace((state) => state.focusMode);
   const [pasteMode, setPasteMode] = useState('auto');
-  const [uploading, setUploading] = useState(0);
-  const [failed, setFailed] = useState<{ file: File; id?: string }[]>([]);
+  const { uploading, failed, setFailed, upload } = useUploads(session.page.id);
   const fileInput = useRef<HTMLInputElement>(null);
-  async function upload(file: File, existingId?: string): Promise<CapturedFile> {
-    setUploading((count) => count + 1);
-    try {
-      return await uploadFile(session.page.id, file, existingId);
-    } catch (error) {
-      setFailed((files) => [
-        ...files,
-        { file, id: error instanceof UploadError ? error.attachmentId : existingId },
-      ]);
-      throw error;
-    } finally {
-      setUploading((count) => count - 1);
-    }
-  }
   const editor = useEditor(
     {
       extensions: [
-        ...editorExtensions().filter(
-          (extension) => !['databaseView', 'toggleBlock'].includes(extension.name),
-        ),
+        ...richEditorExtensions(),
         BlockSurface,
         DocumentFind,
-        toggleBlock.extend({
-          addNodeView() {
-            return ReactNodeViewRenderer(ToggleSection);
-          },
-        }),
-        databaseView.extend({
-          addNodeView() {
-            return ReactNodeViewRenderer(EmbeddedDatabase);
-          },
-        }),
         Collaboration.configure({ document: session.doc }),
         CollaborationCaret.configure({
           provider: session.provider,
@@ -466,34 +430,6 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
           </form>
         </Dialog>
       )}
-    </div>
-  );
-}
-function EmbeddedDatabase({ node }: NodeViewProps) {
-  return (
-    <NodeViewWrapper className="embedded-database">
-      <DatabaseView
-        key={String(node.attrs.databaseId)}
-        id={String(node.attrs.databaseId)}
-        compact
-      />
-    </NodeViewWrapper>
-  );
-}
-function FailedFile({ file, retry }: { file: File; retry(): void }) {
-  const [url, setUrl] = useState('');
-  useEffect(() => {
-    const next = URL.createObjectURL(file);
-    setUrl(next);
-    return () => URL.revokeObjectURL(next);
-  }, [file]);
-  return (
-    <div className="upload-failure">
-      <span>Upload failed: {file.name}</span>
-      <button onClick={retry}>Retry</button>
-      <a download={file.name} href={url}>
-        Save original
-      </a>
     </div>
   );
 }

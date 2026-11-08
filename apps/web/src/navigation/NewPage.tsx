@@ -34,6 +34,7 @@ export function NewPage() {
           <select name="kind" defaultValue={state.newPageKind}>
             <option value="document">Document</option>
             <option value="database">Database</option>
+            <option value="canvas">Canvas</option>
           </select>
         </label>
         <label>

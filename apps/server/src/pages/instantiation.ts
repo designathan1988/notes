@@ -10,6 +10,7 @@ import type { Storage } from '../attachments/storage.js';
 import type { Page, PageKind } from '../../../../packages/contracts/src/index.js';
 import type { CloneInput } from '../templates/clone.js';
 import { documentFromJSON, documentJSON } from '../../../../packages/editor/src/schema.js';
+import { isCanvas } from '../../../../packages/editor/src/canvas.js';
 import {
   DomainError,
   MAX_DOCUMENT_BYTES,
@@ -75,7 +76,7 @@ export class PageInstances {
       );
     if (
       !['copy', 'recovery'].includes(String(purpose)) ||
-      (input.kind !== undefined && input.kind !== 'document')
+      (input.kind !== undefined && !['document', 'canvas'].includes(String(input.kind)))
     )
       throw new DomainError('INVALID', 'Choose a supported document creation operation.');
     if (typeof input.requestId !== 'string' || !/^[\w-]{8,100}$/.test(input.requestId))
@@ -94,9 +95,11 @@ export class PageInstances {
       throw new DomainError('INVALID', 'Provide a structured document.');
     if (Buffer.byteLength(JSON.stringify(input.content)) > MAX_DOCUMENT_BYTES)
       throw new DomainError('LIMIT', 'This document exceeds the creation size limit.');
+    const kind = (input.kind ??
+      (isCanvas(input.content as JSONContent) ? 'canvas' : 'document')) as PageKind;
     let source: Y.Doc;
     try {
-      source = documentFromJSON(input.content as JSONContent);
+      source = documentFromJSON(input.content as JSONContent, kind);
     } catch {
       throw new DomainError('INVALID', 'This document contains unsupported or invalid blocks.');
     }
@@ -107,6 +110,7 @@ export class PageInstances {
         title,
         description,
         purpose,
+        ...(kind === 'canvas' ? { kind } : {}),
         parentId: input.parentId ?? null,
         visibility,
         content: documentJSON(source),
@@ -160,7 +164,7 @@ export class PageInstances {
           description,
           parentId: blueprint.parentId as string | null,
           visibility: visibility as 'private' | 'workspace',
-          kind: 'document',
+          kind,
           content: source,
         });
         await tx.query(

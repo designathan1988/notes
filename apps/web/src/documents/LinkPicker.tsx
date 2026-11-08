@@ -3,7 +3,15 @@ import type { Editor as TiptapEditor } from '@tiptap/react';
 import { Link } from 'lucide-react';
 import { Dialog } from '../ui/Dialog.js';
 import { useWorkspace } from '../state/store.js';
-export function LinkPicker({ editor, close }: { editor: TiptapEditor; close(): void }) {
+export function LinkPicker({
+  editor,
+  close,
+  onPage,
+}: {
+  editor: TiptapEditor;
+  close(): void;
+  onPage?(id: string): void;
+}) {
   const pages = useWorkspace((state) => state.searchResults);
   const search = useWorkspace((state) => state.search);
   const version = useWorkspace((state) => state.knowledgeVersion);
@@ -35,6 +43,11 @@ export function LinkPicker({ editor, close }: { editor: TiptapEditor; close(): v
             <button
               key={page.id}
               onClick={() => {
+                if (onPage) {
+                  onPage(page.id);
+                  close();
+                  return;
+                }
                 editor
                   .chain()
                   .focus()

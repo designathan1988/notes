@@ -396,8 +396,14 @@ export class Transfer {
             try {
               doc = documentFromJSON(
                 rewriteContent(page.content, job.mapping.pages, job.mapping.attachments),
+                page.kind,
               );
             } catch {
+              if (page.kind === 'canvas')
+                throw new DomainError(
+                  'INVALID',
+                  'This canvas could not be imported without losing its structure.',
+                );
               doc = documentFromJSON({
                 type: 'doc',
                 content: [

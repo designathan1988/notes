@@ -142,3 +142,20 @@ test('corrupt spatial preferences cannot introduce nonfinite coordinates or unbo
   expect(state.graphPlacements).toEqual({ valid: { x: 2, y: 3 } });
   expect(state.graphCameras).toEqual({ valid: { x: 1, y: 2, zoom: 1 } });
 });
+
+test('canvas tabs resolve their actual kind and camera preferences stay scoped with the workbench owner', () => {
+  const { get, set } = fixture(),
+    state = get();
+  set({ pages: [{ id: 'board', kind: 'canvas' }] as WorkspaceState['pages'] });
+  state.openTab('board');
+  expect(state.tabs[0]).toMatchObject({ id: 'canvas:board', view: 'canvas' });
+  state.setCanvasCamera('board', { x: 10, y: 20, zoom: 1.2 });
+  set({ user: { id: 'bob' } as WorkspaceState['user'] });
+  state.restoreWorkbench();
+  expect(state.canvasCameras).toEqual({});
+  set({ user: { id: 'alice' } as WorkspaceState['user'] });
+  state.restoreWorkbench();
+  expect(state.canvasCameras.board).toEqual({ x: 10, y: 20, zoom: 1.2 });
+  state.clearWorkbench();
+  expect(state.canvasCameras).toEqual({});
+});

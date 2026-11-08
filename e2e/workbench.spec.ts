@@ -1,4 +1,40 @@
 import { test, expect } from '@playwright/test';
+test('an authorized initial page opens while the redundant background navigation read is delayed', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let held = 0;
+  try {
+    await context.request.post('/api/auth/sign-in/email', {
+      data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
+      headers: { origin: 'http://127.0.0.1:5173' },
+    });
+    const page = await context.newPage();
+    await page.route('**/api/workspaces/*/navigation', async (route) => {
+      if (route.request().method() === 'POST') {
+        held++;
+        await pending;
+      }
+      await route.continue().catch(() => {});
+    });
+    await page.goto('/#ea293f81-c7fa-4551-9da5-58b8af0510a9/document');
+    await expect.poll(() => held).toBeGreaterThan(0);
+    await expect(page.getByRole('textbox', { name: 'Page content', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Command palette', exact: true }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
+    release();
+    await expect(page.locator('.save-status')).toHaveText('Saved');
+  } finally {
+    release();
+    await context.close();
+  }
+});
+
 test('background navigation refresh does not replace the global database catalog with a document', async ({
   browser,
 }) => {

@@ -18,6 +18,7 @@ import {
   SlidersHorizontal,
   MoreHorizontal,
   LayoutTemplate,
+  SquareDashed,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '../state/store.js';
@@ -47,7 +48,14 @@ function PageRow({
     .filter((item) => item.parentId === page.id && item.kind !== 'record')
     .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
   const hasChildren = page.hasChildren || children.length > 0;
-  const Icon = page.kind === 'database' ? Database : hasChildren ? Folder : FileText;
+  const Icon =
+    page.kind === 'canvas'
+      ? SquareDashed
+      : page.kind === 'database'
+        ? Database
+        : hasChildren
+          ? Folder
+          : FileText;
   return (
     <>
       <div
@@ -262,6 +270,10 @@ export function Sidebar() {
           <button onClick={() => state.navigate(null, 'templates')}>
             <LayoutTemplate />
             Templates
+          </button>
+          <button onClick={() => state.navigate(null, 'canvas')}>
+            <SquareDashed />
+            Canvases
           </button>
         </nav>
         <div className="sidebar-scroll">

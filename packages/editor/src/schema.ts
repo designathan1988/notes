@@ -7,8 +7,15 @@ import { prosemirrorJSONToYDoc, yDocToProsemirrorJSON } from 'y-prosemirror';
 import type * as Y from 'yjs';
 import { safeEmbedSource } from './embeds.js';
 import { toggleBlock, toggleTitle, toggleContent, highlight } from './structure.js';
+import { canvasExtensions, isCanvas, validateCanvas } from './canvas.js';
+import type { PageKind } from '../../contracts/src/index.js';
+export const documentRoot = Node.create({
+  name: 'doc',
+  topNode: true,
+  content: 'block+ | canvasRoot',
+});
 
-const pageLink = Node.create({
+export const pageLink = Node.create({
   name: 'pageLink',
   group: 'block',
   atom: true,
@@ -187,7 +194,13 @@ const callout = Node.create({
   },
 });
 export const editorExtensions = () => [
-  StarterKit.configure({ undoRedo: false, link: { openOnClick: false, defaultProtocol: 'https' } }),
+  documentRoot,
+  StarterKit.configure({
+    document: false,
+    undoRedo: false,
+    link: { openOnClick: false, defaultProtocol: 'https' },
+  }),
+  ...canvasExtensions(),
   TableKit.configure({ table: { resizable: false } }),
   TaskList,
   TaskItem.configure({ nested: true }),
@@ -204,10 +217,17 @@ export const editorExtensions = () => [
 ];
 export const editorSchema = () => getSchema(editorExtensions());
 export const emptyDocument: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] };
-export function documentFromJSON(content: JSONContent): Y.Doc {
-  const schema = editorSchema();
-  schema.nodeFromJSON(content).check();
-  return prosemirrorJSONToYDoc(schema, content, 'default');
+export function validateDocument(content: JSONContent, kind?: PageKind) {
+  const node = editorSchema().nodeFromJSON(content);
+  node.check();
+  validateCanvas(node.toJSON());
+  if (kind && (kind === 'canvas') !== isCanvas(node.toJSON()))
+    throw new Error('The content does not match this page type.');
+  return node;
+}
+export function documentFromJSON(content: JSONContent, kind?: PageKind): Y.Doc {
+  const node = validateDocument(content, kind);
+  return prosemirrorJSONToYDoc(node.type.schema, content, 'default');
 }
 export function documentJSON(doc: Y.Doc): JSONContent {
   return yDocToProsemirrorJSON(doc, 'default') as JSONContent;

@@ -5,10 +5,51 @@ import {
   worldToScreen,
   zoomAt,
   pinchCamera,
+  freeRect,
+  validPoint,
 } from '../apps/web/src/spatial/geometry.js';
 import { layoutGraph } from '../apps/web/src/knowledge/layout.js';
 import type { GraphData } from '../packages/contracts/src/index.js';
 import { graphLabels } from '../apps/web/src/knowledge/labels.js';
+
+test('free-space placement keeps an empty preferred position and escapes a completely occupied viewport', () => {
+  const preferred = { x: 0, y: 0, width: 300, height: 200 },
+    viewport = { x: -600, y: -400, width: 1200, height: 800 };
+  expect(freeRect(preferred, [], viewport)).toEqual({ x: 0, y: 0 });
+  const occupied = Object.freeze([{ x: -10000, y: -10000, width: 20000, height: 20000 }]);
+  const position = freeRect(preferred, [...occupied], viewport);
+  expect(validPoint(position)).toBe(true);
+  expect(
+    position.x >= 10000 ||
+      position.x + 300 <= -10000 ||
+      position.y >= 10000 ||
+      position.y + 200 <= -10000,
+  ).toBe(true);
+  expect(occupied).toEqual([{ x: -10000, y: -10000, width: 20000, height: 20000 }]);
+});
+
+test('free-space placement is deterministic and collision-free with the maximum scene population', () => {
+  const occupied = Array.from({ length: 2000 }, (_, i) => ({
+    x: (i % 50) * 324,
+    y: Math.floor(i / 50) * 224,
+    width: 300,
+    height: 200,
+  }));
+  const preferred = { x: 8000, y: 4000, width: 300, height: 200 },
+    viewport = { x: 7500, y: 3500, width: 1000, height: 800 };
+  const position = freeRect(preferred, occupied, viewport);
+  expect(validPoint(position)).toBe(true);
+  expect(position).toEqual(freeRect(preferred, occupied, viewport));
+  expect(
+    occupied.every(
+      (item) =>
+        position.x + 300 <= item.x ||
+        position.x >= item.x + item.width ||
+        position.y + 200 <= item.y ||
+        position.y >= item.y + item.height,
+    ),
+  ).toBe(true);
+});
 
 test('spatial transforms round-trip at different viewport sizes and zoom around the actual pointer', () => {
   for (const size of [

@@ -4,14 +4,16 @@ import {
   DomainError,
   MAX_DOCUMENT_BYTES,
   type Actor,
+  type PageKind,
 } from '../../../../packages/contracts/src/index.js';
 import { Access } from '../access/service.js';
 import {
   documentFromJSON,
   documentJSON,
-  editorSchema,
+  validateDocument,
   emptyDocument,
 } from '../../../../packages/editor/src/schema.js';
+import { emptyCanvas } from '../../../../packages/editor/src/canvas.js';
 import { captureCheckpoint } from '../history/checkpoints.js';
 export interface DurableAcknowledgement {
   type: 'durable';
@@ -25,14 +27,19 @@ export class Documents {
   constructor(readonly db: Database) {}
   async importContent(actor: Actor, pageId: string, source: Y.Doc, generation: number) {
     return this.db.transaction(async (tx) => {
-      await new Access(tx).lockPage(actor, pageId);
+      const page = await new Access(tx).lockPage(actor, pageId);
+      try {
+        validateDocument(documentJSON(source), page.kind);
+      } catch {
+        throw new DomainError('INVALID', 'The imported content does not match this page type.');
+      }
       const current = await new Documents(tx).load(pageId);
       try {
         const root = current.getXmlFragment('default');
         const placeholder = root.length === 1 ? root.get(0) : null;
         if (
           placeholder instanceof Y.XmlElement &&
-          placeholder.nodeName === 'paragraph' &&
+          ['paragraph', 'canvasRoot'].includes(placeholder.nodeName) &&
           placeholder.length === 0
         )
           root.delete(0, 1);
@@ -62,7 +69,15 @@ export class Documents {
       Y.applyUpdate(doc, new Uint8Array(row.state));
       return doc;
     }
-    const initial = documentFromJSON(emptyDocument);
+    const [location] = await this.db.query<{ kind: PageKind }>(
+      'SELECT kind FROM pages WHERE id=$1',
+      [page],
+    );
+    if (!location) throw new DomainError('NOT_FOUND', 'This page is unavailable.');
+    const initial = documentFromJSON(
+      location.kind === 'canvas' ? emptyCanvas : emptyDocument,
+      location.kind,
+    );
     await this.db.query(
       'INSERT INTO documents (page_id,state) VALUES ($1,$2) ON CONFLICT (page_id) DO NOTHING',
       [page, Buffer.from(Y.encodeStateAsUpdate(initial))],
@@ -89,8 +104,12 @@ export class Documents {
       const doc = await new Documents(tx).load(pageId);
       try {
         const before = Y.encodeStateAsUpdate(doc);
-        Y.applyUpdate(doc, update);
-        editorSchema().nodeFromJSON(documentJSON(doc)).check();
+        try {
+          Y.applyUpdate(doc, update);
+          validateDocument(documentJSON(doc), page.kind);
+        } catch {
+          throw new DomainError('INVALID', 'This page contains invalid or incompatible content.');
+        }
         const state = Y.encodeStateAsUpdate(doc);
         if (Buffer.from(before).equals(Buffer.from(state))) {
           const [stored] = await tx.query<{ version: string | number }>(

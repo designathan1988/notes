@@ -3,6 +3,7 @@ import type { View, WorkspaceState } from '../state/store.js';
 import { browserPreferences, type PreferenceStorage } from './preferences.js';
 import { navigateHistory, type WorkbenchHistory } from './history.js';
 import { validPoint, validCamera, type Point, type Camera } from '../spatial/geometry.js';
+import { pageView } from './route.js';
 export interface WorkbenchTab {
   id: string;
   pageId: string | null;
@@ -10,10 +11,14 @@ export interface WorkbenchTab {
   pinned: boolean;
 }
 export const tabKey = (pageId: string | null, view: View) =>
-  view === 'document' || (view === 'database' && pageId) ? `${view}:${pageId ?? ''}` : view;
+  view === 'document' || ((view === 'database' || view === 'canvas') && pageId)
+    ? `${view}:${pageId ?? ''}`
+    : view;
 export interface WorkbenchSlice {
   graphPlacements: Record<string, Point>;
   graphCameras: Record<string, Camera>;
+  canvasCameras: Record<string, Camera>;
+  setCanvasCamera(id: string, camera: Camera): void;
   placeGraphNode(id: string, point: Point | null): void;
   setGraphCamera(view: string, camera: Camera): void;
   resetGraphPositions(): void;
@@ -46,7 +51,7 @@ export interface WorkbenchSlice {
   restoreWorkbench(): void;
   clearWorkbench(): void;
   reconcileTabs(pages: Page[]): void;
-  createQuickPage(parentId?: string | null, kind?: 'document' | 'database'): Promise<void>;
+  createQuickPage(parentId?: string | null, kind?: 'document' | 'database' | 'canvas'): Promise<void>;
 }
 export function workbenchSlice(
   set: (partial: Partial<WorkspaceState>) => void,
@@ -69,6 +74,7 @@ export function workbenchSlice(
           tableSelections: get().tableSelections,
           graphPlacements: get().graphPlacements,
           graphCameras: get().graphCameras,
+          canvasCameras: get().canvasCameras,
         }),
       );
   };
@@ -76,6 +82,19 @@ export function workbenchSlice(
   return {
     graphPlacements: {},
     graphCameras: {},
+    canvasCameras: {},
+    setCanvasCamera(id, camera) {
+      if (!/^[\w-]{1,128}$/u.test(id) || !validCamera(camera)) return;
+      set({
+        canvasCameras: Object.fromEntries(
+          Object.entries({
+            ...get().canvasCameras,
+            [id]: { x: camera.x, y: camera.y, zoom: camera.zoom },
+          }).slice(-200),
+        ),
+      });
+      persist();
+    },
     resetGraphPositions() {
       set({ graphPlacements: {} });
       persist();
@@ -174,10 +193,7 @@ export function workbenchSlice(
       persist();
     },
     openTab(pageId, view) {
-      view ??=
-        get().pages.find((page) => page.id === pageId)?.kind === 'database'
-          ? 'database'
-          : 'document';
+      view ??= pageView(get().pages.find((page) => page.id === pageId)?.kind);
       const id = tabKey(pageId, view),
         tabs = get().tabs.map((tab) =>
           tab.id === activeKey() || tab.id === id ? { ...tab, pinned: true } : tab,
@@ -231,7 +247,8 @@ export function workbenchSlice(
     },
     restoreWorkbench() {
       let graphPlacements: Record<string, Point> = {},
-        graphCameras: Record<string, Camera> = {};
+        graphCameras: Record<string, Camera> = {},
+        canvasCameras: Record<string, Camera> = {};
       let tableSelections: Record<string, string> = {};
       let tabs: WorkbenchTab[] = [],
         recentPageIds: string[] = [],
@@ -259,12 +276,23 @@ export function workbenchSlice(
               { x: (camera as Camera).x, y: (camera as Camera).y, zoom: (camera as Camera).zoom },
             ]),
         );
+        canvasCameras = Object.fromEntries(
+          spatialEntries(value.canvasCameras)
+            .filter(([, camera]) => validCamera(camera))
+            .slice(-200)
+            .map(([id, camera]) => [
+              id,
+              { x: (camera as Camera).x, y: (camera as Camera).y, zoom: (camera as Camera).zoom },
+            ]),
+        );
         if (Array.isArray(value.tabs))
           tabs = value.tabs
             .filter(
               (tab: WorkbenchTab) =>
                 tab &&
-                ['document', 'database', 'graph', 'all', 'templates'].includes(tab.view) &&
+                ['document', 'database', 'graph', 'all', 'templates', 'canvas'].includes(
+                  tab.view,
+                ) &&
                 (tab.pageId === null || typeof tab.pageId === 'string') &&
                 tab.id === tabKey(tab.pageId, tab.view),
             )
@@ -303,6 +331,7 @@ export function workbenchSlice(
         tabs,
         graphPlacements,
         graphCameras,
+        canvasCameras,
         tableSelections,
         recentPageIds,
         sidebarCollapsed,
@@ -320,6 +349,7 @@ export function workbenchSlice(
       set({
         graphPlacements: {},
         graphCameras: {},
+        canvasCameras: {},
         tableSelections: {},
         tabs: [],
         closedTabs: [],
@@ -340,9 +370,13 @@ export function workbenchSlice(
         if (tab.pageId && !ids.has(tab.pageId)) return { ...tab, pageId: null };
         if (
           tab.view === 'document' &&
-          pages.find((page) => page.id === tab.pageId)?.kind === 'database'
+          ['database', 'canvas'].includes(pages.find((page) => page.id === tab.pageId)?.kind ?? '')
         )
-          return { ...tab, id: tabKey(tab.pageId, 'database'), view: 'database' };
+          return {
+            ...tab,
+            id: tabKey(tab.pageId, pageView(pages.find((page) => page.id === tab.pageId)?.kind)),
+            view: pageView(pages.find((page) => page.id === tab.pageId)?.kind),
+          };
         return tab;
       };
       set({
@@ -364,14 +398,14 @@ export function workbenchSlice(
         workspace = get().workspaceId;
       const page = await get().createPage(
         {
-          title: kind === 'database' ? 'Untitled database' : 'Untitled',
+          title: kind === 'database' ? 'Untitled database' : kind === 'canvas' ? 'Untitled canvas' : 'Untitled',
           parentId: parentId ?? undefined,
           kind,
         },
         { navigate: false },
       );
       if (get().user?.id !== user || get().workspaceId !== workspace) return;
-      get().openTab(page.id, kind === 'database' ? 'database' : 'document');
+      get().openTab(page.id, pageView(kind));
       set({ focusTitleId: page.id });
     },
   };

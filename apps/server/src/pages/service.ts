@@ -31,7 +31,7 @@ export class Pages {
     internalId?: string,
   ): Promise<Page> {
     const title = validateTitle(input.title);
-    if (input.kind && !['document', 'database', 'record'].includes(input.kind))
+    if (input.kind && !['document', 'database', 'record', 'canvas'].includes(input.kind))
       throw new DomainError('INVALID', 'Unknown page type.');
     if (input.visibility && !['workspace', 'private'].includes(input.visibility))
       throw new DomainError('INVALID', 'Unknown visibility.');

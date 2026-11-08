@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import {
   fitCamera,
   pinchCamera,
@@ -16,15 +22,36 @@ interface Options {
   commitCamera(camera: Camera): void;
   commitItem(id: string, point: Point): void;
   itemPosition(id: string): Point | undefined;
+  contentAt?(target: Element): HTMLElement | null;
+  select?: {
+    start(point: Point): void;
+    move(point: Point): void;
+    end(moved: boolean): void;
+    cancel(): void;
+  };
 }
 type Gesture =
   | { type: 'pan'; start: Point; camera: Camera }
   | { type: 'item'; id: string; start: Point; position: Point; camera: Camera }
+  | { type: 'select'; start: Point; camera: Camera; selection: NonNullable<Options['select']> }
+  | {
+      type: 'content';
+      start: Point;
+      camera: Camera;
+      element: HTMLElement;
+      left: number;
+      top: number;
+    }
   | { type: 'pinch'; start: [Point, Point]; camera: Camera };
 
 /** Transient pointer state belongs here. Durable preferences/content stay with their capability owner. */
 export function useSpatialView(options: Options) {
   const ref = useRef<HTMLDivElement>(null);
+  const [attached, setAttached] = useState<HTMLDivElement | null>(null);
+  const attach = useCallback((element: HTMLDivElement | null) => {
+    ref.current = element;
+    setAttached(element);
+  }, []);
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
   const [ownCamera, setOwnCamera] = useState<Camera | null>(options.saved ?? null);
   const camera = ownCamera ?? fitCamera(options.points, size);
@@ -58,12 +85,13 @@ export function useSpatialView(options: Options) {
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [attached]);
   useEffect(() => {
     if (ownCamera === null && options.points.length && size.width > 0 && size.height > 0)
       setOwnCamera(fitCamera(options.points, size));
   }, [ownCamera, options.points, size]);
   const cancel = () => {
+    if (gesture.current?.type === 'select') gesture.current.selection.cancel();
     if (gesture.current) {
       updateCamera(gesture.current.camera);
       ignoreClick.current = true;
@@ -87,6 +115,14 @@ export function useSpatialView(options: Options) {
     const element = ref.current;
     if (!element) return;
     const wheel = (event: WheelEvent) => {
+      const content = live.current.options.contentAt?.(event.target as Element);
+      if (
+        content &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        (content.scrollHeight > content.clientHeight || content.scrollWidth > content.clientWidth)
+      )
+        return;
       event.preventDefault();
       if (pointers.current.size) return;
       const { camera, size } = live.current;
@@ -108,11 +144,13 @@ export function useSpatialView(options: Options) {
     };
     element.addEventListener('wheel', wheel, { passive: false });
     return () => element.removeEventListener('wheel', wheel);
-  }, []);
+  }, [attached]);
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    const target = event.target as Element;
+    const content = event.pointerType === 'touch' ? live.current.options.contentAt?.(target) : null;
     if (
       event.button !== 0 ||
-      (event.target as Element).closest('button, input, select, [data-spatial-control]')
+      (target.closest('button, input, select, [data-spatial-control]') && !content)
     )
       return;
     if (wheelTimer.current) {
@@ -122,9 +160,12 @@ export function useSpatialView(options: Options) {
     const point = pointAt(event);
     pointers.current.set(event.pointerId, point);
     ignoreClick.current = false;
-    const item = (event.target as Element).closest<SVGElement>('[data-spatial-item]');
-    (item ?? event.currentTarget).setPointerCapture(event.pointerId);
+    const item = target.closest<SVGElement>('[data-spatial-item]');
+    if (!content) (item ?? event.currentTarget).setPointerCapture(event.pointerId);
     if (pointers.current.size >= 2) {
+      event.preventDefault();
+      for (const pointer of pointers.current.keys()) event.currentTarget.setPointerCapture(pointer);
+      if (gesture.current?.type === 'select') gesture.current.selection.cancel();
       setItemDraft(null);
       moved.current = true;
       ignoreClick.current = true;
@@ -138,10 +179,23 @@ export function useSpatialView(options: Options) {
       moved.current = false;
       const id = item?.dataset.spatialItem,
         position = id ? live.current.options.itemPosition(id) : undefined;
-      gesture.current =
-        id && position
+      const selection = live.current.options.select;
+      gesture.current = content
+        ? {
+            type: 'content',
+            start: point,
+            camera: live.current.camera,
+            element: content,
+            left: content.scrollLeft,
+            top: content.scrollTop,
+          }
+        : id && position
           ? { type: 'item', id, start: point, position, camera: live.current.camera }
-          : { type: 'pan', start: point, camera: live.current.camera };
+          : selection
+            ? { type: 'select', start: point, camera: live.current.camera, selection }
+            : { type: 'pan', start: point, camera: live.current.camera };
+      if (gesture.current.type === 'select')
+        selection!.start(screenToWorld(point, live.current.camera, live.current.size));
     }
   }
   function onPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
@@ -151,6 +205,7 @@ export function useSpatialView(options: Options) {
     pointers.current.set(event.pointerId, point);
     if (!active) return;
     if (active.type === 'pinch') {
+      event.preventDefault();
       if (pointers.current.size >= 2)
         updateCamera(
           pinchCamera(
@@ -168,12 +223,18 @@ export function useSpatialView(options: Options) {
     moved.current = true;
     ignoreClick.current = true;
     setDragging(true);
-    if (active.type === 'pan')
+    if (active.type === 'content') {
+      event.preventDefault();
+      active.element.scrollLeft = active.left - dx / active.camera.zoom;
+      active.element.scrollTop = active.top - dy / active.camera.zoom;
+    } else if (active.type === 'pan')
       updateCamera({
         ...active.camera,
         x: active.camera.x - dx / active.camera.zoom,
         y: active.camera.y - dy / active.camera.zoom,
       });
+    else if (active.type === 'select')
+      active.selection.move(screenToWorld(point, active.camera, live.current.size));
     else {
       const next = {
         x: active.position.x + dx / active.camera.zoom,
@@ -188,7 +249,8 @@ export function useSpatialView(options: Options) {
     const active = gesture.current;
     if (active?.type === 'item' && moved.current && draftRef.current)
       live.current.options.commitItem(active.id, draftRef.current.point);
-    if (active && active.type !== 'item' && moved.current)
+    if (active?.type === 'select') active.selection.end(moved.current);
+    if ((active?.type === 'pan' || active?.type === 'pinch') && moved.current)
       live.current.options.commitCamera(live.current.camera);
     setItemDraft(null);
     setDragging(false);
@@ -215,6 +277,7 @@ export function useSpatialView(options: Options) {
   }
   return {
     ref,
+    attach,
     size,
     camera,
     draft,

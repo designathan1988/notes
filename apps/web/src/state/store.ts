@@ -15,13 +15,14 @@ import { openRecovery } from '../documents/recovery.js';
 import { workbenchSlice, type WorkbenchSlice } from '../workbench/state.js';
 import { activitySlice, type ActivitySlice } from '../activity/state.js';
 import { templateSlice, type TemplateSlice } from '../templates/state.js';
+import { pageView } from '../workbench/route.js';
 type User = { id: string; name: string; email: string };
 const pageWrites = new Map<string, Promise<void>>();
 async function settlePageWrites(ids: string[]) {
   await Promise.all(ids.flatMap((id) => (pageWrites.get(id) ? [pageWrites.get(id)!] : [])));
 }
 let navigationSequence = 0;
-export type View = 'document' | 'database' | 'graph' | 'all' | 'templates';
+export type View = 'document' | 'database' | 'graph' | 'all' | 'templates' | 'canvas';
 export type Dialog = 'search' | 'new-page' | 'page-menu' | 'settings' | 'invite' | 'move' | null;
 export interface WorkspaceState
   extends
@@ -42,8 +43,8 @@ export interface WorkspaceState
   connectionError: boolean;
   dialog: Dialog;
   newPageParentId: string | null;
-  newPageKind: 'document' | 'database';
-  openCreatePage(parentId?: string | null, kind?: 'document' | 'database'): void;
+  newPageKind: 'document' | 'database' | 'canvas';
+  openCreatePage(parentId?: string | null, kind?: 'document' | 'database' | 'canvas'): void;
   sidebarOpen: boolean;
   contextOpen: boolean;
   saveStatus: SaveStatus;
@@ -67,7 +68,7 @@ export interface WorkspaceState
     input: {
       title: string;
       parentId?: string;
-      kind?: 'document' | 'database';
+      kind?: 'document' | 'database' | 'canvas';
       visibility?: 'workspace' | 'private';
       description?: string;
       content?: JSONContent;
@@ -162,10 +163,12 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     get().restoreTemplateCommands();
     try {
       const fromHash = location.hash.slice(1).split('/');
-      const snapshot = await api<NavigationSnapshot>(
-        `/workspaces/${workspaceId}/navigation${fromHash[0] ? '?selected=' + encodeURIComponent(fromHash[0]) : ''}`,
-      );
-      const favorites = await api<string[]>(`/workspaces/${workspaceId}/favorites`);
+      const [snapshot, favorites] = await Promise.all([
+        api<NavigationSnapshot>(
+          `/workspaces/${workspaceId}/navigation${fromHash[0] ? '?selected=' + encodeURIComponent(fromHash[0]) : ''}`,
+        ),
+        api<string[]>(`/workspaces/${workspaceId}/favorites`),
+      ]);
       set({
         pages: snapshot.pages,
         expanded: snapshot.expanded,
@@ -175,13 +178,17 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
         ...(get().connectionError ? { error: null, connectionError: false } : {}),
       });
       get().navigate(
-        fromHash[1] === 'templates' ? null : snapshot.selectedId,
-        (['document', 'database', 'graph', 'all', 'templates'].includes(fromHash[1])
+        fromHash[1] === 'templates' ||
+          (!fromHash[0] && ['canvas', 'database'].includes(fromHash[1]))
+          ? null
+          : snapshot.selectedId,
+        (['document', 'database', 'graph', 'all', 'templates', 'canvas'].includes(fromHash[1])
           ? fromHash[1]
           : 'document') as View,
         'replace',
       );
-      await get().reload();
+      // The authorized bootstrap can render now; tab reconciliation refreshes in the background.
+      void get().reload();
     } catch (error) {
       get().setError(error);
     } finally {
@@ -254,8 +261,14 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
           );
         }
         const selectedPage = snapshot.pages.find((page) => page.id === get().selectedId);
-        if (get().view === 'document' && selectedPage?.kind === 'database')
-          get().navigate(selectedPage.id, 'database', 'replace', { preserveOverlays: true });
+        if (
+          get().view === 'document' &&
+          selectedPage &&
+          ['database', 'canvas'].includes(selectedPage.kind)
+        )
+          get().navigate(selectedPage.id, pageView(selectedPage.kind), 'replace', {
+            preserveOverlays: true,
+          });
       }
     } catch (error) {
       if (!current()) return;
@@ -277,9 +290,9 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   },
   navigate(id, view, mode = 'push', options = {}) {
     const kind = get().pages.find((page) => page.id === id)?.kind;
-    view ??= kind === 'database' ? 'database' : 'document';
-    if (view === 'document' && kind === 'database') {
-      view = 'database';
+    view ??= pageView(kind);
+    if (view === 'document' && kind && ['database', 'canvas'].includes(kind)) {
+      view = pageView(kind);
       if (mode === 'none') mode = 'replace';
     }
     if (mode === 'push' && get().selectedId === id && get().view === view) mode = 'replace';
@@ -326,8 +339,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       ],
       expanded: [...new Set([...get().expanded, ...(page.parentId ? [page.parentId] : [])])],
     });
-    if (options.navigate !== false)
-      get().navigate(page.id, page.kind === 'database' ? 'database' : 'document');
+    if (options.navigate !== false) get().navigate(page.id, pageView(page.kind));
     return page;
   },
   async updatePage(id, patch, expectedRevision) {

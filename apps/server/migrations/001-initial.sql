@@ -12,8 +12,14 @@ CREATE TABLE IF NOT EXISTS pages (
   visibility text NOT NULL DEFAULT 'workspace', created_by text NOT NULL REFERENCES "user"(id), position integer NOT NULL DEFAULT 0,
   revision integer NOT NULL DEFAULT 1, generation integer NOT NULL DEFAULT 1, updated_at timestamptz NOT NULL DEFAULT now(), deleted_at timestamptz,
   UNIQUE(workspace_id,id), FOREIGN KEY(workspace_id,parent_id) REFERENCES pages(workspace_id,id),
-  CHECK(kind IN ('document','database','record')), CHECK(visibility IN ('workspace','private')), CHECK(parent_id IS DISTINCT FROM id)
+  CHECK(kind IN ('document','database','record','canvas')), CHECK(visibility IN ('workspace','private')), CHECK(parent_id IS DISTINCT FROM id)
 );
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='pages'::regclass AND conname='pages_kind_check' AND pg_get_constraintdef(oid) NOT LIKE '%canvas%') THEN
+    ALTER TABLE pages DROP CONSTRAINT pages_kind_check;
+    ALTER TABLE pages ADD CONSTRAINT pages_kind_check CHECK(kind IN ('document','database','record','canvas'));
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS pages_parent ON pages(workspace_id,parent_id,position);
 ALTER TABLE pages ADD COLUMN IF NOT EXISTS index_revision bigint NOT NULL DEFAULT 1;
 ALTER TABLE pages ADD COLUMN IF NOT EXISTS private_owner_id text REFERENCES "user"(id);

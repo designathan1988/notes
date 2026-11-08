@@ -30,6 +30,7 @@ These are disposable local fixture credentials. Production mode does not run the
 - Rich paste, Markdown and JSON/code handling, document tables, checklists, links, attachments, image/audio/video playback, and controlled video embeds. Unsupported rich elements retain their available original source in a downloadable attachment.
 - Typed database records, editable tables, filtered/sorted named views, record-page navigation, and inline views of the same records.
 - PostgreSQL full-text search and title similarity, access-filtered snippets, backlinks, a navigable graph, and rebuildable versioned projections.
+- Spatial canvas foundations: rich notes, owned media, authorized page references, grouping, labeled connections, drag/resize, undo and scoped pan/zoom. The canvas acceptance work below is still in progress.
 - Versioned ZIP export/import containing JSON, structured records, links, and available media bytes. Imports use new IDs, bounded batches, durable progress, and resumable staged source files. Plain text Markdown export is also available with stated fidelity limits.
 - Responsive navigation and editing controls, semantic forms/dialogs, keyboard navigation, and reduced-motion support.
 
@@ -49,6 +50,8 @@ The server owns authorization and business invariants. UI controls call commands
 
 Relational metadata and records have revisions. Yjs updates/snapshots are the document authority; JSON is interchange and rendering data. Durable acknowledgements include Yjs snapshot coverage, including deletion sets, and are sent after database transactions commit. Search, graph edges, and backlinks are derived projections with monotonically increasing revisions. Current permissions filter every read, independent of index freshness.
 
+Canvas pages use the same document session and persistence owners: `doc → canvasRoot → canvasCard / canvasGroup / canvasEdge`. Rich children and spatial attributes live in that single shared fragment. Camera preferences belong to the existing scoped workbench owner. Batched linked-page titles are authorized read projections, separate from user-authored reference labels.
+
 ## Local persistence and recovery
 
 Ignored `.runtime/` contains:
@@ -63,6 +66,8 @@ Browser IndexedDB stores document recovery data partitioned by identity, workspa
 The documents service records recovery checkpoints at most once per ten-minute interval during writes. Workspace ZIP exports are the user-facing full-content backup. For an operator-level local backup, stop the server and copy the entire `.runtime/` directory together; restore the directory before restarting. External PostgreSQL/object storage requires a coordinated database and object-version backup procedure before commercial launch.
 
 ## Development limits
+
+Use Canvases → New canvas, or the New canvas command, to open a spatial page directly. The current foundation has browser coverage for editing, durable geometry, grouping/connections, independent duplication, undo, scoped keyboard selection, mobile content-started pinch/scroll and cancellation. Concurrent canvas topology changes, offline/revocation edge cases, remaining scene controls and preview/capture paths, portable JSON Canvas interchange and whole-product acceptance remain unfinished. Native workspace ZIP already retains canvas content and media; it is not JSON Canvas interchange.
 
 Templates are available from the sidebar and command palette. Page actions → Save as template copies a page, database or record into the library; New template opens a blank definition directly for writing. Definitions use the normal editor and keep their own subpages and media. Use template creates a separate private page tree or database immediately and focuses its title. Internal references remap; links to external pages and databases stay connected. Editing a linked external database still changes that existing database.
 
@@ -90,7 +95,7 @@ npm run build
 
 Browser tests cover pointer-only block dragging, page-tree dragging, durable reorder, block transformations, root creation, inline editable databases, table row/column operations, typed records and relation selection, sorting/filtering/saved views/columns, favorites, trash restoration, rapid metadata edits, retry states, mobile keyboard focus, two-identity editing, rich-paste safety and source preservation, exact uploaded bytes, body search, graph navigation, ZIP transfer, verified invitation acceptance, live access revocation, disconnected recovery, and offline recovery export. Behavior tests use an actual PostgreSQL engine rather than a mocked persistence layer.
 
-The current continuous-block interface and visual evidence are documented in `docs/design/verification.md`. Generated concepts in `docs/design/concepts/` are historical; the user rejected the separated-card directions. The current interface follows the user's explicit Notion-style block interaction requirements.
+The current continuous-block document interface and visual evidence are documented in `docs/design/verification.md`. The user rejected the early separated-paragraph-card directions. Ordinary documents retain continuous Notion-style blocks; the separate spatial canvas intentionally contains movable cards. The newer canvas concept is an implementation reference selected by the developer, not a user-approved final design. Current canvas decisions and remaining acceptance are recorded in `docs/superpowers/plans/2026-11-08-application-workbench.md`.
 
 ## Before commercial launch
 

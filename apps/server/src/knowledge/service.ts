@@ -13,6 +13,19 @@ import { DomainError } from '../../../../packages/contracts/src/index.js';
 import type { PageProperties } from '../../../../packages/contracts/src/index.js';
 export class Knowledge {
   constructor(readonly db: Database) {}
+  async references(actor: Actor, workspace: string, ids: unknown): Promise<GraphData['nodes']> {
+    if (
+      !Array.isArray(ids) ||
+      ids.length > 100 ||
+      ids.some((id) => typeof id !== 'string' || !/^[\w-]{1,128}$/u.test(id))
+    )
+      throw new DomainError('INVALID', 'Resolve up to 100 valid page references.');
+    const scope = await new Access(this.db).scope(actor, workspace);
+    return this.db.query(
+      `${scope.sql} SELECT id,title,kind FROM visible WHERE id=ANY($3::text[]) ORDER BY id`,
+      [...scope.params, [...new Set(ids)]],
+    );
+  }
   async applyProjection(
     id: string,
     version: number,
@@ -124,7 +137,7 @@ export class Knowledge {
   ): Promise<{ results: SearchResult[]; indexing: boolean }> {
     const scope = await new Access(this.db).scope(actor, workspace);
     const term = query.slice(0, 500).trim();
-    const kind = ['document', 'database', 'record'].includes(filters.kind ?? '')
+    const kind = ['document', 'database', 'record', 'canvas'].includes(filters.kind ?? '')
       ? filters.kind
       : '';
     const after = filters.after && /^\d{4}-\d{2}-\d{2}$/.test(filters.after) ? filters.after : null;

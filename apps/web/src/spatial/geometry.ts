@@ -9,6 +9,56 @@ export interface Size {
 export interface Camera extends Point {
   zoom: number;
 }
+export type Rect = Point & Size;
+
+/** Prefer visible space, then nearby space; never cover an existing item as a fallback. */
+export function freeRect(preferred: Rect, occupied: Rect[], viewport: Rect): Point {
+  const gap = 24,
+    { width, height } = preferred;
+  const visible = (point: Point) =>
+    point.x >= viewport.x &&
+    point.y >= viewport.y &&
+    point.x + width <= viewport.x + viewport.width &&
+    point.y + height <= viewport.y + viewport.height;
+  const distance = (point: Point) => Math.hypot(point.x - preferred.x, point.y - preferred.y);
+  const candidates: Point[] = [{ x: preferred.x, y: preferred.y }];
+  for (let row = -4; row <= 4; row++)
+    for (let column = -4; column <= 4; column++)
+      candidates.push({
+        x: preferred.x + column * (width + gap),
+        y: preferred.y + row * (height + gap),
+      });
+  const nearest = [...occupied].sort((a, b) => distance(a) - distance(b)).slice(0, 32);
+  for (const item of nearest)
+    candidates.push(
+      { x: item.x + item.width + gap, y: preferred.y },
+      { x: item.x - width - gap, y: preferred.y },
+      { x: preferred.x, y: item.y + item.height + gap },
+      { x: preferred.x, y: item.y - height - gap },
+    );
+  if (occupied.length)
+    candidates.push(
+      { x: Math.max(...occupied.map((item) => item.x + item.width)) + gap, y: preferred.y },
+      { x: Math.min(...occupied.map((item) => item.x)) - width - gap, y: preferred.y },
+      { x: preferred.x, y: Math.max(...occupied.map((item) => item.y + item.height)) + gap },
+      { x: preferred.x, y: Math.min(...occupied.map((item) => item.y)) - height - gap },
+    );
+  const found = candidates
+    .filter(validPoint)
+    .sort((a, b) => Number(visible(b)) - Number(visible(a)) || distance(a) - distance(b))
+    .find(
+      (point) =>
+        !occupied.some(
+          (item) =>
+            point.x < item.x + item.width + gap &&
+            point.x + width + gap > item.x &&
+            point.y < item.y + item.height + gap &&
+            point.y + height + gap > item.y,
+        ),
+    );
+  if (!found) throw new Error('Move or resize items to make room for another note.');
+  return { x: found.x, y: found.y };
+}
 export const MIN_ZOOM = 0.03,
   MAX_ZOOM = 3;
 export const clampZoom = (zoom: number) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));

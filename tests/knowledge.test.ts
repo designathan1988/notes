@@ -84,3 +84,18 @@ test('bounded graph results prioritize connected visible knowledge, report trunc
   expect(local.nodes.map((node) => node.id).sort()).toEqual([linked, hub]);
   expect(local.truncated).toBe(false);
 });
+
+test('batched page references return only currently authorized titles in the requested workspace', async () => {
+  const visible = await rawPage(db, { title: 'Visible linked note' }),
+    secret = await rawPage(db, { title: 'Secret linked note', visibility: 'private' });
+  expect(await knowledge.references({ userId: 'admin' }, 'studio', [visible, secret])).toEqual([
+    { id: visible, title: 'Visible linked note', kind: 'document' },
+  ]);
+  await db.query("UPDATE pages SET visibility='private',private_owner_id='owner' WHERE id=$1", [
+    visible,
+  ]);
+  expect(await knowledge.references({ userId: 'admin' }, 'studio', [visible])).toEqual([]);
+  await expect(
+    knowledge.references(actor, 'studio', Array(101).fill(visible)),
+  ).rejects.toMatchObject({ code: 'INVALID' });
+});

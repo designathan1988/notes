@@ -28,7 +28,7 @@ export function toPage(row: PageRow): Page {
     templateRootId: row.template_root_id ?? null,
     templateDatabaseId: row.template_database_id ?? null,
     ...(row.template_database_id ? { templateValues: row.template_values ?? {} } : {}),
-    ...(row.kind === 'document'
+    ...(['document', 'canvas'].includes(row.kind)
       ? { properties: row.page_properties ?? { fields: [], values: {} } }
       : {}),
     icon: row.icon ?? null,

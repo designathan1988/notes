@@ -10,6 +10,7 @@ import {
   PanelLeft,
   RotateCcw,
   LayoutTemplate,
+  SquareDashed,
 } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
 import { tabKey } from './state.js';
@@ -116,7 +117,9 @@ export function TabStrip() {
                     ? 'Knowledge graph'
                     : tab.view === 'database' && !tab.pageId
                       ? 'Databases'
-                      : (page?.title ?? 'Page');
+                      : tab.view === 'canvas' && !tab.pageId
+                        ? 'Canvases'
+                        : (page?.title ?? 'Page');
           const Icon =
             tab.view === 'templates'
               ? LayoutTemplate
@@ -126,7 +129,9 @@ export function TabStrip() {
                   ? Files
                   : tab.view === 'database'
                     ? Database
-                    : FileText;
+                    : tab.view === 'canvas'
+                      ? SquareDashed
+                      : FileText;
           return (
             <div
               key={tab.id}

@@ -9,6 +9,7 @@ import {
   type SavedDatabaseView,
 } from '../../../../packages/contracts/src/index.js';
 import { documentJSON, emptyDocument } from '../../../../packages/editor/src/schema.js';
+import { emptyCanvas } from '../../../../packages/editor/src/canvas.js';
 import type { Database } from '../platform/database.js';
 import { Access } from '../access/service.js';
 import { toPage, type PageRow } from '../pages/model.js';
@@ -78,7 +79,7 @@ export async function readBlueprint(
       'SELECT state FROM documents WHERE page_id=$1',
       [page.id],
     );
-    let content: JSONContent = emptyDocument;
+    let content: JSONContent = page.kind === 'canvas' ? emptyCanvas : emptyDocument;
     if (stored) {
       const doc = new Y.Doc();
       try {

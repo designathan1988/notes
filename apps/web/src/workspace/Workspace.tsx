@@ -45,8 +45,13 @@ export function Workspace() {
   const page = state.pages.find((item) => item.id === state.selectedId);
   const parent = state.pages.find((item) => item.id === page?.parentId);
   const databaseIndex = state.view === 'database' && page?.kind !== 'database';
+  const canvasIndex = state.view === 'canvas' && page?.kind !== 'canvas';
   const globalView =
-    state.view === 'all' || state.view === 'graph' || state.view === 'templates' || databaseIndex;
+    state.view === 'all' ||
+    state.view === 'graph' ||
+    state.view === 'templates' ||
+    databaseIndex ||
+    canvasIndex;
   const status = {
     saved: 'Saved',
     saving: 'Saving…',
@@ -140,14 +145,16 @@ export function Workspace() {
                     ? 'Knowledge graph'
                     : databaseIndex
                       ? 'Databases'
-                      : (page?.title ?? 'Workspace')}
+                      : canvasIndex
+                        ? 'Canvases'
+                        : (page?.title ?? 'Workspace')}
             </strong>
           </div>
           <div className="topbar-actions">
             <IconButton label="Command palette" onClick={state.showCommands}>
               <Command size={16} />
             </IconButton>
-            {page && !globalView && state.view === 'document' && (
+            {page && !globalView && ['document', 'canvas'].includes(state.view) && (
               <span className={`save-status ${state.saveStatus}`}>
                 {state.saveStatus === 'saved' ? (
                   <Check />
@@ -167,7 +174,7 @@ export function Workspace() {
                 <Star fill={state.favorites.includes(page.id) ? 'currentColor' : 'none'} />
               </IconButton>
             )}
-            {state.view === 'document' && (
+            {['document', 'canvas'].includes(state.view) && (
               <IconButton
                 label={state.contextOpen ? 'Close page details' : 'Open page details'}
                 onClick={() => useWorkspace.setState({ contextOpen: !state.contextOpen })}
@@ -229,6 +236,29 @@ export function Workspace() {
             <AllPages />
           ) : databaseIndex ? (
             <AllPages kind="database" />
+          ) : canvasIndex ? (
+            <AllPages kind="canvas" />
+          ) : page?.kind === 'canvas' ? (
+            <>
+              <div className="canvas-page">
+                <TemplateBanner page={page} />
+                <LazyBoundary key={page.id} name="Canvas">
+                  <Suspense fallback={<p className="editor-prompt">Opening canvas…</p>}>
+                    <DocumentEditor key={page.id} page={page} />
+                  </Suspense>
+                </LazyBoundary>
+              </div>
+              {state.contextOpen && (
+                <>
+                  <button
+                    className="details-scrim"
+                    aria-label="Close page details overlay"
+                    onClick={() => useWorkspace.setState({ contextOpen: false })}
+                  />
+                  <PagePanel />
+                </>
+              )}
+            </>
           ) : page ? (
             <>
               <div className="document-scroll">

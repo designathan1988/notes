@@ -15,6 +15,7 @@ const canWrite = (state: WorkspaceState) => {
   return !!role && role !== 'viewer';
 };
 export const commands: AppCommand[] = [
+  { id: 'page.canvas', title: 'New canvas', group: 'Create', keywords: 'spatial board whiteboard notes', available: canWrite, run: state => state.createQuickPage(null, 'canvas') },
   {
     id: 'workspace.templates',
     title: 'Open templates',
