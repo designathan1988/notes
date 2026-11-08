@@ -45,11 +45,12 @@ export class Knowledge {
     const [page] = await this.db.query<{
       index_revision: string | number;
       description: string;
+      tags: string[];
       state: Uint8Array | null;
       values: Record<string, unknown> | null;
       computed_values: Record<string, unknown> | null;
     }>(
-      `SELECT p.index_revision,p.description,d.state,r.values,r.computed_values FROM pages p LEFT JOIN documents d ON d.page_id=p.id LEFT JOIN records r ON r.page_id=p.id WHERE p.id=$1`,
+      `SELECT p.index_revision,p.description,p.tags,d.state,r.values,r.computed_values FROM pages p LEFT JOIN documents d ON d.page_id=p.id LEFT JOIN records r ON r.page_id=p.id WHERE p.id=$1`,
       [id],
     );
     if (!page) return;
@@ -66,6 +67,7 @@ export class Knowledge {
     await this.applyProjection(id, Number(page.index_revision), {
       text: [
         page.description,
+        ...page.tags,
         projection.text,
         ...Object.values(page.values ?? {})
           .filter((value) => value !== null)
@@ -98,7 +100,7 @@ export class Knowledge {
     actor: Actor,
     workspace: string,
     query: string,
-    filters: { kind?: string; after?: string } = {},
+    filters: { kind?: string; after?: string; tag?: string } = {},
   ): Promise<{ results: SearchResult[]; indexing: boolean }> {
     const scope = await new Access(this.db).scope(actor, workspace);
     const term = query.slice(0, 500).trim();
@@ -107,12 +109,20 @@ export class Knowledge {
       : '';
     const after = filters.after && /^\d{4}-\d{2}-\d{2}$/.test(filters.after) ? filters.after : null;
     const results = await this.db.query<SearchResult>(
-      `${scope.sql}, search_query AS (SELECT websearch_to_tsquery('simple',$3) AS q)
+      `${scope.sql}, search_query AS (SELECT websearch_to_tsquery('simple',$3) AS q),
+      tagged AS (SELECT id FROM pages WHERE workspace_id=$1 AND tags @> ARRAY[$7]::text[])
       SELECT p.id,p.title,p.kind,left(coalesce(s.body,''),180) AS snippet,parent.title AS "parentTitle" FROM visible p
       LEFT JOIN search_projection s ON s.page_id=p.id LEFT JOIN visible parent ON parent.id=p.parent_id CROSS JOIN search_query
-      WHERE ($3='' OR s.tokens@@search_query.q OR p.title ILIKE $4 OR similarity(p.title,$3)>0.25) AND ($5='' OR p.kind=$5) AND ($6::date IS NULL OR p.updated_at >= $6::date)
+      WHERE ($3='' OR s.tokens@@search_query.q OR p.title ILIKE $4 OR similarity(p.title,$3)>0.25) AND ($5='' OR p.kind=$5) AND ($6::date IS NULL OR p.updated_at >= $6::date) AND ($7='' OR p.id IN (SELECT id FROM tagged))
       ORDER BY CASE WHEN lower(p.title)=lower($3) THEN 0 WHEN p.title ILIKE $3 || '%' THEN 1 ELSE 2 END,ts_rank_cd(s.tokens,search_query.q) DESC NULLS LAST,p.updated_at DESC LIMIT 50`,
-      [...scope.params, term, `%${term}%`, kind, after],
+      [
+        ...scope.params,
+        term,
+        `%${term}%`,
+        kind,
+        after,
+        (filters.tag ?? '').trim().replace(/\s+/gu, ' ').toLocaleLowerCase('en-US').slice(0, 80),
+      ],
     );
     const pending = await this.db.query(
       `${scope.sql} SELECT 1 FROM outbox o JOIN visible p ON p.id=o.page_id WHERE o.processed_at IS NULL LIMIT 1`,

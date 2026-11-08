@@ -5,10 +5,12 @@ import {
   type Actor,
   type Page,
   type PageKind,
+  type PageUpdate,
 } from '../../../../packages/contracts/src/index.js';
 import { Access } from '../access/service.js';
 import { randomUUID } from 'node:crypto';
 import { toPage, type PageRow } from './model.js';
+import { PageDetails } from './details.js';
 type CreatePage = {
   title: string;
   parentId?: string | null;
@@ -77,24 +79,9 @@ export class Pages {
   async update(
     actor: Actor,
     id: string,
-    input: { title?: string; description?: string; revision: number },
+    input: PageUpdate & { revision: number },
   ): Promise<Page> {
-    const row = await this.db.transaction(async (tx) => {
-      const page = await new Access(tx).lockPage(actor, id);
-      const title = input.title === undefined ? page.title : validateTitle(input.title);
-      const [updated] = await tx.query<PageRow>(
-        'UPDATE pages SET title=$2,description=$3,revision=revision+1,index_revision=index_revision+1,updated_at=now() WHERE id=$1 AND revision=$4 RETURNING *',
-        [id, title, String(input.description ?? page.description).slice(0, 2000), input.revision],
-      );
-      if (!updated)
-        throw new DomainError('CONFLICT', 'The page changed. Reload it before saving again.');
-      await tx.query(
-        'INSERT INTO outbox (page_id,version) SELECT id,index_revision FROM pages WHERE id=$1',
-        [id],
-      );
-      return { ...updated, private_owner_id: page.accessOwnerId, visibility: page.visibility };
-    });
-    return toPage(row);
+    return new PageDetails(this.db).update(actor, id, input);
   }
   async move(
     actor: Actor,

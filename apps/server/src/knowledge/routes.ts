@@ -25,7 +25,7 @@ export async function knowledgeRoutes(app: FastifyInstance, db: Database) {
   });
   app.get<{
     Params: { workspace: string };
-    Querystring: { q?: string; kind?: string; after?: string };
+    Querystring: { q?: string; kind?: string; after?: string; tag?: string };
   }>('/api/workspaces/:workspace/search', (request) =>
     knowledge.search(request.actor, request.params.workspace, request.query.q ?? '', request.query),
   );

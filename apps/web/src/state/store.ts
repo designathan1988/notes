@@ -1,7 +1,9 @@
 import { create } from 'zustand';
+import type { JSONContent } from '@tiptap/core';
 import { api, ApiError, json } from './api.js';
 import type {
   Page,
+  PageUpdate,
   SaveStatus,
   Workspace,
   NavigationSnapshot,
@@ -56,10 +58,15 @@ export interface WorkspaceState
       parentId?: string;
       kind?: 'document' | 'database';
       visibility?: 'workspace' | 'private';
+      description?: string;
+      content?: JSONContent;
+      requestId?: string;
+      purpose?: 'copy' | 'recovery';
+      expectedUserId?: string;
     },
     options?: { navigate?: boolean },
   ): Promise<Page>;
-  updatePage(id: string, patch: { title?: string; description?: string }): Promise<void>;
+  updatePage(id: string, patch: PageUpdate, expectedRevision?: number): Promise<void>;
   trashPage(id: string): Promise<void>;
   toggleExpanded(id: string): void;
   toggleFavorite(id: string): void;
@@ -133,6 +140,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       graphs: {},
       mentions: {},
       searchResults: [],
+      searchTag: '',
       knowledgeVersion: get().knowledgeVersion + 1,
     });
     get().restoreWorkbench();
@@ -271,9 +279,12 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   },
   async createPage(input, options = {}) {
     const id = get().workspaceId;
+    const identity = get().user?.id;
     if (!id) throw new Error('Choose a workspace first.');
     const page = await api<Page>(`/workspaces/${id}/pages`, { method: 'POST', body: json(input) });
+    if (identity !== get().user?.id || id !== get().workspaceId) return page;
     await get().reload();
+    if (identity !== get().user?.id || id !== get().workspaceId) return page;
     set({
       pages: [
         ...get()
@@ -287,7 +298,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       get().navigate(page.id, page.kind === 'database' ? 'database' : 'document');
     return page;
   },
-  async updatePage(id, patch) {
+  async updatePage(id, patch, expectedRevision) {
     const user = get().user?.id,
       workspace = get().workspaceId;
     const operation = (pageWrites.get(id) ?? Promise.resolve())
@@ -298,7 +309,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
         if (!current) throw new Error('Reload this page before editing its details.');
         const page = await api<Page>(`/pages/${id}`, {
           method: 'PATCH',
-          body: json({ ...patch, revision: current.revision }),
+          body: json({ ...patch, revision: expectedRevision ?? current.revision }),
         });
         if (user === get().user?.id && workspace === get().workspaceId)
           set({ pages: get().pages.map((item) => (item.id === id ? { ...item, ...page } : item)) });
@@ -370,6 +381,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       graphs: {},
       mentions: {},
       searchResults: [],
+      searchTag: '',
       outline: [],
       linkedPageIds: [],
     });

@@ -17,6 +17,10 @@ CREATE TABLE IF NOT EXISTS pages (
 CREATE INDEX IF NOT EXISTS pages_parent ON pages(workspace_id,parent_id,position);
 ALTER TABLE pages ADD COLUMN IF NOT EXISTS index_revision bigint NOT NULL DEFAULT 1;
 ALTER TABLE pages ADD COLUMN IF NOT EXISTS private_owner_id text REFERENCES "user"(id);
+ALTER TABLE pages ADD COLUMN IF NOT EXISTS icon text;
+ALTER TABLE pages ADD COLUMN IF NOT EXISTS cover jsonb;
+ALTER TABLE pages ADD COLUMN IF NOT EXISTS tags text[] NOT NULL DEFAULT '{}';
+CREATE INDEX IF NOT EXISTS pages_tags ON pages USING GIN(tags);
 CREATE TABLE IF NOT EXISTS documents (page_id text PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE, state bytea NOT NULL, version bigint NOT NULL DEFAULT 1, updated_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE IF NOT EXISTS document_checkpoints (id text PRIMARY KEY, page_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE, state bytea NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
 ALTER TABLE document_checkpoints ADD COLUMN IF NOT EXISTS author_id text REFERENCES "user"(id) ON DELETE SET NULL;

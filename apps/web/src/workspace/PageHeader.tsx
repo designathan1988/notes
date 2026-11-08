@@ -2,6 +2,7 @@ import { Clock3, FileText, Database, Network } from 'lucide-react';
 import type { Page } from '../../../../packages/contracts/src/index.js';
 import { useWorkspace } from '../state/store.js';
 import { useLayoutEffect, useRef } from 'react';
+import { PagePresentation, PageTags } from '../pages/PagePresentation.js';
 function fit(element: HTMLTextAreaElement) {
   element.style.height = 'auto';
   element.style.height = element.scrollHeight + 'px';
@@ -33,8 +34,13 @@ export function PageHeader({ page, connections = 0 }: { page: Page; connections?
   );
   return (
     <header className="page-heading">
+      <PagePresentation key={`presentation-${page.id}`} page={page} readOnly={readOnly} />
       <div className="title-row">
-        <Icon className="page-icon" />
+        {page.icon ? (
+          <span className="page-icon page-emoji">{page.icon}</span>
+        ) : (
+          <Icon className="page-icon" />
+        )}
         <textarea
           ref={title}
           onInput={(event) => fit(event.currentTarget)}
@@ -94,6 +100,7 @@ export function PageHeader({ page, connections = 0 }: { page: Page; connections?
           {connections} connections
         </span>
       </div>
+      <PageTags key={`tags-${page.id}`} page={page} readOnly={readOnly} />
     </header>
   );
 }

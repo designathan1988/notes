@@ -58,7 +58,7 @@ export class Transfer {
     );
     const ids = pages.map((page) => page.id);
     const manifest: Manifest = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       workspace: { name: info.name },
       pages: [],
       databases: [],
@@ -74,6 +74,9 @@ export class Transfer {
         parentId: page.parentId,
         title: page.title,
         description: page.description,
+        icon: page.icon ?? null,
+        cover: page.cover ?? null,
+        tags: page.tags ?? [],
         kind: page.kind,
         visibility: page.visibility,
         content: documentJSON(doc),
@@ -322,6 +325,19 @@ export class Transfer {
             }
           } else if (job.stage === 'documents') {
             const page = pages[i];
+            const created = await service.get(actor, job.mapping.pages[page.id]);
+            await service.update(actor, created.id, {
+              revision: created.revision,
+              icon: page.icon ?? null,
+              tags: page.tags ?? [],
+              cover:
+                page.cover?.type === 'image'
+                  ? {
+                      ...page.cover,
+                      attachmentId: job.mapping.attachments[page.cover.attachmentId],
+                    }
+                  : (page.cover ?? null),
+            });
             let doc: Y.Doc;
             try {
               doc = documentFromJSON(

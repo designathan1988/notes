@@ -9,6 +9,9 @@ export interface Workspace {
   role: Role;
 }
 export interface Page {
+  icon?: string | null;
+  cover?: PageCover | null;
+  tags?: string[];
   accessOwnerId: string;
   hasChildren?: boolean;
   id: string;
@@ -24,6 +27,16 @@ export interface Page {
   generation: number;
   updatedAt: string;
   deletedAt: string | null;
+}
+export type PageCover =
+  | { type: 'color'; color: string }
+  | { type: 'image'; attachmentId: string; positionY: number };
+export interface PageUpdate {
+  title?: string;
+  description?: string;
+  icon?: string | null;
+  cover?: PageCover | null;
+  tags?: string[];
 }
 export type SaveStatus = 'connecting' | 'saving' | 'saved' | 'local' | 'error' | 'read-only';
 export interface PageCursor {

@@ -4,13 +4,18 @@ import {
   DomainError,
   type PageKind,
   type RecordField,
+  type Page,
 } from '../../../../packages/contracts/src/index.js';
 import { validateFields, validateValues } from '../databases/values.js';
+import { validatePresentation } from '../pages/details.js';
 export const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024;
 export const MAX_MANIFEST_BYTES = 32 * 1024 * 1024;
 export const MAX_ARCHIVED_PAGE_BYTES = 8 * 1024 * 1024;
 const MAX_EXPANDED_BYTES = 128 * 1024 * 1024;
 export interface ArchivePage {
+  icon?: Page['icon'];
+  cover?: Page['cover'];
+  tags?: Page['tags'];
   id: string;
   parentId: string | null;
   title: string;
@@ -20,7 +25,7 @@ export interface ArchivePage {
   content: JSONContent;
 }
 export interface Manifest {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   workspace: { name: string };
   pages: ArchivePage[];
   databases: { pageId: string; fields: RecordField[] }[];
@@ -148,7 +153,7 @@ export function orderedPages(pages: ArchivePage[]) {
 function validateManifest(manifest: Manifest, files: Record<string, Uint8Array>) {
   if (
     !manifest ||
-    manifest.schemaVersion !== 1 ||
+    ![1, 2].includes(manifest.schemaVersion) ||
     !manifest.workspace ||
     typeof manifest.workspace.name !== 'string' ||
     !Array.isArray(manifest.pages) ||
@@ -178,6 +183,7 @@ function validateManifest(manifest: Manifest, files: Record<string, Uint8Array>)
     )
       throw new DomainError('INVALID', 'An archived page is invalid or too large.');
     ids.add(page.id);
+    validatePresentation(page);
   }
   orderedPages(manifest.pages);
   const databases = new Set<string>();
@@ -236,6 +242,21 @@ function validateManifest(manifest: Manifest, files: Record<string, Uint8Array>)
     )
       throw new DomainError('INVALID', 'An archived attachment is invalid or missing.');
     attachmentIds.add(file.id);
+  }
+  for (const page of manifest.pages) {
+    if (page.cover?.type !== 'image') continue;
+    const file = manifest.attachments.find(
+      (file) => file.id === (page.cover as { attachmentId: string }).attachmentId,
+    );
+    if (
+      !file ||
+      file.pageId !== page.id ||
+      !['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.mediaType)
+    )
+      throw new DomainError(
+        'INVALID',
+        'An archived cover must reference its own image attachment.',
+      );
   }
   for (const view of manifest.views)
     if (

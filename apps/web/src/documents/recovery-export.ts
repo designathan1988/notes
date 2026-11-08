@@ -1,8 +1,24 @@
 import * as Y from 'yjs';
 import { yDocToProsemirrorJSON } from 'y-prosemirror';
 import { zipSync, strToU8 } from 'fflate';
-import { openRecovery } from './recovery.js';
+import { openRecovery, type Recovery } from './recovery.js';
+import { projectDocument } from '../../../../packages/editor/src/projection.js';
 import { useWorkspace } from '../state/store.js';
+
+export async function localDraftExcerpt(storage: Recovery, key: string) {
+  const state = await storage.read(key);
+  if (!state) return 'No readable content is available.';
+  const doc = new Y.Doc();
+  try {
+    Y.applyUpdate(doc, state);
+    return (
+      projectDocument(yDocToProsemirrorJSON(doc, 'default')).text.slice(0, 180) ||
+      'Structured content'
+    );
+  } finally {
+    doc.destroy();
+  }
+}
 
 export async function downloadLocalDrafts() {
   const identity = useWorkspace.getState().user?.id;

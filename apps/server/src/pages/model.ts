@@ -1,5 +1,8 @@
 import type { Page } from '../../../../packages/contracts/src/index.js';
 export interface PageRow {
+  icon?: string | null;
+  cover?: Page['cover'];
+  tags?: string[];
   private_owner_id?: string | null;
   has_children?: boolean;
   id: string;
@@ -18,6 +21,9 @@ export interface PageRow {
 }
 export function toPage(row: PageRow): Page {
   return {
+    icon: row.icon ?? null,
+    cover: row.cover ?? null,
+    tags: row.tags ?? [],
     accessOwnerId: row.private_owner_id ?? row.created_by,
     ...(row.has_children !== undefined ? { hasChildren: row.has_children } : {}),
     id: row.id,

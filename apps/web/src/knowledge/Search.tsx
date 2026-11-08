@@ -14,15 +14,17 @@ export function Search() {
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('');
   const [after, setAfter] = useState('');
+  const [tag, setTag] = useState(useWorkspace.getState().searchTag);
+  useEffect(() => () => useWorkspace.setState({ searchTag: '' }), []);
   const [active, setActive] = useState(0);
   const resultsRef = useRef<HTMLDivElement>(null);
-  const recent:SearchResult[] = recentIds.flatMap((id) => {
+  const recent: SearchResult[] = recentIds.flatMap((id) => {
     const page = pages.find((page) => page.id === id);
     return page
       ? [{ id: page.id, title: page.title, kind: page.kind, snippet: page.description }]
       : [];
   });
-  const showingRecent = !query && !kind && !after && recent.length > 0;
+  const showingRecent = !query && !kind && !after && !tag && recent.length > 0;
   const results = showingRecent ? recent : searched;
   useEffect(() => {
     resultsRef.current
@@ -31,11 +33,11 @@ export function Search() {
   }, [active]);
   useEffect(() => {
     const timer = setTimeout(() => {
-      void search(query, { kind, after }).catch(useWorkspace.getState().setError);
+      void search(query, { kind, after, tag }).catch(useWorkspace.getState().setError);
       setActive(0);
     }, 120);
     return () => clearTimeout(timer);
-  }, [query, kind, after, search, version]);
+  }, [query, kind, after, tag, search, version]);
   const open = (index: number) => {
     const result = results[index];
     if (result)
@@ -75,6 +77,13 @@ export function Search() {
         <kbd>↵</kbd>
       </div>
       <div className="search-filters">
+        <input
+          aria-label="Tag filter"
+          placeholder="Filter by tag…"
+          value={tag}
+          maxLength={80}
+          onChange={(event) => setTag(event.target.value)}
+        />
         <select
           aria-label="Content type"
           value={kind}

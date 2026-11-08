@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { assertObject, DomainError } from '../../../../packages/contracts/src/index.js';
+import { PageInstances } from './instantiation.js';
+import { assertObject, DomainError, type PageUpdate } from '../../../../packages/contracts/src/index.js';
 import type { Pages } from './service.js';
 import { Navigation } from './navigation.js';
 export function pageRoutes(app: FastifyInstance, pages: Pages) {
@@ -92,6 +93,18 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
     '/api/workspaces/:workspace/pages',
     async (request) => {
       assertObject(request.body);
+      if ('content' in request.body || 'purpose' in request.body)
+        return new PageInstances(pages.db).create(request.actor, request.params.workspace, {
+          title: request.body.title,
+          content: request.body.content,
+          requestId: request.body.requestId,
+          purpose: request.body.purpose,
+          description: request.body.description,
+          parentId: request.body.parentId,
+          visibility: request.body.visibility,
+          kind: request.body.kind,
+          expectedUserId: request.body.expectedUserId,
+        });
       if (request.body.kind && !['document', 'database'].includes(String(request.body.kind)))
         throw new DomainError('INVALID', 'Use the database record command for records.');
       return pages.create(request.actor, request.params.workspace, {
@@ -110,6 +123,9 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
     return pages.update(request.actor, request.params.id, {
       title: request.body.title as string | undefined,
       description: request.body.description as string | undefined,
+      icon: request.body.icon as PageUpdate['icon'],
+      cover: request.body.cover as PageUpdate['cover'],
+      tags: request.body.tags as PageUpdate['tags'],
       revision: Number(request.body.revision),
     });
   });

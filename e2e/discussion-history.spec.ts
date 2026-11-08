@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { unzipSync, strFromU8 } from 'fflate';
+import * as Y from 'yjs';
 
 test('two editors discuss, resolve and reopen; saved history previews and restores a live document', async ({
   browser,
@@ -165,7 +166,7 @@ test('two editors discuss, resolve and reopen; saved history previews and restor
   }
 });
 
-test('a restored page retains a disconnected collaborator draft as exportable recovery data', async ({
+test('a disconnected collaborator recovers retained drafts as private pages and signs out safely', async ({
   browser,
 }) => {
   const firstContext = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
@@ -186,6 +187,9 @@ test('a restored page retains a disconnected collaborator draft as exportable re
       headers,
     })
   ).json();
+  const recoveredIds: string[] = [];
+  let initialCopyId = '',
+    release: (() => void) | undefined;
   const first = await firstContext.newPage(),
     second = await secondContext.newPage();
   try {
@@ -261,8 +265,138 @@ test('a restored page retains a disconnected collaborator draft as exportable re
         .map(([, bytes]) => strFromU8(bytes))
         .join(''),
     ).toContain('Another disconnected contribution.');
+    const manifest = JSON.parse(strFromU8(archive['recovery.json'])),
+      original = manifest.drafts.find(
+        (draft: { pageId: string; generation: string }) =>
+          draft.pageId === note.id && draft.generation === '1',
+      );
+    const changed = new Y.Doc();
+    Y.applyUpdate(changed, archive[original.yjsFile]);
+    const paragraph = changed.getXmlFragment('default').get(0) as Y.XmlElement,
+      text = paragraph.get(0) as Y.XmlText;
+    text.insert(text.length, ' Newer retained addition.');
+    const newer = Array.from(Y.encodeStateAsUpdate(changed));
+    changed.destroy();
+    const editorSession = await (await secondContext.request.get('/api/session')).json(),
+      key = `${editorSession.user.id}:${original.workspaceId}:${original.pageId}:${original.generation}`;
+    let arrived!: () => void;
+    const requested = new Promise<void>((resolve) => {
+      arrived = resolve;
+    });
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let attempt = 0;
+    await second.route(`**/api/workspaces/${session.workspaces[0].id}/pages`, async (route) => {
+      if (
+        route.request().method() !== 'POST' ||
+        route.request().postDataJSON().purpose !== 'recovery'
+      ) {
+        await route.continue();
+        return;
+      }
+      if (attempt++ === 0) {
+        const response = await route.fetch();
+        initialCopyId = (await response.json()).id;
+        await route.fulfill({
+          status: 503,
+          json: { code: 'UNAVAILABLE', message: 'Recovery response unavailable' },
+        });
+        return;
+      }
+      if (attempt === 2) {
+        arrived();
+        await gate;
+      }
+      await route.continue();
+    });
+    await second
+      .getByRole('button', { name: 'Recover as private page', exact: true })
+      .first()
+      .click();
+    await expect(
+      second.getByRole('region', { name: 'Local recovery', exact: true }).getByRole('alert'),
+    ).toContainText('Recovery response unavailable');
+    const renamedSource = await (await firstContext.request.get(`/api/pages/${note.id}`)).json();
+    await firstContext.request.patch(`/api/pages/${note.id}`, {
+      headers: { 'x-note-request': '1' },
+      data: { revision: renamedSource.revision, title: 'Renamed retained draft source' },
+    });
+    await expect(second.locator('.local-draft strong').first()).toHaveText(
+      'Renamed retained draft source',
+    );
+    await expect(
+      second.getByRole('button', { name: 'Recover as private page', exact: true }),
+    ).toHaveCount(2);
+    for (const [index, contribution] of [
+      'My disconnected contribution.',
+      'Newer retained addition.',
+      'Another disconnected contribution.',
+    ].entries()) {
+      await expect(
+        second.getByRole('button', { name: 'Recover as private page', exact: true }).first(),
+      ).toBeVisible();
+      await second
+        .getByRole('button', { name: 'Recover as private page', exact: true })
+        .first()
+        .click();
+      if (index === 0) {
+        await requested;
+        await second.evaluate(
+          async ({ key, newer }) => {
+            const path = '/src/documents/recovery.ts',
+              { openRecovery } = await import(path),
+              storage = await openRecovery();
+            try {
+              await storage.write(key, new Uint8Array(newer), true);
+            } finally {
+              storage.close();
+            }
+          },
+          { key, newer },
+        );
+        release?.();
+      }
+      await expect(second.getByRole('textbox', { name: 'Page title', exact: true })).toHaveValue(
+        `Recovered: ${index === 0 ? note.title : 'Renamed retained draft source'}`,
+      );
+      await expect(
+        second.getByRole('textbox', { name: 'Page content', exact: true }),
+      ).toContainText(contribution);
+      await expect(second.locator('.save-status')).toHaveText('Saved');
+      const id = new URL(second.url()).hash.slice(1).split('/')[0];
+      recoveredIds.push(id);
+      if (index === 0) expect(id).toBe(initialCopyId);
+      expect((await (await secondContext.request.get(`/api/pages/${id}`)).json()).visibility).toBe(
+        'private',
+      );
+      expect((await firstContext.request.get(`/api/pages/${id}`)).status()).toBe(403);
+      await second.getByRole('button', { name: 'Settings', exact: true }).click();
+      await second.getByRole('dialog').getByRole('button', { name: 'Data', exact: true }).click();
+    }
+    await expect(
+      second.getByRole('button', { name: 'Recover as private page', exact: true }),
+    ).toHaveCount(0);
+    await second
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Close dialog', exact: true })
+      .click();
+    await second.getByRole('button', { name: 'All pages', exact: true }).click();
+    await second.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await expect(
+      second.getByRole('button', { name: 'Open demo workspace', exact: true }),
+    ).toBeVisible();
   } finally {
     await secondContext.setOffline(false);
+    release?.();
+    if (recoveredIds.length || initialCopyId) {
+      await secondContext.request.post('/api/auth/sign-in/email', {
+        data: { email: 'amelia@note.test', password: 'Note-local-demo-2026' },
+        headers: { origin: 'http://127.0.0.1:5173' },
+      });
+      for (const id of new Set([...recoveredIds, ...(initialCopyId ? [initialCopyId] : [])]))
+        await secondContext.request.delete(`/api/pages/${id}`, { headers }).catch(() => {});
+    }
     await firstContext.request.delete(`/api/pages/${note.id}`, { headers }).catch(() => {});
     await firstContext.close();
     await secondContext.close();

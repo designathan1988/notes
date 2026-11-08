@@ -40,6 +40,22 @@ test('workspace archive round trip remaps pages and retains attachment bytes and
     size: 6,
   });
   await attachments.upload(actor, file.id, Buffer.from('proof!'));
+  const image = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+    'base64',
+  );
+  const cover = await attachments.begin(actor, source, {
+    filename: 'cover.png',
+    mediaType: 'image/png',
+    size: image.length,
+  });
+  await attachments.upload(actor, cover.id, image);
+  await new Pages(db).update(actor, source, {
+    revision: 1,
+    icon: '🧭',
+    tags: ['Field research'],
+    cover: { type: 'image', attachmentId: cover.id, positionY: 38 },
+  });
   const doc = documentFromJSON({
     type: 'doc',
     content: [
@@ -62,6 +78,15 @@ test('workspace archive round trip remaps pages and retains attachment bytes and
   const restored = pages.find((page) => page.title === 'Original note')!;
   const linked = pages.find((page) => page.title === 'Link target')!;
   expect(restored.id).not.toBe(source);
+  expect(restored).toMatchObject({
+    icon: '🧭',
+    tags: ['field research'],
+    cover: { type: 'image', positionY: 38 },
+  });
+  expect(restored.cover?.type).toBe('image');
+  if (restored.cover?.type !== 'image') throw new Error('The image cover was lost');
+  expect(restored.cover.attachmentId).not.toBe(cover.id);
+  expect((await attachments.read(actor, restored.cover.attachmentId)).bytes).toEqual(image);
   const loaded = await new Documents(db).load(restored.id);
   const content = documentJSON(loaded);
   loaded.destroy();

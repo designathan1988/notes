@@ -2,6 +2,7 @@ export interface Recovery {
   read(key: string): Promise<Uint8Array | null>;
   write(key: string, value: Uint8Array, pending?: boolean): Promise<void>;
   setPending(key: string, pending: boolean): Promise<void>;
+  acknowledge(key: string, expected: Uint8Array): Promise<boolean>;
   pendingIdentity(identity: string): Promise<string[]>;
   clearIdentity(identity: string): Promise<void>;
   close(): void;
@@ -33,6 +34,25 @@ export function openRecovery(): Promise<Recovery> {
       }
       resolve({
         write,
+        acknowledge(key, expected) {
+          return new Promise((done, fail) => {
+            const tx = db.transaction('documents', 'readwrite'),
+              store = tx.objectStore('documents'),
+              get = store.get(key);
+            let matched = false;
+            get.onsuccess = () => {
+              const current = get.result ? new Uint8Array(get.result) : null;
+              matched =
+                !!current &&
+                current.length === expected.length &&
+                current.every((value, index) => value === expected[index]);
+              if (matched) store.delete(`!pending:${key}`);
+            };
+            tx.oncomplete = () => done(matched);
+            tx.onerror = () => fail(tx.error);
+            tx.onabort = () => fail(tx.error);
+          });
+        },
         setPending(key, pending) {
           return new Promise((done, fail) => {
             const tx = db.transaction('documents', 'readwrite');

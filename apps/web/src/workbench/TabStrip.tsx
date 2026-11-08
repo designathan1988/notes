@@ -145,7 +145,13 @@ export function TabStrip() {
                 }}
                 onDoubleClick={() => state.pinTab(tab.id)}
               >
-                <Icon size={15} />
+                {page?.icon && ['document', 'database'].includes(tab.view) ? (
+                  <span className="page-reference-icon" aria-hidden="true">
+                    {page.icon}
+                  </span>
+                ) : (
+                  <Icon size={15} />
+                )}
                 <span>{label}</span>
               </button>
               <button

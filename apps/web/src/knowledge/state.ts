@@ -9,11 +9,13 @@ export interface KnowledgeSlice {
   knowledgeVersion: number;
   invalidateKnowledge(): void;
   searchResults: SearchResult[];
+  searchTag: string;
+  openTagSearch(tag: string): void;
   searchLoading: boolean;
   indexing: boolean;
   graphs: Record<string, GraphData>;
   mentions: Record<string, KnowledgeLink[]>;
-  search(query: string, filters?: { kind?: string; after?: string }): Promise<void>;
+  search(query: string, filters?: { kind?: string; after?: string; tag?: string }): Promise<void>;
   loadGraph(center?: string): Promise<void>;
   loadMentions(id: string): Promise<void>;
 }
@@ -35,6 +37,10 @@ export function knowledgeSlice(
       });
     },
     searchResults: [],
+    searchTag: '',
+    openTagSearch(tag) {
+      set({ searchTag: tag, dialog: 'search' });
+    },
     searchLoading: false,
     indexing: false,
     graphs: {},

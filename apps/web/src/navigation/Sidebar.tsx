@@ -78,7 +78,13 @@ function PageRow({
             else state.navigate(page.id, page.kind === 'database' ? 'database' : 'document');
           }}
         >
-          <Icon />
+          {page.icon ? (
+            <span className="page-reference-icon" aria-hidden="true">
+              {page.icon}
+            </span>
+          ) : (
+            <Icon />
+          )}
           <span>{page.title}</span>
         </button>
         <span className="tree-row-actions" data-tree-control>
@@ -305,7 +311,13 @@ export function Sidebar() {
                     state.navigate(page.id, page.kind === 'database' ? 'database' : 'document')
                   }
                 >
-                  <Star />
+                  {page.icon ? (
+                    <span className="page-reference-icon" aria-hidden="true">
+                      {page.icon}
+                    </span>
+                  ) : (
+                    <Star />
+                  )}
                   <span>{page.title}</span>
                 </button>
               ))}

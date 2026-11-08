@@ -72,7 +72,15 @@ export function AllPages({ kind }: { kind?: 'database' }) {
                 .navigate(page.id, page.kind === 'database' ? 'database' : 'document')
             }
           >
-            {page.kind === 'database' ? <Database /> : <FileText />}
+            {page.icon ? (
+              <span className="page-reference-icon" aria-hidden="true">
+                {page.icon}
+              </span>
+            ) : page.kind === 'database' ? (
+              <Database />
+            ) : (
+              <FileText />
+            )}
             <span>{page.title}</span>
             <small>{page.kind}</small>
             <ArrowUpRight size={14} />
