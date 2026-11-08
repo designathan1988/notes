@@ -24,7 +24,6 @@ import { PageHeader } from './PageHeader.js';
 import { AppearancePanel } from '../appearance/AppearancePanel.js';
 import { appearanceVariables, PageAppearance } from '../appearance/projection.js';
 import { PagePanel } from '../activity/PagePanel.js';
-import { DatabaseView } from '../databases/DatabaseView.js';
 import { Search } from '../knowledge/Search.js';
 import { Settings } from '../settings/Settings.js';
 import { Invite } from '../settings/Invite.js';
@@ -39,6 +38,9 @@ import { TemplateDialog } from '../templates/TemplateDialog.js';
 import { LazyBoundary } from '../ui/LazyBoundary.js';
 const Library = lazy(() => import('../templates/Library.js'));
 const Graph = lazy(() => import('../knowledge/Graph.js'));
+const DatabaseView = lazy(() =>
+  import('../databases/DatabaseView.js').then((module) => ({ default: module.DatabaseView })),
+);
 const DocumentEditor = lazy(() =>
   import('../documents/Editor.js').then((module) => ({ default: module.DocumentEditor })),
 );
@@ -284,7 +286,11 @@ export function Workspace() {
                   <PageHeader page={page} connections={state.linkedPageIds.length} />
                   {state.view === 'database' ? (
                     page.kind === 'database' ? (
-                      <DatabaseView key={page.id} id={page.id} />
+                      <LazyBoundary key={page.id} name="Database">
+                        <Suspense fallback={<p className="table-empty">Opening database…</p>}>
+                          <DatabaseView key={page.id} id={page.id} />
+                        </Suspense>
+                      </LazyBoundary>
                     ) : (
                       <div className="empty-state">
                         <Database />

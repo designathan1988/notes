@@ -3,8 +3,9 @@ import { pg_trgm } from '@electric-sql/pglite/contrib/pg_trgm';
 import { drizzle as localDrizzle } from 'drizzle-orm/pglite';
 import { drizzle as postgresDrizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+import { readdir, readFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 import * as schema from '../identity/schema.js';
 
 export interface Database {
@@ -76,7 +77,42 @@ export async function openDatabase(
   return make(client);
 }
 
-export async function migrate(db: Database) {
-  const migration = await readFile(resolve('apps/server/migrations/001-initial.sql'), 'utf8');
-  await db.exec(migration);
+const MIGRATION_LOCK = 4_242_001;
+
+/**
+ * Applies numbered `NNN-name.sql` files in order, each in its own transaction, once.
+ * Applied files are checksummed: never edit one — add a new numbered file instead.
+ */
+export async function migrate(db: Database, options: { directory?: string } = {}): Promise<void> {
+  const directory = options.directory ?? resolve('apps/server/migrations');
+  const files = (await readdir(directory))
+    .filter((name) => /^\d+-.+\.sql$/.test(name))
+    .sort((a, b) => parseInt(a, 10) - parseInt(b, 10) || a.localeCompare(b));
+  for (const file of files) {
+    const version = file.slice(0, -'.sql'.length);
+    const sql = await readFile(join(directory, file), 'utf8');
+    const checksum = createHash('sha256').update(sql.replace(/\r\n/g, '\n')).digest('hex');
+    await db.transaction(async (tx) => {
+      await tx.query('SELECT pg_advisory_xact_lock($1)', [MIGRATION_LOCK]);
+      await tx.exec(
+        'CREATE TABLE IF NOT EXISTS schema_migrations (version text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())',
+      );
+      const [applied] = await tx.query<{ checksum: string }>(
+        'SELECT checksum FROM schema_migrations WHERE version=$1',
+        [version],
+      );
+      if (applied) {
+        if (applied.checksum !== checksum)
+          throw new Error(
+            `Migration ${version} changed after it was applied; add a new numbered migration instead`,
+          );
+        return;
+      }
+      await tx.exec(sql);
+      await tx.query('INSERT INTO schema_migrations (version, checksum) VALUES ($1, $2)', [
+        version,
+        checksum,
+      ]);
+    });
+  }
 }

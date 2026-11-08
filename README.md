@@ -52,6 +52,10 @@ Relational metadata and records have revisions. Yjs updates/snapshots are the do
 
 Canvas pages use the same document session and persistence owners: `doc → canvasRoot → canvasCard / canvasGroup / canvasEdge`. Rich children and spatial attributes live in that single shared fragment. Camera preferences belong to the existing scoped workbench owner. Batched linked-page titles are authorized read projections, separate from user-authored reference labels.
 
+## Database migrations
+
+`apps/server/migrations/NNN-name.sql` files run in numeric order, once each, inside their own transaction, under a PostgreSQL advisory lock. Applied versions and checksums are recorded in `schema_migrations`. **Never edit an applied migration**: startup refuses a changed checksum. Add the next numbered file instead. Databases created before versioning adopt `001-initial` automatically on their next start.
+
 ## Local persistence and recovery
 
 Ignored `.runtime/` contains:

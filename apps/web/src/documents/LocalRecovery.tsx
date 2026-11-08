@@ -2,7 +2,17 @@ import { useEffect, useState } from 'react';
 import { Download, FilePlus2, HardDrive } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
 import { openRecovery } from './recovery.js';
-import { downloadLocalDrafts, localDraftExcerpt } from './recovery-export.js';
+
+// recovery-export pulls Yjs, ProseMirror projection, HTML parsing and ZIP code. Keep it out of
+// the initial chunk, but start loading it right after boot: the export must work offline.
+let recoveryExport: Promise<typeof import('./recovery-export.js')> | undefined;
+const loadRecoveryExport = () =>
+  (recoveryExport ??= import('./recovery-export.js').catch((failure: unknown) => {
+    recoveryExport = undefined;
+    throw failure;
+  }));
+if (typeof window !== 'undefined')
+  window.setTimeout(() => void loadRecoveryExport().catch(() => undefined), 0);
 
 type Draft = { key: string; title: string; excerpt: string };
 export function LocalRecovery() {
@@ -36,7 +46,7 @@ export function LocalRecovery() {
               'Local draft';
             let excerpt = 'A recovery copy is retained on this device.';
             try {
-              excerpt = await localDraftExcerpt(storage, key);
+              excerpt = await (await loadRecoveryExport()).localDraftExcerpt(storage, key);
             } catch {
               /* Keep the raw recovery download available. */
             }
@@ -75,7 +85,8 @@ export function LocalRecovery() {
         onClick={() => {
           setBusy(true);
           setError('');
-          void downloadLocalDrafts()
+          void loadRecoveryExport()
+            .then((module) => module.downloadLocalDrafts())
             .catch((failure) => setError(failure.message))
             .finally(() => setBusy(false));
         }}

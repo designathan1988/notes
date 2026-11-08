@@ -221,7 +221,8 @@ test('the existing page-kind migration admits canvas pages without losing origin
   try {
     const original = await rawPage(legacy, { title: 'Original note' });
     await legacy.exec(
-      "ALTER TABLE pages DROP CONSTRAINT pages_kind_check; ALTER TABLE pages ADD CONSTRAINT pages_kind_check CHECK(kind IN ('document','database','record'))",
+      // A database bootstrapped before canvases and before versioned migrations existed.
+      "ALTER TABLE pages DROP CONSTRAINT pages_kind_check; ALTER TABLE pages ADD CONSTRAINT pages_kind_check CHECK(kind IN ('document','database','record')); DROP TABLE schema_migrations",
     );
     await migrate(legacy);
     await migrate(legacy);
