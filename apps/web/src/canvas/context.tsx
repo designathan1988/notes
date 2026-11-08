@@ -26,17 +26,19 @@ import {
   type CanvasItem,
 } from '../../../../packages/editor/src/canvas-commands.js';
 import { useSpatialView } from '../spatial/useSpatialView.js';
-import { freeRect, type Point } from '../spatial/geometry.js';
+import { freeRect, fitCamera, type Point } from '../spatial/geometry.js';
 import { useWorkspace } from '../state/store.js';
 import { isolatedDocumentEdit } from '../documents/history.js';
 import { flushSync } from 'react-dom';
 import type { ClipboardContent } from '../documents/capture.js';
 import { canvasBoxes } from '../../../../packages/editor/src/canvas-containment.js';
+import { headingPositions } from '../../../../packages/editor/src/outline.js';
 
 export interface CanvasApi {
   addNote(point?: Point, content?: JSONContent[], focus?: boolean): string | undefined;
   preparePaste(): void;
   key(event: KeyboardEvent): boolean;
+  revealHeading(index: number): void;
 }
 type Box = Point & { width: number; height: number };
 interface Context extends CanvasApi {
@@ -242,6 +244,35 @@ export function CanvasProvider({
       width: frame.width,
       height: frame.height,
     };
+  }
+  function revealHeading(index: number) {
+    const position = headingPositions(editor.state.doc)[index];
+    const target = position === undefined ? null : editor.view.nodeDOM(position);
+    if (!(target instanceof HTMLElement)) return;
+    const card = target.closest<HTMLElement>('[data-canvas-card]'),
+      id = card?.dataset.canvasCard;
+    const frame = id && box(id);
+    if (!frame) return;
+    const rich = target.closest<HTMLElement>('.canvas-card-rich');
+    if (rich) {
+      const bounds = target.getBoundingClientRect(),
+        container = rich.getBoundingClientRect();
+      rich.scrollTop +=
+        (bounds.top - container.top) / view.camera.zoom -
+        (rich.clientHeight - bounds.height / view.camera.zoom) / 2;
+    }
+    select(id, false, false);
+    setTool('select');
+    view.changeCamera(
+      fitCamera(
+        [
+          { x: frame.x, y: frame.y },
+          { x: frame.x + frame.width, y: frame.y + frame.height },
+        ],
+        view.size,
+        24,
+      ),
+    );
   }
   function addNote(point?: Point, content?: JSONContent[], focus = true) {
     if (fresh.current.readOnly || editor.isDestroyed) return;
@@ -644,6 +675,7 @@ export function CanvasProvider({
     addNote,
     preparePaste,
     key,
+    revealHeading,
     inspector,
     setInspector,
     media,

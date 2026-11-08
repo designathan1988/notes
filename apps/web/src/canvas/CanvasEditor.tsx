@@ -62,6 +62,7 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
     input = useRef<HTMLInputElement>(null);
   const { upload, failed, setFailed, uploading } = useUploads(page.id);
   const [link, setLink] = useState<'inline' | 'card' | null>(null);
+  const request = useWorkspace((state) => state.editorRequest);
   const editor = useEditor(
     {
       extensions: [
@@ -159,6 +160,13 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
       editor.setEditable(!readOnly);
     }
   }, [editor, readOnly, session]);
+  useEffect(() => {
+    if (!editor || !api.current || request?.pageId !== page.id) return;
+    if (typeof request.command === 'object') api.current.revealHeading(request.command.heading);
+    else if (request.command === 'link' && editor.isEditable) setLink('card');
+    if (useWorkspace.getState().editorRequest === request)
+      useWorkspace.setState({ editorRequest: null });
+  }, [request, editor, page.id]);
   if (!editor) return null;
   async function insertFile(file: File, point?: Point, existingId?: string) {
     if (!editor || editor.isDestroyed) return;
@@ -264,6 +272,27 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
                   api.current?.addNote(
                     undefined,
                     [{ type: 'pageLink', attrs: { targetId: id, label: 'Linked page' } }],
+                    false,
+                  )
+              : undefined
+          }
+          onUrl={
+            link === 'card'
+              ? (url) =>
+                  api.current?.addNote(
+                    undefined,
+                    [
+                      {
+                        type: 'paragraph',
+                        content: [
+                          {
+                            type: 'text',
+                            text: url,
+                            marks: [{ type: 'link', attrs: { href: url } }],
+                          },
+                        ],
+                      },
+                    ],
                     false,
                   )
               : undefined

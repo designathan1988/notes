@@ -14,6 +14,7 @@ import {
   Search,
   Maximize2,
   Users,
+  PanelRight,
 } from 'lucide-react';
 import type { Page } from '../../../../packages/contracts/src/index.js';
 import { useWorkspace } from '../state/store.js';
@@ -156,6 +157,17 @@ export function PageActions({
           Export text as Markdown
         </button>
         <hr />
+        <button
+          onClick={() =>
+            run(() => {
+              state.navigate(page.id);
+              state.openPagePanel('details');
+            })
+          }
+        >
+          <PanelRight />
+          Page details
+        </button>
         <button
           onClick={() =>
             run(() => {

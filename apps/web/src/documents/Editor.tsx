@@ -44,6 +44,7 @@ import { SelectionToolbar } from './SelectionToolbar.js';
 import { Templates } from './Templates.js';
 import { DocumentFind, FindInPage } from './FindInPage.js';
 import { useDocumentProjection } from './useDocumentProjection.js';
+import { headingPositions } from '../../../../packages/editor/src/outline.js';
 import { richEditorExtensions } from './richExtensions.js';
 import { useUploads, FailedFile } from './useUploads.js';
 const CanvasEditor = lazy(() => import('../canvas/CanvasEditor.js'));
@@ -236,9 +237,16 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
   const statistics = useDocumentProjection(editor, session.page.id);
   useEffect(() => {
     if (!editor || request?.pageId !== session.page.id) return;
-    if (request.command === 'find') setFindOpen(true);
-    else if (editor.isEditable) setTemplatesOpen(true);
-    useWorkspace.setState({ editorRequest: null });
+    if (typeof request.command === 'object') {
+      const position = headingPositions(editor.state.doc)[request.command.heading];
+      const target = position === undefined ? null : editor.view.nodeDOM(position);
+      if (target instanceof HTMLElement)
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (request.command === 'find') setFindOpen(true);
+    else if (request.command === 'link' && editor.isEditable) setLinkOpen(true);
+    else if (request.command === 'templates' && editor.isEditable) setTemplatesOpen(true);
+    if (useWorkspace.getState().editorRequest === request)
+      useWorkspace.setState({ editorRequest: null });
   }, [request, editor, session]);
   const role = useWorkspace(
     (state) => state.workspaces.find((item) => item.id === state.workspaceId)?.role,

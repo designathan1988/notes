@@ -7,10 +7,12 @@ export function LinkPicker({
   editor,
   close,
   onPage,
+  onUrl,
 }: {
   editor: TiptapEditor;
   close(): void;
   onPage?(id: string): void;
+  onUrl?(url: string): void;
 }) {
   const pages = useWorkspace((state) => state.searchResults);
   const search = useWorkspace((state) => state.search);
@@ -66,6 +68,11 @@ export function LinkPicker({
         {/^https?:\/\//i.test(query) && (
           <button
             onClick={() => {
+              if (onUrl) {
+                onUrl(query);
+                close();
+                return;
+              }
               if (!editor.state.selection.empty || editor.isActive('link')) {
                 editor.chain().focus().extendMarkRange('link').setLink({ href: query }).run();
                 close();

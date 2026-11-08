@@ -182,6 +182,6 @@ function DocumentProperties({ page, readOnly }: { page: Page; readOnly: boolean 
 export function PageProperties({ page, readOnly }: { page: Page; readOnly: boolean }) {
   if (page.templateDatabaseId) return <TemplateDefaults page={page} readOnly={readOnly} />;
   if (page.kind === 'record') return <RecordPageProperties page={page} readOnly={readOnly} />;
-  if (page.kind !== 'document') return null;
+  if (!['document', 'canvas'].includes(page.kind)) return null;
   return <DocumentProperties page={page} readOnly={readOnly} />;
 }

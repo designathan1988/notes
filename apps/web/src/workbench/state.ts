@@ -14,6 +14,7 @@ export const tabKey = (pageId: string | null, view: View) =>
   view === 'document' || ((view === 'database' || view === 'canvas') && pageId)
     ? `${view}:${pageId ?? ''}`
     : view;
+export type EditorCommand = 'find' | 'templates' | 'link' | { heading: number };
 export interface WorkbenchSlice {
   graphPlacements: Record<string, Point>;
   graphCameras: Record<string, Camera>;
@@ -32,8 +33,8 @@ export interface WorkbenchSlice {
   sidebarCollapsed: boolean;
   focusMode: boolean;
   toggleFocusMode(): void;
-  editorRequest: { pageId: string; command: 'find' | 'templates'; serial: number } | null;
-  requestEditor(command: 'find' | 'templates'): void;
+  editorRequest: { pageId: string; command: EditorCommand; serial: number } | null;
+  requestEditor(command: EditorCommand): void;
   navigationHistory: WorkbenchHistory;
   goBack(): void;
   goForward(): void;
@@ -140,7 +141,13 @@ export function workbenchSlice(
     },
     editorRequest: null,
     requestEditor(command) {
-      if (get().selectedId && get().view === 'document')
+      if (
+        typeof command === 'object' &&
+        (!Number.isInteger(command.heading) || command.heading < 0)
+      )
+        return;
+      if (get().view === 'canvas' && typeof command !== 'object' && command !== 'link') return;
+      if (get().selectedId && ['document', 'canvas'].includes(get().view))
         set({
           editorRequest: {
             pageId: get().selectedId!,

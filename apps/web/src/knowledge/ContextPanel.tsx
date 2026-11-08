@@ -1,6 +1,8 @@
 import { FileText, Link2, Network } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
 import { useEffect } from 'react';
+import { PageTags } from '../pages/PagePresentation.js';
+import { PageProperties } from '../pages/PageProperties.js';
 export function ContextPanel() {
   const outline = useWorkspace((state) => state.outline);
   const links = useWorkspace((state) => state.linkedPageIds);
@@ -10,6 +12,10 @@ export function ContextPanel() {
   const load = useWorkspace((state) => state.loadMentions);
   const version = useWorkspace((state) => state.knowledgeVersion);
   const workspace = useWorkspace((state) => state.workspaceId);
+  const role = useWorkspace(
+    (state) => state.workspaces.find((item) => item.id === state.workspaceId)?.role,
+  );
+  const readOnly = !role || role === 'viewer';
   const graph = useWorkspace((state) => state.graphs[`${workspace}:${selectedId}`]);
   useEffect(() => {
     if (!selectedId) return;
@@ -47,6 +53,13 @@ export function ContextPanel() {
           <dd>{current?.visibility === 'private' ? 'Private' : 'Workspace'}</dd>
         </div>
       </dl>
+      {current?.kind === 'canvas' && (
+        <details className="context-section canvas-metadata">
+          <summary>Properties and tags</summary>
+          <PageTags key={`tags-${current.id}`} page={current} readOnly={readOnly} />
+          <PageProperties key={`properties-${current.id}`} page={current} readOnly={readOnly} />
+        </details>
+      )}
       <details className="context-section" open>
         <summary>
           On this page <span>{outline.length}</span>
@@ -56,11 +69,11 @@ export function ContextPanel() {
             <button
               key={index}
               style={{ paddingLeft: `${Math.max(0, heading.level - 1) * 12}px` }}
-              onClick={() =>
-                document
-                  .querySelectorAll('.note-editor h1,.note-editor h2,.note-editor h3')
-                  [index]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-              }
+              onClick={() => {
+                useWorkspace.getState().requestEditor({ heading: index });
+                if (matchMedia('(max-width:1050px)').matches)
+                  useWorkspace.setState({ contextOpen: false });
+              }}
             >
               {heading.text}
             </button>
@@ -167,15 +180,20 @@ export function ContextPanel() {
           <p className="muted-text">No linked mentions yet.</p>
         )}
       </details>
-      <button
-        className="context-connect"
-        onClick={() =>
-          document.querySelector<HTMLButtonElement>('[aria-label="Insert link"]')?.click()
-        }
-      >
-        <Link2 />
-        Connect an idea
-      </button>
+      {current?.kind !== 'database' && (
+        <button
+          className="context-connect"
+          disabled={readOnly}
+          onClick={() => {
+            useWorkspace.getState().requestEditor('link');
+            if (matchMedia('(max-width:1050px)').matches)
+              useWorkspace.setState({ contextOpen: false });
+          }}
+        >
+          <Link2 />
+          Connect an idea
+        </button>
+      )}
     </div>
   );
 }
