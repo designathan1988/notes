@@ -27,20 +27,14 @@ import { BlockSurface } from '../documents/BlockSurface.js';
 import { IconButton } from '../ui/IconButton.js';
 import { Dialog } from '../ui/Dialog.js';
 import { CanvasConnections, canvasElementColor } from './CanvasConnections.js';
+import { canvasBoxes } from '../../../../packages/editor/src/canvas-containment.js';
 
 // Immutable document identity keys this disposable geometry projection, not another body.
 const geometry = new WeakMap<ProseMirrorNode, ReadonlyMap<string, CanvasBox>>();
 function snapshotBoxes(doc: ProseMirrorNode) {
   let boxes = geometry.get(doc);
   if (!boxes) {
-    boxes = new Map(
-      canvasItems(doc)
-        .filter((item) => item.node.type.name !== 'canvasEdge')
-        .map((item) => {
-          const { x, y, width, height } = item.node.attrs;
-          return [item.id, { x, y, width, height }];
-        }),
-    );
+    boxes = canvasBoxes(canvasItems(doc));
     geometry.set(doc, boxes);
   }
   return boxes;
@@ -156,9 +150,10 @@ function SavedRoot({ editor }: NodeViewProps) {
   );
 }
 
-function SavedBox({ node }: NodeViewProps) {
+function SavedBox({ node, editor }: NodeViewProps) {
   const attrs = node.attrs,
     group = node.type.name === 'canvasGroup';
+  const frame = snapshotBoxes(editor.state.doc).get(attrs.id)!;
   return (
     <NodeViewWrapper
       className={group ? 'canvas-group' : 'canvas-card'}
@@ -166,10 +161,10 @@ function SavedBox({ node }: NodeViewProps) {
       data-canvas-colored={attrs.color !== 'neutral' || undefined}
       style={
         {
-          left: attrs.x,
-          top: attrs.y,
-          width: attrs.width,
-          height: attrs.height,
+          left: frame.x,
+          top: frame.y,
+          width: frame.width,
+          height: frame.height,
           ...(!group ? { zIndex: 10 + Number(attrs.z) } : {}),
           '--canvas-item-color': canvasElementColor(attrs.color),
         } as CSSProperties

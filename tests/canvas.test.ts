@@ -4,6 +4,8 @@ import type { JSONContent } from '@tiptap/core';
 import { documentFromJSON, documentJSON, projectDocument } from '../packages/editor/src/schema.js';
 import { editorSchema } from '../packages/editor/src/schema.js';
 import { EditorState } from '@tiptap/pm/state';
+import { canvasBoxes } from '../packages/editor/src/canvas-containment.js';
+import { MAX_CANVAS_ELEMENTS } from '../packages/editor/src/canvas.js';
 import {
   canvasItems,
   moveCanvas,
@@ -278,4 +280,211 @@ test('canvas insertion, connection, resize and stacking operate on the same type
     toNode: 'new-note',
   });
   expect(() => connectCanvas(tr, 'bad-edge', 'missing', 'new-note')).toThrow();
+});
+
+test('effective nested group frames enclose growing members without rewriting canonical geometry', () => {
+  const schema = editorSchema();
+  const doc = schema.nodeFromJSON({
+    type: 'doc',
+    content: [
+      {
+        type: 'canvasRoot',
+        content: [
+          { type: 'canvasGroup', attrs: { id: 'outer', x: 0, y: 0, width: 400, height: 300 } },
+          {
+            type: 'canvasGroup',
+            attrs: { id: 'inner', x: 20, y: 40, width: 300, height: 200, groupId: 'outer' },
+          },
+          {
+            type: 'canvasCard',
+            attrs: { id: 'child', x: -100, y: 100, width: 600, height: 400, groupId: 'inner' },
+            content: [paragraph('Original rich evidence')],
+          },
+        ],
+      },
+    ],
+  });
+  const original = doc.toJSON();
+  const boxes = canvasBoxes(canvasItems(doc));
+  expect(boxes.get('inner')).toEqual({ x: -124, y: 40, width: 648, height: 484 });
+  expect(boxes.get('outer')).toEqual({ x: -148, y: 0, width: 696, height: 548 });
+  expect(doc.toJSON()).toEqual(original);
+});
+
+test('moving a note adopts the smallest stationary group and releases it when it leaves', () => {
+  const schema = editorSchema();
+  const state = EditorState.create({
+    schema,
+    doc: schema.nodeFromJSON({
+      type: 'doc',
+      content: [
+        {
+          type: 'canvasRoot',
+          content: [
+            { type: 'canvasGroup', attrs: { id: 'outer', x: 0, y: 0, width: 1000, height: 800 } },
+            {
+              type: 'canvasGroup',
+              attrs: { id: 'inner', x: 100, y: 100, width: 500, height: 500, groupId: 'outer' },
+            },
+            {
+              type: 'canvasCard',
+              attrs: { id: 'child', x: 1200, y: 100, width: 200, height: 150 },
+              content: [paragraph('Keep this identity')],
+            },
+          ],
+        },
+      ],
+    }),
+  });
+  const original = canvasItems(state.doc).find((item) => item.id === 'child')!.node.content;
+  const tr = moveCanvas(state.tr, ['child'], -1000, 100);
+  expect(canvasItems(tr.doc).find((item) => item.id === 'child')!.node.attrs.groupId).toBe('inner');
+  expect(canvasItems(tr.doc).find((item) => item.id === 'child')!.node.content).toBe(original);
+  moveCanvas(tr, ['child'], 500, 0);
+  expect(canvasItems(tr.doc).find((item) => item.id === 'child')!.node.attrs.groupId).toBe('outer');
+  moveCanvas(tr, ['child'], 600, 0);
+  expect(canvasItems(tr.doc).find((item) => item.id === 'child')!.node.attrs.groupId).toBeNull();
+});
+
+test('resizing a group respects its members while member resize expands ancestor presentation', () => {
+  const schema = editorSchema();
+  const state = EditorState.create({
+    schema,
+    doc: schema.nodeFromJSON({
+      type: 'doc',
+      content: [
+        {
+          type: 'canvasRoot',
+          content: [
+            { type: 'canvasGroup', attrs: { id: 'group', x: 0, y: 0, width: 800, height: 600 } },
+            {
+              type: 'canvasCard',
+              attrs: { id: 'child', x: 100, y: 100, width: 300, height: 200, groupId: 'group' },
+              content: [paragraph('Retained')],
+            },
+          ],
+        },
+      ],
+    }),
+  });
+  const tr = resizeCanvas(state.tr, 'group', 120, 80);
+  expect(canvasBoxes(canvasItems(tr.doc)).get('group')).toEqual({
+    x: 0,
+    y: 0,
+    width: 424,
+    height: 324,
+  });
+  resizeCanvas(tr, 'child', 700, 600);
+  expect(canvasBoxes(canvasItems(tr.doc)).get('group')).toEqual({
+    x: 0,
+    y: 0,
+    width: 824,
+    height: 724,
+  });
+  expect(canvasItems(tr.doc).find((item) => item.id === 'child')!.node.attrs.groupId).toBe('group');
+});
+
+test('concurrent member growth converges to one enclosing frame without derived Yjs writes', () => {
+  const first = documentFromJSON({
+    type: 'doc',
+    content: [
+      {
+        type: 'canvasRoot',
+        content: [
+          { type: 'canvasGroup', attrs: { id: 'group', x: 0, y: 0, width: 500, height: 300 } },
+          {
+            type: 'canvasCard',
+            attrs: { id: 'one', x: 100, y: 100, width: 200, height: 100, groupId: 'group' },
+            content: [paragraph('Retain both changes.')],
+          },
+          {
+            type: 'canvasCard',
+            attrs: { id: 'two', x: 300, y: 100, width: 100, height: 100, groupId: 'group' },
+            content: [paragraph('Separate source.')],
+          },
+        ],
+      },
+    ],
+  });
+  const second = new Y.Doc();
+  try {
+    Y.applyUpdate(second, Y.encodeStateAsUpdate(first));
+    const a = first.getXmlFragment('default').get(0) as Y.XmlElement;
+    const b = second.getXmlFragment('default').get(0) as Y.XmlElement;
+    (a.get(1) as Y.XmlElement).setAttribute('width', 700 as unknown as string);
+    (b.get(2) as Y.XmlElement).setAttribute('x', -200 as unknown as string);
+    const text = ((b.get(1) as Y.XmlElement).get(0) as Y.XmlElement).get(0) as Y.XmlText;
+    text.insert(text.length, ' Concurrent evidence.');
+    Y.applyUpdate(first, Y.encodeStateAsUpdate(second));
+    Y.applyUpdate(second, Y.encodeStateAsUpdate(first));
+    const frame = (doc: Y.Doc) =>
+      canvasBoxes(canvasItems(editorSchema().nodeFromJSON(documentJSON(doc)))).get('group');
+    expect(frame(first)).toEqual({ x: -224, y: 0, width: 1048, height: 300 });
+    expect(frame(second)).toEqual(frame(first));
+    expect((a.get(0) as Y.XmlElement).getAttribute('width')).toBe(500);
+    expect(documentJSON(first)).toEqual(documentJSON(second));
+    expect(projectDocument(documentJSON(first)).text).toContain('Concurrent evidence.');
+  } finally {
+    first.destroy();
+    second.destroy();
+  }
+});
+
+test('moving a group at the canvas element limit moves every selected descendant once', () => {
+  const schema = editorSchema();
+  const children = Array.from({ length: MAX_CANVAS_ELEMENTS - 1 }, (_, i) => ({
+    type: 'canvasCard',
+    attrs: { id: `note-${i}`, x: (i % 30) * 320, y: Math.floor(i / 30) * 220, groupId: 'root' },
+    content: [paragraph(`Source ${i}`)],
+  }));
+  const state = EditorState.create({
+    schema,
+    doc: schema.nodeFromJSON({
+      type: 'doc',
+      content: [
+        {
+          type: 'canvasRoot',
+          content: [{ type: 'canvasGroup', attrs: { id: 'root' } }, ...children],
+        },
+      ],
+    }),
+  });
+  const tr = moveCanvas(state.tr, ['root', children.at(-1)!.attrs.id], 20, 30);
+  const items = canvasItems(tr.doc);
+  expect(items).toHaveLength(MAX_CANVAS_ELEMENTS);
+  for (const item of items.slice(1)) {
+    const index = Number(item.id.slice(5));
+    expect(item.node.attrs.x).toBe(children[index].attrs.x + 20);
+    expect(item.node.attrs.y).toBe(children[index].attrs.y + 30);
+    expect(item.node.attrs.groupId).toBe('root');
+  }
+});
+
+test('grouping an ancestor with a deeply selected note preserves the existing nested membership', () => {
+  const schema = editorSchema();
+  const state = EditorState.create({
+    schema,
+    doc: schema.nodeFromJSON({
+      type: 'doc',
+      content: [
+        {
+          type: 'canvasRoot',
+          content: [
+            { type: 'canvasGroup', attrs: { id: 'outer' } },
+            { type: 'canvasGroup', attrs: { id: 'inner', groupId: 'outer' } },
+            {
+              type: 'canvasCard',
+              attrs: { id: 'source', groupId: 'inner' },
+              content: [paragraph('Retain this hierarchy.')],
+            },
+          ],
+        },
+      ],
+    }),
+  });
+  const tr = groupCanvas(state.tr, ['outer', 'source'], 'wrapper', 'Assembly');
+  const items = canvasItems(tr.doc);
+  expect(items.find((item) => item.id === 'outer')!.node.attrs.groupId).toBe('wrapper');
+  expect(items.find((item) => item.id === 'inner')!.node.attrs.groupId).toBe('outer');
+  expect(items.find((item) => item.id === 'source')!.node.attrs.groupId).toBe('inner');
 });

@@ -3,6 +3,8 @@ import type { Transaction } from '@tiptap/pm/state';
 import { validateCanvas } from './canvas.js';
 import type { JSONContent } from '@tiptap/core';
 import type { CanvasSide, CanvasEnd } from './canvas-geometry.js';
+import type { CanvasBox } from './canvas-geometry.js';
+import { canvasBoxes, canvasContains, canvasGroupPadding } from './canvas-containment.js';
 export interface CanvasStyle {
   color?: string;
   fromSide?: CanvasSide;
@@ -36,11 +38,14 @@ export function addCanvasCard(
   y: number,
   content: JSONContent[] = [{ type: 'paragraph' }],
 ) {
-  const z = Math.max(0, ...canvasItems(tr.doc).map((item) => Number(item.node.attrs.z) || 0)) + 1;
+  const before = canvasItems(tr.doc),
+    boxes = canvasBoxes(before);
+  const z = Math.max(0, ...before.map((item) => Number(item.node.attrs.z) || 0)) + 1;
   tr.insert(
     tr.doc.content.size - 1,
     tr.doc.type.schema.nodeFromJSON({ type: 'canvasCard', attrs: { id, x, y, z }, content }),
   );
+  adoptCanvas(tr, [id], boxes);
   return checked(tr);
 }
 export function connectCanvas(
@@ -61,10 +66,13 @@ export function connectCanvas(
   return checked(tr);
 }
 export function resizeCanvas(tr: Transaction, id: string, width: number, height: number) {
-  const item = canvasItems(tr.doc).find((item) => item.id === id);
+  const items = canvasItems(tr.doc),
+    item = items.find((item) => item.id === id);
   if (!item || item.node.type.name === 'canvasEdge') return tr;
+  const frame = item.node.type.name === 'canvasGroup' ? canvasBoxes(items).get(id) : undefined;
   tr.setNodeMarkup(item.pos, undefined, {
     ...item.node.attrs,
+    ...(frame ? { x: frame.x, y: frame.y } : {}),
     width: Math.max(120, width),
     height: Math.max(80, height),
   });
@@ -103,17 +111,29 @@ const checked = (tr: Transaction) => {
 };
 export function canvasDescendants(items: CanvasItem[], ids: string[]) {
   const result = new Set(ids);
-  for (let pass = 0; pass < items.length; pass++) {
-    const before = result.size;
-    for (const item of items)
-      if (item.node.attrs.groupId && result.has(item.node.attrs.groupId)) result.add(item.id);
-    if (result.size === before) break;
+  const children = new Map<string, string[]>();
+  for (const item of items) {
+    const parent = item.node.attrs.groupId;
+    if (parent) {
+      const siblings = children.get(parent);
+      if (siblings) siblings.push(item.id);
+      else children.set(parent, [item.id]);
+    }
+  }
+  const queue = [...result];
+  for (let i = 0; i < queue.length; i++) {
+    for (const child of children.get(queue[i]) ?? []) {
+      if (result.has(child)) continue;
+      result.add(child);
+      queue.push(child);
+    }
   }
   return result;
 }
 export function moveCanvas(tr: Transaction, ids: string[], dx: number, dy: number) {
   const items = canvasItems(tr.doc),
-    selected = canvasDescendants(items, ids);
+    selected = canvasDescendants(items, ids),
+    boxes = canvasBoxes(items);
   for (const item of items)
     if (selected.has(item.id) && item.node.type.name !== 'canvasEdge')
       tr.setNodeMarkup(item.pos, undefined, {
@@ -121,7 +141,52 @@ export function moveCanvas(tr: Transaction, ids: string[], dx: number, dy: numbe
         x: item.node.attrs.x + dx,
         y: item.node.attrs.y + dy,
       });
+  adoptCanvas(tr, ids, boxes);
   return checked(tr);
+}
+
+function canvasRoots(items: CanvasItem[], ids: string[]) {
+  const selected = new Set(ids),
+    byId = new Map(items.map((item) => [item.id, item]));
+  return items.filter((item) => {
+    if (!selected.has(item.id) || item.node.type.name === 'canvasEdge') return false;
+    let parent = item.node.attrs.groupId;
+    const seen = new Set<string>();
+    while (parent && !seen.has(parent)) {
+      if (selected.has(parent)) return false;
+      seen.add(parent);
+      parent = byId.get(parent)?.node.attrs.groupId;
+    }
+    return true;
+  });
+}
+
+/** Drop against stationary pre-move frames, so a parent cannot follow a departing child. */
+function adoptCanvas(tr: Transaction, ids: string[], destination: Map<string, CanvasBox>) {
+  const items = canvasItems(tr.doc),
+    moved = canvasDescendants(items, ids),
+    boxes = canvasBoxes(items);
+  for (const item of canvasRoots(items, ids)) {
+    const frame = boxes.get(item.id)!;
+    const candidates = items.filter(
+      (group) =>
+        group.node.type.name === 'canvasGroup' &&
+        !moved.has(group.id) &&
+        destination.has(group.id) &&
+        canvasContains(destination.get(group.id)!, frame),
+    );
+    candidates.sort((a, b) => {
+      const one = destination.get(a.id)!,
+        two = destination.get(b.id)!;
+      return (
+        one.width * one.height - two.width * two.height ||
+        (a.id < b.id ? -1 : a.id === b.id ? 0 : 1)
+      );
+    });
+    const groupId = candidates[0]?.id ?? null;
+    if (item.node.attrs.groupId !== groupId)
+      tr.setNodeMarkup(item.pos, undefined, { ...item.node.attrs, groupId });
+  }
 }
 export function groupCanvas(tr: Transaction, ids: string[], id: string, label: string) {
   const items = canvasItems(tr.doc),
@@ -129,16 +194,16 @@ export function groupCanvas(tr: Transaction, ids: string[], id: string, label: s
       (item) => ids.includes(item.id) && item.node.type.name !== 'canvasEdge',
     );
   if (!selected.length) throw new Error('Select notes or groups first.');
-  const roots = selected.filter(
-    (item) => !selected.some((parent) => parent.id === item.node.attrs.groupId),
-  );
+  const boxes = canvasBoxes(items);
+  const roots = canvasRoots(items, ids);
   const parent = roots.every((item) => item.node.attrs.groupId === roots[0].node.attrs.groupId)
     ? roots[0].node.attrs.groupId
     : null;
-  const left = Math.min(...selected.map((item) => item.node.attrs.x)) - 24,
-    top = Math.min(...selected.map((item) => item.node.attrs.y)) - 40;
-  const right = Math.max(...selected.map((item) => item.node.attrs.x + item.node.attrs.width)) + 24,
-    bottom = Math.max(...selected.map((item) => item.node.attrs.y + item.node.attrs.height)) + 24;
+  const frames = selected.map((item) => boxes.get(item.id)!);
+  const left = Math.min(...frames.map((frame) => frame.x)) - canvasGroupPadding.side,
+    top = Math.min(...frames.map((frame) => frame.y)) - canvasGroupPadding.top;
+  const right = Math.max(...frames.map((frame) => frame.x + frame.width)) + canvasGroupPadding.side,
+    bottom = Math.max(...frames.map((frame) => frame.y + frame.height)) + canvasGroupPadding.side;
   for (const item of roots)
     tr.setNodeMarkup(item.pos, undefined, { ...item.node.attrs, groupId: id });
   tr.insert(

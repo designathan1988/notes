@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -30,6 +31,7 @@ import { useWorkspace } from '../state/store.js';
 import { isolatedDocumentEdit } from '../documents/history.js';
 import { flushSync } from 'react-dom';
 import type { ClipboardContent } from '../documents/capture.js';
+import { canvasBoxes } from '../../../../packages/editor/src/canvas-containment.js';
 
 export interface CanvasApi {
   addNote(point?: Point, content?: JSONContent[], focus?: boolean): string | undefined;
@@ -91,8 +93,9 @@ export function CanvasProvider({
   children: ReactNode;
 }) {
   const doc = useEditorState({ editor, selector: ({ editor }) => editor.state.doc });
-  const items = canvasItems(doc),
-    byId = new Map(items.map((item) => [item.id, item]));
+  const items = useMemo(() => canvasItems(doc), [doc]),
+    byId = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]),
+    frames = useMemo(() => canvasBoxes(items), [items]);
   const saved = useWorkspace((state) => state.canvasCameras[page.id]);
   const [selected, setSelected] = useState<string[]>([]),
     [tool, setTool] = useState<Context['tool']>('select');
@@ -103,6 +106,15 @@ export function CanvasProvider({
   const [resizing, setResizing] = useState<{ id: string; width: number; height: number } | null>(
     null,
   );
+  const visibleFrames = useMemo(() => {
+    const frame = resizing && frames.get(resizing.id);
+    return resizing && frame
+      ? canvasBoxes(
+          items,
+          new Map([[resizing.id, { ...frame, width: resizing.width, height: resizing.height }]]),
+        )
+      : frames;
+  }, [items, frames, resizing]);
   const cleanup = useRef<(() => void) | null>(null),
     selectionStart = useRef<Point | null>(null);
   const fresh = useRef({ readOnly });
@@ -128,15 +140,10 @@ export function CanvasProvider({
   }
   const view = useSpatialView({
     saved: saved ?? (!items.length ? { x: 0, y: 0, zoom: 1 } : undefined),
-    points: items
-      .filter((item) => item.node.type.name !== 'canvasEdge')
-      .flatMap((item) => [
-        { x: item.node.attrs.x, y: item.node.attrs.y },
-        {
-          x: item.node.attrs.x + item.node.attrs.width,
-          y: item.node.attrs.y + item.node.attrs.height,
-        },
-      ]),
+    points: [...frames.values()].flatMap((frame) => [
+      { x: frame.x, y: frame.y },
+      { x: frame.x + frame.width, y: frame.y + frame.height },
+    ]),
     itemPosition: (id) => {
       const item = byId.get(id);
       return item ? { x: item.node.attrs.x, y: item.node.attrs.y } : undefined;
@@ -210,27 +217,30 @@ export function CanvasProvider({
           }
         : undefined,
   });
+  const moving = useMemo(() => {
+    const draft = view.draft,
+      dragged = draft && byId.get(draft.id);
+    if (!draft || !dragged) return null;
+    return {
+      dx: draft.point.x - dragged.node.attrs.x,
+      dy: draft.point.y - dragged.node.attrs.y,
+      affected: canvasDescendants(items, selected.includes(draft.id) ? selected : [draft.id]),
+    };
+  }, [view.draft, byId, items, selected]);
   function box(id: string): Box | undefined {
     const item = byId.get(id);
-    if (!item || item.node.type.name === 'canvasEdge') return;
-    let x = item.node.attrs.x,
-      y = item.node.attrs.y;
-    if (view.draft) {
-      const dragged = byId.get(view.draft.id),
-        affected = canvasDescendants(
-          items,
-          selected.includes(view.draft.id) ? selected : [view.draft.id],
-        );
-      if (dragged && affected.has(id)) {
-        x += view.draft.point.x - dragged.node.attrs.x;
-        y += view.draft.point.y - dragged.node.attrs.y;
-      }
+    const frame = visibleFrames.get(id);
+    if (!item || !frame) return;
+    let { x, y } = frame;
+    if (moving?.affected.has(id)) {
+      x += moving.dx;
+      y += moving.dy;
     }
     return {
       x,
       y,
-      width: resizing?.id === id ? resizing.width : item.node.attrs.width,
-      height: resizing?.id === id ? resizing.height : item.node.attrs.height,
+      width: frame.width,
+      height: frame.height,
     };
   }
   function addNote(point?: Point, content?: JSONContent[], focus = true) {
@@ -477,6 +487,23 @@ export function CanvasProvider({
     const delta = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[
       event.key
     ];
+    const resizingId = target
+      .closest('.canvas-resize')
+      ?.closest<HTMLElement>('[data-canvas-element]')?.dataset.canvasElement;
+    if (delta && resizingId) {
+      const frame = box(resizingId),
+        step = event.shiftKey ? 80 : 20;
+      if (frame)
+        run((tr) =>
+          resizeCanvas(
+            tr,
+            resizingId,
+            frame.width + delta[0] * step,
+            frame.height + delta[1] * step,
+          ),
+        );
+      return true;
+    }
     if (delta && selected.length) {
       run((tr) =>
         moveCanvas(

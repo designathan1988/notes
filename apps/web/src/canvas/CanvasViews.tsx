@@ -279,6 +279,7 @@ export function CanvasCardView({ node }: NodeViewProps) {
           role="button"
           tabIndex={0}
           aria-label="Resize note"
+          title="Drag to resize. Arrow keys resize; Shift uses larger steps."
           contentEditable={false}
           data-spatial-control
           onPointerDown={(event) => c.gesture(id, event, true)}
@@ -335,6 +336,18 @@ export function CanvasGroupView({ node }: NodeViewProps) {
           aria-readonly={c.readOnly}
         />
       </div>
+      {c.selected.includes(id) && !c.readOnly && (
+        <span
+          className="canvas-resize"
+          role="button"
+          tabIndex={0}
+          aria-label="Resize group"
+          title="Drag to resize. Arrow keys resize; Shift uses larger steps."
+          contentEditable={false}
+          data-spatial-control
+          onPointerDown={(event) => c.gesture(id, event, true)}
+        />
+      )}
     </NodeViewWrapper>
   );
 }

@@ -1,0 +1,9 @@
+# Canvas containment and group resizing
+
+Continue the existing spatial task inline. Reference: [Obsidian Canvas](https://obsidian.md/help/plugins/canvas) exposes movable/resizable cards, groups and direct spatial organization. This implementation keeps Note's explicit canonical group membership rather than inferring a second editable scene from DOM positions.
+
+1. Reproduce missing drag-in/drag-out membership, group resize controls and group frames failing to encompass growing members.
+2. Add one pure effective-box projection: canonical group rectangles are minimum frames; descendant geometry can expand their displayed bounds. Reuse this projection in live rendering, saved previews and connection anchors. Concurrent member changes then converge without adding geometry repair writes or rejecting otherwise valid rich edits.
+3. Moving a note or group adopts the smallest enclosing stationary group; leaving releases it. Use the destination frames from before the move so an existing parent cannot follow its departing member forever. Exclude moved descendants and groups to prevent cycles. Insertion follows the same containment policy. Group movement preserves descendant offsets and moves each member once.
+4. Add group resize through the existing pointer/cancel/read-only transaction owner and keyboard resizing through the same resize command. A group resize cannot clip its members; resizing a member expands its derived ancestor frames. Keep manual empty space until explicitly resized.
+5. Test nested containment, rich-content identity, undo, concurrent geometry projection, drop membership, resizing, cancellation, keyboard/readonly behavior and reload. Inspect actual neutral desktop/mobile controls, run affected checks and commit locally. Portable interchange, metadata navigation and whole-product acceptance remain separate open requirements.

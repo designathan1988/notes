@@ -5739,6 +5739,9 @@
   .canvas-group[data-selected] {
     border-color: var(--accent);
   }
+  .canvas-group .canvas-resize {
+    pointer-events: auto;
+  }
   .canvas-group-heading {
     position: absolute;
     left: 12px;
@@ -5965,6 +5968,15 @@
     }
     .canvas-toolbar button span {
       display: none;
+    }
+    .canvas-resize {
+      width: 44px;
+      height: 44px;
+      right: -22px;
+      bottom: -22px;
+    }
+    .canvas-resize::after {
+      inset: 18px;
     }
     .canvas-tool-group {
       padding: 0 4px;
