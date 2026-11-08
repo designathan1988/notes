@@ -47,7 +47,10 @@ export function AllPages({ kind }: { kind?: 'database' }) {
           disabled={readOnly}
           className="button primary"
           onClick={() =>
-            useWorkspace.getState().openCreatePage(null, kind ? 'database' : 'document')
+            void useWorkspace
+              .getState()
+              .createQuickPage(null, kind ? 'database' : 'document')
+              .catch(useWorkspace.getState().setError)
           }
         >
           <Plus size={15} />

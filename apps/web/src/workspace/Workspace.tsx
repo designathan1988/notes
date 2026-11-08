@@ -10,16 +10,15 @@ import {
   FileText,
   Database,
   Star,
-  Trash2,
-  FolderInput,
   PanelRight,
-  Network,
+  ArrowLeft,
+  ArrowRight,
+  Command,
 } from 'lucide-react';
 import { useEffect, lazy, Suspense } from 'react';
 import { useWorkspace } from '../state/store.js';
 import { Sidebar } from '../navigation/Sidebar.js';
 import { IconButton } from '../ui/IconButton.js';
-import { Dialog } from '../ui/Dialog.js';
 import { PageHeader } from './PageHeader.js';
 import { ContextPanel } from '../knowledge/ContextPanel.js';
 import { DatabaseView } from '../databases/DatabaseView.js';
@@ -27,9 +26,11 @@ import { Search } from '../knowledge/Search.js';
 import { Settings } from '../settings/Settings.js';
 import { Invite } from '../settings/Invite.js';
 import { MovePage } from '../navigation/MovePage.js';
-import { download } from '../settings/DataSettings.js';
 import { NewPage } from '../navigation/NewPage.js';
 import { AllPages } from '../navigation/AllPages.js';
+import { PageActions } from '../navigation/PageActions.js';
+import { TabStrip } from '../workbench/TabStrip.js';
+import { CommandPalette } from '../workbench/CommandPalette.js';
 const Graph = lazy(() => import('../knowledge/Graph.js'));
 const DocumentEditor = lazy(() =>
   import('../documents/Editor.js').then((module) => ({ default: module.DocumentEditor })),
@@ -37,8 +38,6 @@ const DocumentEditor = lazy(() =>
 export function Workspace() {
   const state = useWorkspace();
   const page = state.pages.find((item) => item.id === state.selectedId);
-  const readOnly =
-    state.workspaces.find((item) => item.id === state.workspaceId)?.role === 'viewer';
   const parent = state.pages.find((item) => item.id === page?.parentId);
   const databaseIndex = state.view === 'database' && page?.kind !== 'database';
   const globalView = state.view === 'all' || state.view === 'graph' || databaseIndex;
@@ -79,10 +78,27 @@ export function Workspace() {
     return () => source.close();
   }, [state.workspaceId]);
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${state.sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <Sidebar />
       <main className="workspace-main" inert={state.sidebarOpen}>
+        <TabStrip />
         <header className="topbar">
+          <div className="history-controls">
+            <IconButton
+              label="Go back"
+              disabled={state.navigationHistory.index <= 0}
+              onClick={state.goBack}
+            >
+              <ArrowLeft size={16} />
+            </IconButton>
+            <IconButton
+              label="Go forward"
+              disabled={state.navigationHistory.index >= state.navigationHistory.entries.length - 1}
+              onClick={state.goForward}
+            >
+              <ArrowRight size={16} />
+            </IconButton>
+          </div>
           <div className="mobile-brand">
             <IconButton
               label="Open navigation"
@@ -118,6 +134,9 @@ export function Workspace() {
             </strong>
           </div>
           <div className="topbar-actions">
+            <IconButton label="Command palette" onClick={state.showCommands}>
+              <Command size={16} />
+            </IconButton>
             {page && !globalView && state.view === 'document' && (
               <span className={`save-status ${state.saveStatus}`}>
                 {state.saveStatus === 'saved' ? (
@@ -233,7 +252,10 @@ export function Workspace() {
               <FileText />
               <h1>A little space to think.</h1>
               <p>Create a page and make it yours.</p>
-              <button className="button primary" onClick={() => state.openCreatePage()}>
+              <button
+                className="button primary"
+                onClick={() => void state.createQuickPage().catch(state.setError)}
+              >
                 <Plus />
                 New page
               </button>
@@ -242,53 +264,17 @@ export function Workspace() {
         </div>
       </main>
       {state.dialog === 'new-page' && <NewPage />}
+      {state.commandOpen && <CommandPalette />}
       {state.dialog === 'search' && <Search />}
       {state.dialog === 'settings' && <Settings />}
       {state.dialog === 'invite' && <Invite />}
       {state.dialog === 'move' && (page || state.pendingMove) && <MovePage />}
       {state.dialog === 'page-menu' && page && (
-        <Dialog title="Page actions" onClose={() => state.openDialog(null)}>
-          <div className="menu-list">
-            <button
-              onClick={() => {
-                state.toggleFavorite(page.id);
-                state.openDialog(null);
-              }}
-            >
-              <Star />
-              {state.favorites.includes(page.id) ? 'Remove favorite' : 'Add to favorites'}
-            </button>
-            <button disabled={readOnly} onClick={() => state.openCreatePage(page.id)}>
-              <Plus />
-              Add subpage
-            </button>
-            <button
-              onClick={() => state.openDialog('move')}
-              disabled={readOnly || page.kind === 'record'}
-            >
-              <FolderInput />
-              Move page
-            </button>
-            <button
-              onClick={() =>
-                void download(`/api/pages/${page.id}/markdown`, page.title + '.md').catch(
-                  state.setError,
-                )
-              }
-            >
-              <FileText />
-              Export text as Markdown
-            </button>
-            <button
-              className="danger"
-              disabled={readOnly}
-              onClick={() => void state.trashPage(page.id).catch(state.setError)}
-            >
-              <Trash2 />
-              Move to trash
-            </button>
-          </div>
-        </Dialog>
+        <PageActions
+          page={page}
+          anchor={document.querySelector<HTMLElement>('.topbar [aria-label="Page actions"]')}
+          close={() => state.openDialog(null)}
+        />
       )}
     </div>
   );

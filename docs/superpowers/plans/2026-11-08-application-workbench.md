@@ -23,9 +23,9 @@ English UI/code/docs, Brazilian Portuguese chat. Continuous blocks. No user data
 
 **Files:** `apps/web/src/workbench/{state,preferences,commands,TabStrip,CommandPalette}.ts/tsx`; store, App, Workspace, Sidebar, Editor link handling and CSS. Tests: `tests/workbench.test.ts`, `e2e/workbench.spec.ts`.
 **Interfaces:** Workbench IDs/view/pinned state and scoped preference gateway, store `createQuickPage`, command definitions, title focus request.
-- [ ] RED: open/activate/close/reopen/reorder tabs, scope isolation and removed references; browser Ctrl Alt N creates directly and focuses title, modifier-click opens a tab, palette navigates by keyboard.
-- [ ] Implement scoped tabs and one command registry; integrate direct create, context menus, back/forward and recent working context. Keep advanced creation optional.
-- [ ] Verify focused tests plus full behavior suite and browser flows; commit verified milestone.
+- [x] RED: open/activate/close/reopen/reorder tabs, scope isolation and removed references; browser Ctrl Alt N creates directly and focuses title, modifier-click opens a tab, palette navigates by keyboard.
+- [x] Implement scoped tabs and one command registry; integrate direct create, context menus, back/forward and recent working context. Keep advanced creation optional.
+- [x] Verify focused tests plus full behavior suite and browser flows; commit verified milestone.
 
 ### Task 2: Editor depth
 
@@ -71,3 +71,7 @@ English UI/code/docs, Brazilian Portuguese chat. Continuous blocks. No user data
 ## Execution ledger
 
 Initial authoritative state: clean main at 0d18807; local ports 5173 and 3001 live. Starting assessment: current source has no workbench tabs, command registry, discussion surface or alternate database layouts. IAB confirmed ordinary content insertion still uses a central configuration dialog. The initial research and design are recorded before implementation. The plan retains the full goal rather than treating the first milestone as completion.
+
+- Task 1 verified: 62/62 behavior tests across 17 files, 20/20 browser tests, typecheck and web/server build passed. Native IAB verified Ctrl Alt N title focus, direct typing and palette navigation. Screenshot QA at 1536x1024, 390x844 and 360x800 found no errors/overlays or horizontal overflow. Scoped window preferences fixed a reproduced two-window restoration failure. A reproduced null-selection refresh bug no longer replaces global database navigation. Closing a disconnected tab preserves and later synchronizes its draft.
+- Test correction: the original collaboration test refocused the contenteditable root after positioning two carets. It now asserts DOM caret paragraphs and uses each page keyboard directly; three focused repetitions and the full suite passed. This tests actual simultaneous typing in distinct paragraphs rather than accidentally interleaving both writers at the root.
+- Task 1 visual comparison: the reference and current desktop/mobile screenshots were inspected. Preserved white continuous content, restrained neutral app chrome, real document copy, Inter 16/24 body and compact controls. OS window buttons are excluded; inspector remains closed by default under the earlier user requirement; only genuinely opened pages appear as tabs. The generated drawing is a builder reference, not a claim of user approval or final whole-product visual sign-off.

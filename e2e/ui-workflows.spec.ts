@@ -51,7 +51,7 @@ test('creates pages through the UI, edits table structure, embeds an editable da
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
-  await page.getByRole('button', { name: 'Create page', exact: true }).click();
+  await page.getByRole('button', { name: 'New page options', exact: true }).click();
   const dialog = page.getByRole('dialog');
   const title = `Interface workflow ${Date.now()}`;
   await expect(dialog.getByLabel('Title', { exact: true })).toBeFocused();

@@ -3,6 +3,7 @@ import { useWorkspace } from './state/store.js';
 import { SignIn } from './identity/SignIn.js';
 import { Workspace } from './workspace/Workspace.js';
 import { WorkspaceSetup, InvitationAccept } from './identity/Onboarding.js';
+import { shortcutCommand } from './workbench/commands.js';
 export default function App() {
   const loading = useWorkspace((state) => state.loading);
   const user = useWorkspace((state) => state.user);
@@ -13,9 +14,13 @@ export default function App() {
     void useWorkspace.getState().initialize();
     const online = () => useWorkspace.setState({ online: navigator.onLine });
     const keys = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      if (event.defaultPrevented || event.isComposing) return;
+      const command = shortcutCommand(event, useWorkspace.getState());
+      if (command) {
         event.preventDefault();
-        useWorkspace.getState().openDialog('search');
+        void Promise.resolve(command.run(useWorkspace.getState())).catch(
+          useWorkspace.getState().setError,
+        );
       }
     };
     window.addEventListener('online', online);

@@ -17,11 +17,9 @@ test('database controls save typed values, relations, filtered views, sorting, f
     title = `Database workflow ${Date.now()}`;
   const alpha = `Alpha ${Date.now()}`,
     zeta = `Zeta ${Date.now()}`;
-  await expect(dialog.getByRole('combobox', { name: 'Page type', exact: true })).toHaveValue(
-    'database',
-  );
-  await dialog.getByLabel('Title', { exact: true }).fill(title);
-  await dialog.getByRole('button', { name: 'Create page', exact: true }).click();
+  await expect(page.getByLabel('Page title', { exact: true })).toHaveValue('Untitled database');
+  await page.getByLabel('Page title', { exact: true }).fill(title);
+  await page.getByLabel('Page title', { exact: true }).press('Enter');
   await expect(page.getByRole('table', { name: 'Database records' })).toBeVisible();
   const id = page.url().split('#')[1].split('/')[0];
   async function property(name: string, type: string) {
@@ -82,7 +80,10 @@ test('database controls save typed values, relations, filtered views, sorting, f
   await page.getByRole('button', { name: 'All records', exact: true }).click();
   await expect(page.getByLabel(`Effort for ${alpha}`, { exact: true })).toHaveValue('42');
   await page.getByRole('button', { name: 'Page actions', exact: true }).click();
-  await dialog.getByRole('button', { name: 'Move to trash', exact: true }).click();
+  await page
+    .getByRole('menu', { name: 'Page actions' })
+    .getByRole('menuitem', { name: 'Move to trash', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await dialog.getByRole('button', { name: 'Trash', exact: true }).click();
   await dialog

@@ -14,12 +14,16 @@ import {
   Folder,
   LogOut,
   X,
+  Command,
+  SlidersHorizontal,
+  MoreHorizontal,
 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '../state/store.js';
 import { IconButton } from '../ui/IconButton.js';
 import type { Page } from '../../../../packages/contracts/src/index.js';
 import { useTreeDrag } from './useTreeDrag.js';
+import { PageActions } from './PageActions.js';
 function PageRow({
   page,
   depth,
@@ -30,6 +34,11 @@ function PageRow({
   drop?: { id: string | null; edge: string } | null;
 }) {
   const pages = useWorkspace((state) => state.pages);
+  const [menu, setMenu] = useState<HTMLElement | null>(null);
+  const readOnly = useWorkspace(
+    (state) =>
+      state.workspaces.find((workspace) => workspace.id === state.workspaceId)?.role === 'viewer',
+  );
   const selected = useWorkspace((state) => state.selectedId);
   const expanded = useWorkspace((state) => state.expanded.includes(page.id));
   const cursor = useWorkspace((state) => state.navigationCursors[page.id]);
@@ -43,6 +52,10 @@ function PageRow({
       <div
         className={`tree-row ${selected === page.id ? 'selected' : ''} ${drop?.id === page.id ? 'tree-drop-' + drop.edge : ''}`}
         data-tree-page={page.id}
+        onContextMenu={(event) => {
+          event.preventDefault();
+          setMenu(event.currentTarget);
+        }}
         style={{ '--depth': Math.min(depth, 8) } as React.CSSProperties}
       >
         {hasChildren ? (
@@ -58,16 +71,39 @@ function PageRow({
         )}
         <button
           className="tree-page"
-          onClick={() =>
-            useWorkspace
-              .getState()
-              .navigate(page.id, page.kind === 'database' ? 'database' : 'document')
-          }
+          onClick={(event) => {
+            const state = useWorkspace.getState();
+            if (event.ctrlKey || event.metaKey)
+              state.openTab(page.id, page.kind === 'database' ? 'database' : 'document');
+            else state.navigate(page.id, page.kind === 'database' ? 'database' : 'document');
+          }}
         >
           <Icon />
           <span>{page.title}</span>
         </button>
+        <span className="tree-row-actions" data-tree-control>
+          {page.kind === 'document' && !readOnly && (
+            <button
+              aria-label={`Add subpage to ${page.title}`}
+              onClick={() =>
+                void useWorkspace
+                  .getState()
+                  .createQuickPage(page.id)
+                  .catch(useWorkspace.getState().setError)
+              }
+            >
+              <Plus size={13} />
+            </button>
+          )}
+          <button
+            aria-label={`Actions for ${page.title}`}
+            onClick={(event) => setMenu(event.currentTarget)}
+          >
+            <MoreHorizontal size={13} />
+          </button>
+        </span>
       </div>
+      {menu && <PageActions page={page} anchor={menu} close={() => setMenu(null)} />}
       {expanded &&
         children.map((child) => (
           <PageRow key={child.id} page={child} depth={depth + 1} drop={drop} />
@@ -194,6 +230,14 @@ export function Sidebar() {
           <kbd>Ctrl K</kbd>
         </button>
         <nav className="main-nav">
+          <button
+            className="new-page-trigger"
+            disabled={workspace?.role === 'viewer'}
+            onClick={() => void state.createQuickPage().catch(state.setError)}
+          >
+            <Plus />
+            New page<kbd>Ctrl Alt N</kbd>
+          </button>
           <button onClick={() => state.navigate(state.selectedId, 'all')}>
             <Files />
             All pages
@@ -217,9 +261,16 @@ export function Sidebar() {
             <IconButton
               label="Create page"
               disabled={workspace?.role === 'viewer'}
-              onClick={() => state.openCreatePage()}
+              onClick={() => void state.createQuickPage().catch(state.setError)}
             >
               <Plus />
+            </IconButton>
+            <IconButton
+              label="New page options"
+              disabled={workspace?.role === 'viewer'}
+              onClick={() => state.openCreatePage()}
+            >
+              <SlidersHorizontal size={13} />
             </IconButton>
           </div>
           {drag.label && (
@@ -261,6 +312,10 @@ export function Sidebar() {
           </div>
         </div>
         <footer className="sidebar-footer">
+          <button onClick={state.showCommands}>
+            <Command />
+            Commands<kbd>Ctrl Shift P</kbd>
+          </button>
           <button onClick={() => state.openDialog('invite')}>
             <UserPlus />
             Invite people

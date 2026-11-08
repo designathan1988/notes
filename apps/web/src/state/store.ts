@@ -10,11 +10,13 @@ import { databaseSlice, type DatabaseSlice } from '../databases/state.js';
 import { knowledgeSlice, type KnowledgeSlice } from '../knowledge/state.js';
 import { navigationSlice, type NavigationSlice } from '../navigation/state.js';
 import { openRecovery } from '../documents/recovery.js';
+import { workbenchSlice, type WorkbenchSlice } from '../workbench/state.js';
 type User = { id: string; name: string; email: string };
 const pageWrites = new Map<string, Promise<void>>();
 export type View = 'document' | 'database' | 'graph' | 'all';
 export type Dialog = 'search' | 'new-page' | 'page-menu' | 'settings' | 'invite' | 'move' | null;
-export interface WorkspaceState extends DatabaseSlice, KnowledgeSlice, NavigationSlice {
+export interface WorkspaceState
+  extends DatabaseSlice, KnowledgeSlice, NavigationSlice, WorkbenchSlice {
   user: User | null;
   workspaces: Workspace[];
   workspaceId: string | null;
@@ -61,6 +63,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   ...databaseSlice(set, get),
   ...knowledgeSlice(set, get),
   ...navigationSlice(set, get),
+  ...workbenchSlice(set, get),
   user: null,
   workspaces: [],
   workspaceId: null,
@@ -124,6 +127,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       searchResults: [],
       knowledgeVersion: get().knowledgeVersion + 1,
     });
+    get().restoreWorkbench();
     try {
       const fromHash = location.hash.slice(1).split('/');
       const snapshot = await api<NavigationSnapshot>(
@@ -145,6 +149,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
           : 'document') as View,
         'replace',
       );
+      await get().reload();
     } catch (error) {
       get().setError(error);
     } finally {
@@ -163,6 +168,10 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
           body: json({
             loaded: get()
               .pages.map((page) => page.id)
+              .concat(
+                get().tabs.flatMap((tab) => (tab.pageId ? [tab.pageId] : [])),
+                get().recentPageIds,
+              )
               .slice(0, 5000),
             selected,
             expanded: get().expanded,
@@ -176,7 +185,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
           if (!cursors[key] || !cursor) cursors[key] = cursor;
         set({
           pages: snapshot.pages,
-          selectedId: snapshot.selectedId,
+          selectedId: selected === null ? null : snapshot.selectedId,
           expanded: [...new Set([...get().expanded, ...snapshot.expanded])].filter((id) =>
             snapshot.pages.some((page) => page.id === id),
           ),
@@ -186,6 +195,13 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
           ...(get().connectionError ? { error: null, connectionError: false } : {}),
         });
         get().invalidateKnowledge();
+        get().reconcileTabs(snapshot.pages);
+        if (selected !== null && snapshot.selectedId !== selected)
+          get().navigate(
+            snapshot.selectedId,
+            ['all', 'graph'].includes(get().view) ? get().view : undefined,
+            'replace',
+          );
         const selectedPage = snapshot.pages.find((page) => page.id === snapshot.selectedId);
         if (get().view === 'document' && selectedPage?.kind === 'database')
           get().navigate(selectedPage.id, 'database', 'replace');
@@ -213,9 +229,15 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       view = 'database';
       if (mode === 'none') mode = 'replace';
     }
-    set({ selectedId: id, view, sidebarOpen: false, dialog: null });
+    if (mode === 'push' && get().selectedId === id && get().view === view) mode = 'replace';
+    get().trackNavigation(id, view, mode);
+    set({ selectedId: id, view, sidebarOpen: false, dialog: null, commandOpen: false });
     if (mode !== 'none')
-      history[mode === 'replace' ? 'replaceState' : 'pushState'](null, '', `#${id ?? ''}/${view}`);
+      history[mode === 'replace' ? 'replaceState' : 'pushState'](
+        { noteWorkbench: { workspaceId: get().workspaceId, index: get().navigationHistory.index } },
+        '',
+        `#${id ?? ''}/${view}`,
+      );
     if (id && !get().pages.some((page) => page.id === id)) {
       void get().reload();
     }
@@ -271,9 +293,13 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     }
   },
   async trashPage(id) {
+    const selected = get().selectedId;
     await api(`/pages/${id}`, { method: 'DELETE' });
     await get().reload();
-    get().navigate(get().pages[0]?.id ?? null);
+    if (selected && !get().pages.some((page) => page.id === selected)) {
+      const next = get().tabs.find((tab) => tab.pageId);
+      get().navigate(next?.pageId ?? get().selectedId ?? get().pages[0]?.id ?? null, next?.view);
+    }
   },
   toggleExpanded(id) {
     if (!get().expanded.includes(id)) void get().loadChildren(id).catch(get().setError);
@@ -311,6 +337,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
         }
       }
     }
+    get().clearWorkbench();
     set({
       user: null,
       pages: [],

@@ -48,7 +48,16 @@ test('two independent identities edit, persist, and reopen one shared document',
   await expect(two.locator('p')).toHaveCount(2);
   await one.locator('p').first().click();
   await two.locator('p').last().click();
-  await Promise.all([one.pressSequentially('Alpha '), two.pressSequentially('Beta ')]);
+  // Keep each explicitly positioned caret: typing through the root locator can
+  // refocus a background contenteditable and reset it to the first paragraph.
+  const caretParagraph = (root: Element) => {
+    const anchor = window.getSelection()?.anchorNode;
+    const element = anchor instanceof Element ? anchor : anchor?.parentElement;
+    return [...root.querySelectorAll('p')].indexOf(element?.closest('p') as HTMLParagraphElement);
+  };
+  expect(await one.evaluate(caretParagraph)).toBe(0);
+  expect(await two.evaluate(caretParagraph)).toBe(1);
+  await Promise.all([a.keyboard.type('Alpha '), b.keyboard.type('Beta ')]);
   await expect(one).toContainText('Alpha');
   await expect(one).toContainText('Beta');
   await expect(two).toContainText('Alpha');

@@ -140,9 +140,9 @@ function ConnectedEditor({ session }: { session: DocumentSession }) {
           );
           if (target) {
             event.preventDefault();
-            useWorkspace
-              .getState()
-              .navigate(target.dataset.pageLink ?? target.dataset.wikiLink ?? null);
+            const id = target.dataset.pageLink ?? target.dataset.wikiLink ?? null;
+            if (event.ctrlKey || event.metaKey) useWorkspace.getState().openTab(id);
+            else useWorkspace.getState().navigate(id);
             return true;
           }
           return false;

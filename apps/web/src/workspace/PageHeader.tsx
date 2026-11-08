@@ -9,6 +9,14 @@ function fit(element: HTMLTextAreaElement) {
 export function PageHeader({ page, connections = 0 }: { page: Page; connections?: number }) {
   const title = useRef<HTMLTextAreaElement>(null),
     description = useRef<HTMLTextAreaElement>(null);
+  const focusTitleId = useWorkspace((state) => state.focusTitleId);
+  useLayoutEffect(() => {
+    if (focusTitleId === page.id && title.current) {
+      title.current.focus();
+      title.current.select();
+      useWorkspace.setState({ focusTitleId: null });
+    }
+  }, [focusTitleId, page.id]);
   useLayoutEffect(() => {
     const resize = () => {
       if (title.current) fit(title.current);
@@ -30,6 +38,13 @@ export function PageHeader({ page, connections = 0 }: { page: Page; connections?
         <textarea
           ref={title}
           onInput={(event) => fit(event.currentTarget)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              event.currentTarget.blur();
+              document.querySelector<HTMLElement>('[aria-label="Page content"]')?.focus();
+            }
+          }}
           key={page.id + page.title}
           readOnly={readOnly}
           aria-label="Page title"

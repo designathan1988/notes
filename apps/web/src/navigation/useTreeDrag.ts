@@ -15,7 +15,12 @@ export function useTreeDrag() {
   function start(event: ReactPointerEvent<HTMLElement>) {
     const row = (event.target as HTMLElement).closest<HTMLElement>('[data-tree-page]');
     const id = row?.dataset.treePage;
-    if (!id || event.button !== 0 || (event.target as HTMLElement).closest('.tree-toggle')) return;
+    if (
+      !id ||
+      event.button !== 0 ||
+      (event.target as HTMLElement).closest('.tree-toggle,[data-tree-control]')
+    )
+      return;
     const state = useWorkspace.getState();
     const source = state.pages.find((page) => page.id === id);
     if (

@@ -2,8 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Search as SearchIcon, FileText, ArrowUpLeft } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
 import { Dialog } from '../ui/Dialog.js';
+import type { SearchResult } from '../../../../packages/contracts/src/index.js';
 export function Search() {
-  const results = useWorkspace((state) => state.searchResults);
+  const searched = useWorkspace((state) => state.searchResults);
+  const recentIds = useWorkspace((state) => state.recentPageIds);
+  const pages = useWorkspace((state) => state.pages);
   const loading = useWorkspace((state) => state.searchLoading);
   const indexing = useWorkspace((state) => state.indexing);
   const search = useWorkspace((state) => state.search);
@@ -13,6 +16,14 @@ export function Search() {
   const [after, setAfter] = useState('');
   const [active, setActive] = useState(0);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const recent:SearchResult[] = recentIds.flatMap((id) => {
+    const page = pages.find((page) => page.id === id);
+    return page
+      ? [{ id: page.id, title: page.title, kind: page.kind, snippet: page.description }]
+      : [];
+  });
+  const showingRecent = !query && !kind && !after && recent.length > 0;
+  const results = showingRecent ? recent : searched;
   useEffect(() => {
     resultsRef.current
       ?.querySelectorAll('[role=option]')
@@ -84,6 +95,7 @@ export function Search() {
           />
         </label>
       </div>
+      {showingRecent && <p className="block-menu-caption">Recently opened</p>}
       <div className="search-results" ref={resultsRef} role="listbox" aria-label="Search results">
         {results.map((result, index) => (
           <button
