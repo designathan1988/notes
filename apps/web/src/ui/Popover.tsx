@@ -5,11 +5,13 @@ export function Popover({
   label,
   close,
   children,
+  role = 'menu',
 }: {
   anchor: HTMLElement | null;
   label: string;
   close(): void;
   children: ReactNode;
+  role?: 'menu' | 'dialog';
 }) {
   const root = useRef<HTMLDivElement>(null),
     [position, setPosition] = useState({ left: 0, top: 0 });
@@ -30,10 +32,13 @@ export function Popover({
   useEffect(() => {
     const previous = document.activeElement as HTMLElement;
     const element = root.current;
-    root.current
-      ?.querySelectorAll('button')
-      .forEach((button) => button.setAttribute('role', 'menuitem'));
-    root.current?.querySelector<HTMLElement>('button:not(:disabled),input')?.focus();
+    if (role === 'menu')
+      element
+        ?.querySelectorAll('button')
+        .forEach((button) => button.setAttribute('role', 'menuitem'));
+    const initial =
+      role === 'dialog' ? element?.querySelector<HTMLElement>('[aria-selected="true"]') : null;
+    (initial ?? element?.querySelector<HTMLElement>('button:not(:disabled),input'))?.focus();
     const outside = (event: PointerEvent) => {
       if (!root.current?.contains(event.target as Node) && !anchor?.contains(event.target as Node))
         close();
@@ -47,11 +52,11 @@ export function Popover({
       )
         previous.focus();
     };
-  }, [anchor]);
+  }, [anchor, role]);
   return createPortal(
     <div
       ref={root}
-      role="menu"
+      role={role}
       aria-label={label}
       className="app-popover"
       style={position}
@@ -61,7 +66,7 @@ export function Popover({
           event.stopPropagation();
           close();
         }
-        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        if (role === 'menu' && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
           event.preventDefault();
           const items = [
               ...root.current!.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'),

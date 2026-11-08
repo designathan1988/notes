@@ -6,7 +6,6 @@ import {
   Network,
   Database,
   Plus,
-  Star,
   UserPlus,
   Settings,
   Building2,
@@ -19,6 +18,7 @@ import {
   MoreHorizontal,
   LayoutTemplate,
   SquareDashed,
+  BookOpen,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '../state/store.js';
@@ -182,6 +182,18 @@ export function Sidebar() {
   const workspace = state.workspaces.find((item) => item.id === state.workspaceId);
   const templateId = state.pages.find((page) => page.id === state.selectedId)?.templateRootId,
     template = state.pages.find((page) => page.id === templateId);
+  const destinations = [
+    { view: 'all', label: 'All pages', Icon: Files },
+    { view: 'graph', label: 'Knowledge graph', Icon: Network },
+    { view: 'database', label: 'Databases', Icon: Database },
+    { view: 'templates', label: 'Templates', Icon: LayoutTemplate },
+    { view: 'canvas', label: 'Canvases', Icon: SquareDashed },
+  ] as const;
+  const utilities = [
+    { label: 'Commands', Icon: Command, run: state.showCommands },
+    { label: 'Invite people', Icon: UserPlus, run: () => state.openDialog('invite') },
+    { label: 'Settings', Icon: Settings, run: () => state.openDialog('settings') },
+  ];
   return (
     <>
       <button
@@ -206,174 +218,192 @@ export function Sidebar() {
         >
           <X size={18} />
         </button>
-        <a
-          className="brand"
-          href="#"
-          onClick={(event) => {
-            event.preventDefault();
-            state.navigate(
-              state.pages.find((p) => p.title === 'Product direction')?.id ??
-                state.pages[0]?.id ??
-                null,
-            );
-          }}
-        >
-          <span className="brand-mark">
-            <i />
-            <i />
-            <i />
-            <i />
-          </span>
-          Note
-        </a>
-        <label className="workspace-select">
-          <Building2 size={17} />
-          <select
-            aria-label="Workspace"
-            value={state.workspaceId ?? ''}
-            onChange={(event) => void state.chooseWorkspace(event.target.value)}
-          >
-            {state.workspaces.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
+        <nav className="activity-rail" aria-label="Workspace tools">
+          <div className="activity-destinations">
+            {destinations.map(({ view, label, Icon }) => {
+              const active = template
+                ? view === 'templates'
+                : state.view === view || (view === 'all' && state.view === 'document');
+              return (
+                <button
+                  key={view}
+                  className={`activity-button${active ? ' active' : ''}`}
+                  aria-label={label}
+                  aria-current={active ? 'page' : undefined}
+                  onClick={() =>
+                    state.navigate(['all', 'graph'].includes(view) ? state.selectedId : null, view)
+                  }
+                >
+                  <Icon />
+                  <span className="activity-label" aria-hidden="true">
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="activity-utilities">
+            {utilities.map(({ label, Icon, run }) => (
+              <button key={label} className="activity-button" aria-label={label} onClick={run}>
+                <Icon />
+                <span className="activity-label" aria-hidden="true">
+                  {label}
+                </span>
+              </button>
             ))}
-          </select>
-          <ChevronDown size={15} />
-        </label>
-        <button className="search-trigger" onClick={() => state.openDialog('search')}>
-          <Search size={18} />
-          <span>Search anything</span>
-          <kbd>Ctrl K</kbd>
-        </button>
-        <nav className="main-nav">
-          <button
-            className="new-page-trigger"
-            disabled={workspace?.role === 'viewer'}
-            onClick={() => void state.createQuickPage().catch(state.setError)}
-          >
-            <Plus />
-            New page<kbd>Ctrl Alt N</kbd>
-          </button>
-          <button onClick={() => state.navigate(state.selectedId, 'all')}>
-            <Files />
-            All pages
-          </button>
-          <button onClick={() => state.navigate(state.selectedId, 'graph')}>
-            <Network />
-            Knowledge graph
-          </button>
-          <button onClick={() => state.navigate(null, 'database')}>
-            <Database />
-            Databases
-          </button>
-          <button onClick={() => state.navigate(null, 'templates')}>
-            <LayoutTemplate />
-            Templates
-          </button>
-          <button onClick={() => state.navigate(null, 'canvas')}>
-            <SquareDashed />
-            Canvases
-          </button>
+          </div>
         </nav>
-        <div className="sidebar-scroll">
-          <div
-            className="section-label"
-            data-tree-root
-            data-drag-over={drag.target?.id === null || undefined}
+        <div className="sidebar-pane">
+          <a
+            className="brand"
+            href="#"
+            onClick={(event) => {
+              event.preventDefault();
+              state.navigate(
+                state.pages.find((p) => p.title === 'Product direction')?.id ??
+                  state.pages[0]?.id ??
+                  null,
+              );
+            }}
           >
-            <span>Workspace</span>
-            <IconButton
-              label="Create page"
+            <BookOpen className="brand-icon" aria-hidden="true" />
+            Note
+          </a>
+          <label className="workspace-select">
+            <Building2 size={17} />
+            <select
+              aria-label="Workspace"
+              value={state.workspaceId ?? ''}
+              onChange={(event) => void state.chooseWorkspace(event.target.value)}
+            >
+              {state.workspaces.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={15} />
+          </label>
+          <button className="search-trigger" onClick={() => state.openDialog('search')}>
+            <Search size={18} />
+            <span>Search anything</span>
+            <kbd>Ctrl K</kbd>
+          </button>
+          <nav className="main-nav">
+            <button
+              className="new-page-trigger"
               disabled={workspace?.role === 'viewer'}
               onClick={() => void state.createQuickPage().catch(state.setError)}
             >
               <Plus />
-            </IconButton>
-            <IconButton
-              label="New page options"
-              disabled={workspace?.role === 'viewer'}
-              onClick={() => state.openCreatePage()}
+              New page<kbd>Ctrl Alt N</kbd>
+            </button>
+          </nav>
+          <div className="sidebar-scroll">
+            {state.favorites.length > 0 && (
+              <>
+                <div className="section-label favorites-label">Favorites</div>
+                <div className="favorites">
+                  {state.pages
+                    .filter((page) => state.favorites.includes(page.id) && !page.templateRootId)
+                    .map((page) => (
+                      <button
+                        key={page.id}
+                        onClick={() =>
+                          state.navigate(
+                            page.id,
+                            page.kind === 'database' ? 'database' : 'document',
+                          )
+                        }
+                      >
+                        {page.icon ? (
+                          <span className="page-reference-icon" aria-hidden="true">
+                            {page.icon}
+                          </span>
+                        ) : (
+                          <FileText />
+                        )}
+                        <span>{page.title}</span>
+                      </button>
+                    ))}
+                </div>
+              </>
+            )}
+            <div
+              className="section-label"
+              data-tree-root
+              data-drag-over={drag.target?.id === null || undefined}
             >
-              <SlidersHorizontal size={13} />
-            </IconButton>
-          </div>
-          {drag.label && (
-            <div className="tree-drag-status" role="status">
-              Moving {drag.label}. Drop between pages to reorder, or on a page to nest.
-            </div>
-          )}
-          <div className="page-tree">
-            {state.pages
-              .filter((page) => !page.parentId && !page.templateRootId)
-              .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
-              .map((page) => (
-                <PageRow key={page.id} page={page} depth={0} drop={drag.target} />
-              ))}
-            {state.navigationCursors.root && (
-              <button
-                className="tree-more"
-                onClick={() => void state.loadChildren(null, true).catch(state.setError)}
+              <span>Workspace</span>
+              <IconButton
+                label="Create page"
+                disabled={workspace?.role === 'viewer'}
+                onClick={() => void state.createQuickPage().catch(state.setError)}
               >
-                Load more pages
-              </button>
+                <Plus />
+              </IconButton>
+              <IconButton
+                label="New page options"
+                disabled={workspace?.role === 'viewer'}
+                onClick={() => state.openCreatePage()}
+              >
+                <SlidersHorizontal size={13} />
+              </IconButton>
+            </div>
+            {drag.label && (
+              <div className="tree-drag-status" role="status">
+                Moving {drag.label}. Drop between pages to reorder, or on a page to nest.
+              </div>
+            )}
+            <div className="page-tree">
+              {state.pages
+                .filter((page) => !page.parentId && !page.templateRootId)
+                .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
+                .map((page) => (
+                  <PageRow key={page.id} page={page} depth={0} drop={drag.target} />
+                ))}
+              {state.navigationCursors.root && (
+                <button
+                  className="tree-more"
+                  onClick={() => void state.loadChildren(null, true).catch(state.setError)}
+                >
+                  Load more pages
+                </button>
+              )}
+            </div>
+            {template && (
+              <>
+                <div className="section-label">Editing template</div>
+                <div className="page-tree">
+                  <PageRow key={template.id} page={template} depth={0} drop={drag.target} />
+                </div>
+              </>
             )}
           </div>
-          {template && (
-            <>
-              <div className="section-label">Editing template</div>
-              <div className="page-tree">
-                <PageRow key={template.id} page={template} depth={0} drop={drag.target} />
-              </div>
-            </>
-          )}
-          <div className="section-label favorites-label">Favorites</div>
-          <div className="favorites">
-            {state.pages
-              .filter((page) => state.favorites.includes(page.id) && !page.templateRootId)
-              .map((page) => (
-                <button
-                  key={page.id}
-                  onClick={() =>
-                    state.navigate(page.id, page.kind === 'database' ? 'database' : 'document')
-                  }
-                >
-                  {page.icon ? (
-                    <span className="page-reference-icon" aria-hidden="true">
-                      {page.icon}
-                    </span>
-                  ) : (
-                    <Star />
-                  )}
-                  <span>{page.title}</span>
+          <footer className="sidebar-footer">
+            <div className="mobile-sidebar-utilities">
+              {utilities.map(({ label, Icon, run }) => (
+                <button key={label} onClick={run}>
+                  <Icon />
+                  <span>{label}</span>
                 </button>
               ))}
-          </div>
+            </div>
+            <div className="user-row">
+              <span className="avatar">{state.user?.name[0]}</span>
+              <span>{state.user?.name}</span>
+              <IconButton
+                label="Sign out"
+                onClick={() => void state.signOut().catch(state.setError)}
+              >
+                <LogOut size={15} />
+              </IconButton>
+              <small className={state.online ? 'connection' : 'connection offline'}>
+                {state.online ? 'Connected' : 'Offline'}
+              </small>
+            </div>
+          </footer>
         </div>
-        <footer className="sidebar-footer">
-          <button onClick={state.showCommands}>
-            <Command />
-            Commands<kbd>Ctrl Shift P</kbd>
-          </button>
-          <button onClick={() => state.openDialog('invite')}>
-            <UserPlus />
-            Invite people
-          </button>
-          <button onClick={() => state.openDialog('settings')}>
-            <Settings />
-            Settings
-          </button>
-          <div className="user-row">
-            <span className="avatar">{state.user?.name[0]}</span>
-            <span>{state.user?.name}</span>
-            <IconButton label="Sign out" onClick={() => void state.signOut().catch(state.setError)}>
-              <LogOut size={15} />
-            </IconButton>
-            <small className={state.online ? 'connection' : 'connection offline'}>
-              {state.online ? 'Connected' : 'Offline'}
-            </small>
-          </div>
-        </footer>
       </aside>
     </>
   );

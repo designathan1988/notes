@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Image, Smile, Tag, X } from 'lucide-react';
+import { Image, Smile, Tag, X, MoreHorizontal, SlidersHorizontal } from 'lucide-react';
 import type { Page, PageUpdate } from '../../../../packages/contracts/src/index.js';
 import { useWorkspace } from '../state/store.js';
 import { Popover } from '../ui/Popover.js';
@@ -28,8 +28,16 @@ const colors = [
   ['#d6dedf', 'Mist'],
 ];
 
-export function PagePresentation({ page, readOnly }: { page: Page; readOnly: boolean }) {
-  const [menu, setMenu] = useState<'icon' | 'cover' | null>(null),
+export function PagePresentation({
+  page,
+  readOnly,
+  showProperties,
+}: {
+  page: Page;
+  readOnly: boolean;
+  showProperties?: () => void;
+}) {
+  const [menu, setMenu] = useState<'appearance' | 'icon' | 'cover' | null>(null),
     [anchor, setAnchor] = useState<HTMLElement | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
@@ -148,123 +156,145 @@ export function PagePresentation({ page, readOnly }: { page: Page; readOnly: boo
       {!readOnly && (
         <div className="page-presentation-tools">
           <button
+            className="page-customize-trigger icon-button"
+            aria-label="Customize page"
+            title="Customize page"
+            aria-haspopup="menu"
             disabled={busy}
             onClick={(event) => {
               setAnchor(event.currentTarget);
-              setMenu('icon');
+              setMenu('appearance');
             }}
           >
-            <Smile size={13} />
-            {page.icon ? 'Change icon' : 'Add icon'}
+            <MoreHorizontal size={18} />
           </button>
-          {!cover && (
-            <button
-              disabled={busy}
-              onClick={(event) => {
-                setAnchor(event.currentTarget);
-                setMenu('cover');
-              }}
-            >
-              <Image size={13} />
-              Add cover
-            </button>
-          )}
         </div>
       )}
       {menu && (
         <Popover
+          key={menu}
           anchor={anchor}
-          label={menu === 'icon' ? 'Choose page icon' : 'Choose page cover'}
+          label={
+            menu === 'appearance'
+              ? 'Customize page'
+              : menu === 'icon'
+                ? 'Choose page icon'
+                : 'Choose page cover'
+          }
           close={() => !busy && setMenu(null)}
         >
-          <div className="presentation-picker">
-            <p className="block-menu-caption">
-              {menu === 'icon' ? 'Make it recognizable' : 'Give this page a cover'}
-            </p>
-            {menu === 'icon' ? (
-              <>
-                <div className="page-emoji-grid">
-                  {icons.map(([icon, name]) => (
-                    <button
-                      key={name}
-                      aria-label={name}
-                      disabled={busy}
-                      onClick={() => void save({ icon })}
-                    >
-                      {icon}
-                    </button>
-                  ))}
-                </div>
-                <label className="page-custom-icon">
-                  Your icon
-                  <input
-                    aria-label="Custom page icon"
-                    maxLength={40}
-                    placeholder="Any emoji or character"
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        void save({ icon: event.currentTarget.value });
-                      }
-                    }}
-                  />
-                </label>
-                {page.icon && (
-                  <button disabled={busy} onClick={() => void save({ icon: null })}>
-                    Remove icon
-                  </button>
-                )}
-              </>
-            ) : (
-              <>
-                <div className="page-color-grid">
-                  {colors.map(([color, name]) => (
-                    <button
-                      key={name}
-                      aria-label={name}
-                      disabled={busy}
-                      style={{ backgroundColor: color }}
-                      onClick={() => void save({ cover: { type: 'color', color } })}
+          {menu === 'appearance' ? (
+            <div className="menu-list">
+              <button onClick={() => setMenu('icon')}>
+                <Smile />
+                {page.icon ? 'Change icon' : 'Add icon'}
+              </button>
+              <button onClick={() => setMenu('cover')}>
+                <Image />
+                {cover ? 'Change cover' : 'Add cover'}
+              </button>
+              {showProperties && (
+                <button
+                  onClick={() => {
+                    setMenu(null);
+                    showProperties();
+                  }}
+                >
+                  <SlidersHorizontal />
+                  Page properties
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="presentation-picker">
+              <p className="block-menu-caption">
+                {menu === 'icon' ? 'Make it recognizable' : 'Give this page a cover'}
+              </p>
+              {menu === 'icon' ? (
+                <>
+                  <div className="page-emoji-grid">
+                    {icons.map(([icon, name]) => (
+                      <button
+                        key={name}
+                        aria-label={name}
+                        disabled={busy}
+                        onClick={() => void save({ icon })}
+                      >
+                        {icon}
+                      </button>
+                    ))}
+                  </div>
+                  <label className="page-custom-icon">
+                    Your icon
+                    <input
+                      aria-label="Custom page icon"
+                      maxLength={40}
+                      placeholder="Any emoji or character"
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          void save({ icon: event.currentTarget.value });
+                        }
+                      }}
                     />
-                  ))}
-                </div>
-                <label className="cover-upload">
-                  Upload image
-                  <input
-                    aria-label="Upload cover image"
-                    type="file"
-                    accept="image/png,image/jpeg,image/gif,image/webp"
-                    disabled={busy}
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (!file) return;
-                      const revision = page.revision;
-                      setBusy(true);
-                      setError('');
-                      void uploadFile(page.id, file)
-                        .then((image) =>
-                          useWorkspace
-                            .getState()
-                            .updatePage(
-                              page.id,
-                              { cover: { type: 'image', attachmentId: image.id, positionY: 50 } },
-                              revision,
-                            ),
-                        )
-                        .then(() => setMenu(null))
-                        .catch((failure) => setError(failure.message))
-                        .finally(() => setBusy(false));
-                    }}
-                  />
-                </label>
-                {cover && (
-                  <button disabled={busy} onClick={() => void save({ cover: null })}>
-                    Remove cover
-                  </button>
-                )}
-              </>
-            )}
-          </div>
+                  </label>
+                  {page.icon && (
+                    <button disabled={busy} onClick={() => void save({ icon: null })}>
+                      Remove icon
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="page-color-grid">
+                    {colors.map(([color, name]) => (
+                      <button
+                        key={name}
+                        aria-label={name}
+                        disabled={busy}
+                        style={{ backgroundColor: color }}
+                        onClick={() => void save({ cover: { type: 'color', color } })}
+                      />
+                    ))}
+                  </div>
+                  <label className="cover-upload">
+                    Upload image
+                    <input
+                      aria-label="Upload cover image"
+                      type="file"
+                      accept="image/png,image/jpeg,image/gif,image/webp"
+                      disabled={busy}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (!file) return;
+                        const revision = page.revision;
+                        setBusy(true);
+                        setError('');
+                        void uploadFile(page.id, file)
+                          .then((image) =>
+                            useWorkspace
+                              .getState()
+                              .updatePage(
+                                page.id,
+                                { cover: { type: 'image', attachmentId: image.id, positionY: 50 } },
+                                revision,
+                              ),
+                          )
+                          .then(() => setMenu(null))
+                          .catch((failure) => setError(failure.message))
+                          .finally(() => setBusy(false));
+                      }}
+                    />
+                  </label>
+                  {cover && (
+                    <button disabled={busy} onClick={() => void save({ cover: null })}>
+                      Remove cover
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </Popover>
       )}
       {error && (

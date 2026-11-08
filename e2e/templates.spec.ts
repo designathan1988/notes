@@ -74,7 +74,8 @@ test('saves and edits reusable page trees, captures the last typed content and c
   try {
     await page.goto(`/#${source.id}/document`);
     await expect(page.locator('.save-status')).toHaveText('Saved');
-    await page.getByRole('button', { name: 'Add cover', exact: true }).click();
+    await page.getByRole('button', { name: 'Customize page', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Add cover', exact: true }).click();
     await page.getByLabel('Upload cover image').setInputFiles({
       name: 'cover.png',
       mimeType: 'image/png',

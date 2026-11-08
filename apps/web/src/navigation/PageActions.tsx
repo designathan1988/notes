@@ -11,6 +11,9 @@ import {
   MessageSquare,
   LayoutTemplate,
   Files,
+  Search,
+  Maximize2,
+  Users,
 } from 'lucide-react';
 import type { Page } from '../../../../packages/contracts/src/index.js';
 import { useWorkspace } from '../state/store.js';
@@ -34,6 +37,50 @@ export function PageActions({
   return (
     <Popover label="Page actions" anchor={anchor} close={close}>
       <div className="menu-list">
+        <button onClick={() => run(() => state.openDialog('invite'))}>
+          <Users />
+          Share
+        </button>
+        {['document', 'record'].includes(page.kind) && (
+          <>
+            <button
+              onClick={() =>
+                run(() => {
+                  state.navigate(page.id);
+                  useWorkspace.getState().requestEditor('find');
+                })
+              }
+            >
+              <Search />
+              Find in page
+            </button>
+            {!readOnly && (
+              <button
+                onClick={() =>
+                  run(() => {
+                    state.navigate(page.id);
+                    useWorkspace.getState().requestEditor('templates');
+                  })
+                }
+              >
+                <LayoutTemplate />
+                Insert template
+              </button>
+            )}
+            <button
+              onClick={() =>
+                run(() => {
+                  state.navigate(page.id);
+                  useWorkspace.getState().toggleFocusMode();
+                })
+              }
+            >
+              <Maximize2 />
+              {state.focusMode ? 'Leave focus mode' : 'Enter focus mode'}
+            </button>
+            <hr />
+          </>
+        )}
         <button onClick={() => run(() => state.openTab(page.id))}>
           <ExternalLink />
           Open in new tab

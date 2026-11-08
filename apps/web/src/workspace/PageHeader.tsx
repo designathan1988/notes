@@ -1,4 +1,4 @@
-import { Clock3, FileText, Database, Network, SquareDashed } from 'lucide-react';
+import { Clock3, FileText, Database, Network, SquareDashed, ChevronDown } from 'lucide-react';
 import type { Page } from '../../../../packages/contracts/src/index.js';
 import { useWorkspace } from '../state/store.js';
 import { useLayoutEffect, useRef } from 'react';
@@ -18,7 +18,20 @@ export function PageHeader({
   compact?: boolean;
 }) {
   const title = useRef<HTMLTextAreaElement>(null),
-    description = useRef<HTMLTextAreaElement>(null);
+    description = useRef<HTMLTextAreaElement>(null),
+    metadata = useRef<HTMLDetailsElement>(null);
+  useLayoutEffect(() => {
+    if (metadata.current) {
+      metadata.current.open =
+        page.kind === 'record' ||
+        !!page.templateDatabaseId ||
+        !!page.tags?.length ||
+        !!page.properties?.fields.some((field) => !field.archived);
+      metadata.current
+        .querySelector('summary')
+        ?.setAttribute('aria-expanded', String(metadata.current.open));
+    }
+  }, [page.id]);
   const focusTitleId = useWorkspace((state) => state.focusTitleId);
   useLayoutEffect(() => {
     if (focusTitleId === page.id && title.current) {
@@ -45,7 +58,17 @@ export function PageHeader({
   return (
     <header className={`page-heading${compact ? ' page-heading-compact' : ''}`}>
       {!compact && (
-        <PagePresentation key={`presentation-${page.id}`} page={page} readOnly={readOnly} />
+        <PagePresentation
+          key={`presentation-${page.id}`}
+          page={page}
+          readOnly={readOnly}
+          showProperties={() => {
+            if (metadata.current) {
+              metadata.current.open = true;
+              metadata.current.querySelector<HTMLElement>('summary')?.focus();
+            }
+          }}
+        />
       )}
       <div className="title-row">
         {page.icon ? (
@@ -100,22 +123,43 @@ export function PageHeader({
                   .catch(useWorkspace.getState().setError);
             }}
           />
-          <div className="page-meta">
-            <span>
-              <Clock3 />
-              {new Date(page.updatedAt).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </span>
-            <span>
-              <Network />
-              {connections} connections
-            </span>
+          <div className="page-metadata-row">
+            <div className="page-meta">
+              <span>
+                <Clock3 />
+                {new Date(page.updatedAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </span>
+              <span>
+                <Network />
+                {connections} connections
+              </span>
+            </div>
+            <details
+              ref={metadata}
+              className="page-properties-disclosure"
+              onToggle={(event) =>
+                event.currentTarget
+                  .querySelector('summary')
+                  ?.setAttribute('aria-expanded', String(event.currentTarget.open))
+              }
+            >
+              <summary
+                role="button"
+                aria-label="Page properties"
+                aria-controls={`page-properties-${page.id}`}
+              >
+                Properties <ChevronDown size={13} />
+              </summary>
+              <div className="page-metadata-content" id={`page-properties-${page.id}`}>
+                <PageTags key={`tags-${page.id}`} page={page} readOnly={readOnly} />
+                <PageProperties key={`properties-${page.id}`} page={page} readOnly={readOnly} />
+              </div>
+            </details>
           </div>
-          <PageTags key={`tags-${page.id}`} page={page} readOnly={readOnly} />
-          <PageProperties key={`properties-${page.id}`} page={page} readOnly={readOnly} />
         </>
       )}
     </header>

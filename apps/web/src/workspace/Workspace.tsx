@@ -119,13 +119,6 @@ export function Workspace() {
             >
               <Menu />
             </IconButton>
-            <span className="brand-mark">
-              <i />
-              <i />
-              <i />
-              <i />
-            </span>
-            <b>Note</b>
           </div>
           <div className="breadcrumb">
             {parent && !globalView && (
@@ -194,10 +187,7 @@ export function Workspace() {
             >
               <MoreHorizontal />
             </IconButton>
-            <button
-              className="button primary share-button"
-              onClick={() => state.openDialog('invite')}
-            >
+            <button className="button share-button" onClick={() => state.openDialog('invite')}>
               <Users />
               Share
             </button>

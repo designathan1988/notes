@@ -25,11 +25,12 @@ test('page icons, uploaded covers, repositioning and tags persist and drive sear
   try {
     await page.goto(`/#${note.id}/document`);
     await expect(page.locator('.save-status')).toHaveText('Saved');
-    await expect(page.getByRole('button', { name: 'Add icon', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Add icon', exact: true }).click();
+    await page.getByRole('button', { name: 'Customize page', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Add icon', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Compass', exact: true }).click();
     await expect(page.locator('.page-icon')).toHaveText('🧭');
-    await page.getByRole('button', { name: 'Add cover', exact: true }).click();
+    await page.getByRole('button', { name: 'Customize page', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Add cover', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Sand', exact: true }).click();
     await expect(page.locator('.page-cover')).toBeVisible();
     await page.getByRole('button', { name: 'Change cover', exact: true }).click();
@@ -52,6 +53,7 @@ test('page icons, uploaded covers, repositioning and tags persist and drive sear
     await page.getByRole('button', { name: 'Save cover position', exact: true }).click();
     const persisted = await (await context.request.get(`/api/pages/${note.id}`)).json();
     expect(persisted.cover.positionY).not.toBe(50);
+    await page.getByRole('button', { name: 'Page properties', exact: true }).click();
     await page.getByRole('button', { name: 'Add tag', exact: true }).click();
     await page.getByRole('textbox', { name: 'New tag' }).fill('Field Research');
     await page.getByRole('textbox', { name: 'New tag' }).press('Enter');
@@ -79,7 +81,8 @@ test('page icons, uploaded covers, repositioning and tags persist and drive sear
         .locator('.page-icon')
         .evaluate((element) => parseFloat(getComputedStyle(element).fontSize)),
     );
-    await page.getByRole('button', { name: 'Change icon', exact: true }).click();
+    await page.getByRole('button', { name: 'Customize page', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Change icon', exact: true }).click();
     const menu = page.getByRole('menu', { name: 'Choose page icon' }),
       box = await menu.boundingBox();
     for (const button of await menu.locator('button,input').all()) {
