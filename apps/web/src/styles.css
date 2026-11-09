@@ -1,11 +1,18 @@
 @import '@fontsource-variable/geist';
 @import '@fontsource-variable/geist-mono';
-@layer tokens, base, layout, components, editor, responsive, variants, workbench, mosaic;
+@layer tokens, base, layout, components, editor, responsive, variants, workbench, mosaic, finish;
 
 @layer components {
+  /* Status floats over the control: a save must never move the rows around it mid-click. */
   .cell-saving {
-    display: inline-block;
-    margin-left: 6px;
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    padding: 0 4px;
+    border-radius: 4px;
+    background: var(--canvas);
     color: var(--muted);
     font: 400 0.71429rem/1.5 var(--ui);
   }
@@ -1050,12 +1057,6 @@
     margin: 5px 8px;
   }
 }
-@layer layout {
-  .app-shell.focus-mode > .sidebar,
-  .app-shell.focus-mode .context-panel {
-    display: none;
-  }
-}
 @layer responsive {
   @media (max-width: 600px) {
     .statistics-reading {
@@ -1418,11 +1419,6 @@
   }
 }
 @layer responsive {
-  @media (min-width: 701px) {
-    .app-shell.sidebar-collapsed > .sidebar {
-      display: none;
-    }
-  }
   @media (max-width: 700px) {
     .workbench-strip {
       padding: 0 5px;
@@ -1608,6 +1604,103 @@
       --shadow-xl:
         0 32px 90px -20px hsl(var(--shadow-color) / 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
     }
+  }
+}
+
+/* Mosaic foundations live in the base layer so every component layer can override them
+   (a later layer always beats an earlier one, whatever the specificity). */
+@layer base {
+  html,
+  body {
+    background: var(--sidebar);
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--accent) 26%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .lucide {
+    stroke-width: 1.75;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule-strong) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: var(--rule-strong) padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--faint) padding-box;
+  }
+  ::-webkit-scrollbar-button {
+    display: none;
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    transition:
+      background-color 0.14s var(--ease),
+      border-color 0.14s var(--ease),
+      color 0.14s var(--ease),
+      box-shadow 0.14s var(--ease);
+  }
+  /* Shortcut hints are quiet text, not little framed keys. */
+  kbd {
+    font: 500 0.75rem/1 var(--ui);
+    padding: 3px 6px;
+    border: 0;
+    border-radius: 5px;
+    background: var(--soft);
+    color: var(--muted);
+  }
+  .brand-mark {
+    flex: none;
+    display: block;
+  }
+  /* Separators span their container, also inside flex menus (the UA auto margins collapse them). */
+  hr {
+    align-self: stretch;
+    height: 0;
+    margin: 4px 0;
+    border: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  :where(
+    input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']),
+    select,
+    textarea
+  ) {
+    border-radius: 8px;
+    border-color: var(--rule-strong);
+    background-color: var(--canvas);
+    color: var(--ink);
+  }
+  :where(
+    input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']),
+    select,
+    textarea
+  ):focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--accent) 55%, transparent);
+    outline-offset: 1px;
+  }
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: var(--accent);
   }
 }
 @layer responsive {
@@ -1849,10 +1942,6 @@
     }
     .topbar-actions > .icon-button:not([aria-label='Page actions']),
     .topbar-actions .share-button {
-      display: none;
-    }
-    .topbar-actions > .icon-button[aria-label='Add to favorites'],
-    .topbar-actions > .icon-button[aria-label='Remove favorite'] {
       display: none;
     }
     .topbar-actions .save-status {
@@ -4830,7 +4919,7 @@
     font-size: 0.78571rem;
     border-bottom: 2px solid transparent;
   }
-  .page-panel-tabs button[aria-pressed='true'] {
+  .page-panel-tabs button[aria-selected='true'] {
     color: var(--ink);
     border-bottom-color: var(--ink);
   }
@@ -6162,6 +6251,16 @@
     display: flex;
     color: var(--ink);
   }
+  /* Collapse and focus states live in the same layer as the display they override. */
+  @media (min-width: 701px) {
+    .app-shell.sidebar-collapsed > .sidebar {
+      display: none;
+    }
+  }
+  .app-shell.focus-mode > .sidebar,
+  .app-shell.focus-mode .context-panel {
+    display: none;
+  }
   .sidebar-pane {
     padding: 0 12px;
     width: 100%;
@@ -6378,9 +6477,7 @@
     width: 32px;
     height: 32px;
   }
-  .topbar-actions > [aria-label='Command palette'],
-  .topbar-actions > [aria-label='Add to favorites'],
-  .topbar-actions > [aria-label='Remove favorite'] {
+  .topbar-actions > [aria-label='Command palette'] {
     display: none;
   }
   .save-status {
@@ -7970,68 +8067,6 @@
 /* Mosaic — the approved interface. One layer, last in the cascade; feature layers above own
    behavior and content structure. See tokens for the rules this layer follows. */
 @layer mosaic {
-  /* ---------- foundations ---------- */
-  html,
-  body {
-    background: var(--sidebar);
-  }
-  ::selection {
-    background: color-mix(in oklab, var(--accent) 26%, transparent);
-  }
-  :focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-  .lucide {
-    stroke-width: 1.75;
-  }
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: var(--rule-strong) transparent;
-  }
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  ::-webkit-scrollbar-track,
-  ::-webkit-scrollbar-corner {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    border: 3px solid transparent;
-    border-radius: 999px;
-    background: var(--rule-strong) padding-box;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--faint) padding-box;
-  }
-  ::-webkit-scrollbar-button {
-    display: none;
-  }
-  button,
-  a,
-  input,
-  select,
-  textarea {
-    transition:
-      background-color 0.14s var(--ease),
-      border-color 0.14s var(--ease),
-      color 0.14s var(--ease),
-      box-shadow 0.14s var(--ease);
-  }
-  kbd {
-    font: 500 0.79rem/1 var(--code);
-    padding: 3px 6px;
-    border: 1px solid var(--rule);
-    border-radius: 5px;
-    background: var(--soft);
-    color: var(--muted);
-  }
-  .brand-mark {
-    flex: none;
-    display: block;
-  }
-
   /* ---------- color roles: one per kind of content ---------- */
   [data-kind] {
     --k: var(--kind-document);
@@ -8077,6 +8112,8 @@
   .kind-tile svg {
     width: 15px;
     height: 15px;
+    /* The glyph always takes its tile's kind color, whatever list it sits in. */
+    color: inherit;
   }
   .kind-tile-emoji {
     font-size: 15px;
@@ -8152,30 +8189,6 @@
   }
   .text-button:hover {
     color: var(--accent-hover);
-  }
-  /* Zero specificity: any component rule for a field wins over these defaults. */
-  :where(
-    input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']),
-    select,
-    textarea
-  ) {
-    border-radius: 8px;
-    border-color: var(--rule-strong);
-    background-color: var(--canvas);
-    color: var(--ink);
-  }
-  :where(
-    input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']),
-    select,
-    textarea
-  ):focus-visible {
-    outline: none;
-    border-color: color-mix(in oklab, var(--accent) 65%, transparent);
-    box-shadow: var(--ring);
-  }
-  input[type='checkbox'],
-  input[type='radio'] {
-    accent-color: var(--accent);
   }
 
   /* ---------- overlays ---------- */
@@ -8722,22 +8735,18 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  /* Plain figures, no boxed grid: numbers read on the page itself. */
   .home-stats {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1px;
+    gap: 14px 16px;
     margin: 0;
-    overflow: hidden;
-    border: 1px solid var(--rule);
-    border-radius: 10px;
-    background: var(--rule);
   }
   .home-stats > div {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 12px 14px;
-    background: var(--soft);
+    padding: 0;
   }
   .home-stats dd {
     margin: 0;
@@ -9292,5 +9301,645 @@
   .command-results > button.active strong,
   .command-results > button[aria-selected='true'] strong {
     color: var(--ink);
+  }
+}
+
+@layer mosaic {
+  /* Writing surfaces are not form fields: the caret shows focus, never a frame. */
+  .ProseMirror:focus,
+  .ProseMirror:focus-visible,
+  [contenteditable='true']:focus-visible,
+  .page-title:focus-visible,
+  .page-description:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+}
+
+@layer mosaic {
+  /* Block menus: one row height, quiet shortcuts, borderless icon tiles. */
+  .block-popover {
+    border-color: var(--rule);
+    border-radius: 12px;
+    background: var(--canvas);
+    box-shadow: var(--shadow-lg);
+    padding: 4px;
+  }
+  .block-menu-search {
+    gap: 8px;
+    padding: 6px 8px 8px;
+    color: var(--muted);
+  }
+  .block-menu-search input {
+    font-size: 0.93rem;
+    color: var(--ink);
+  }
+  .block-menu-search kbd,
+  .block-action-list kbd {
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: 400 0.79rem/1 var(--code);
+    color: var(--muted);
+  }
+  .block-action-list {
+    display: grid;
+    gap: 1px;
+    padding: 4px 0;
+  }
+  .block-action-list button {
+    min-height: 32px;
+    padding: 0 8px;
+    gap: 10px;
+    border-radius: 7px;
+    font-size: 0.93rem;
+    color: var(--text2);
+  }
+  .block-action-list button svg {
+    width: 16px;
+    height: 16px;
+    color: var(--muted);
+  }
+  .block-action-list button.danger,
+  .block-action-list button.danger svg {
+    color: var(--danger);
+  }
+  .block-menu-caption {
+    padding: 10px 8px 6px;
+    font: 500 0.79rem/1 var(--ui);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted);
+  }
+  .block-type-list {
+    display: grid;
+    gap: 1px;
+  }
+  .block-type-list button {
+    min-height: 44px;
+    padding: 6px 8px;
+    gap: 12px;
+    border-radius: 7px;
+  }
+  .block-type-list button:hover,
+  .block-action-list button:hover,
+  .block-type-list button:focus-visible,
+  .block-action-list button:focus-visible,
+  .block-type-list button[aria-selected='true'] {
+    background: var(--hover);
+    color: var(--ink);
+  }
+  .block-type-icon {
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--selected);
+    color: var(--text2);
+  }
+  .block-type-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  .block-type-list strong {
+    font-size: 0.93rem;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .block-type-list small {
+    margin-top: 2px;
+    font-size: 0.79rem;
+    color: var(--muted);
+  }
+}
+
+@layer mosaic {
+  /* Block selection: whole blocks tinted, never the text inside them. */
+  .note-editor .content-block[data-block-selected] {
+    border-radius: 4px;
+    background: color-mix(in oklab, var(--accent) 13%, transparent);
+  }
+  .note-editor .content-block[data-block-selected] ::selection {
+    background: transparent;
+  }
+  .block-marquee {
+    position: fixed;
+    z-index: 30;
+    pointer-events: none;
+    border: 1px solid color-mix(in oklab, var(--accent) 45%, transparent);
+    border-radius: 3px;
+    background: color-mix(in oklab, var(--accent) 9%, transparent);
+  }
+}
+
+@layer mosaic {
+  /* The box owns the pointer while it is drawn; hover affordances stay out of its way. */
+  body[data-block-marquee] .block-gutter {
+    display: none;
+  }
+  /*
+   * The writing surface fills the pane so the formatting bar rests at the bottom edge
+   * instead of floating right under short documents; statistics follow the content.
+   */
+  .document-scroll:has(.note-editor) {
+    display: flex;
+    flex-direction: column;
+  }
+  .document-scroll:has(.note-editor) > .document-canvas {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    margin-bottom: 0;
+  }
+  .document-canvas > .editor-wrap {
+    flex: 1 0 auto;
+  }
+  .document-canvas > .editor-wrap > .document-utilities {
+    order: 3;
+  }
+  .document-canvas > .editor-wrap > .document-tools {
+    order: 4;
+    position: sticky;
+    bottom: 16px;
+    margin: auto auto 16px;
+    transform: none;
+  }
+}
+
+/*
+ * Final word on frames. This layer comes last, so it beats every earlier rule whatever its
+ * specificity: no field draws a border, outline or shadow, and nothing gets a focus ring.
+ * Focus shows as a quiet tint instead.
+ */
+@layer finish {
+  :focus,
+  :focus-visible {
+    outline: none;
+  }
+  :is(
+    input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']),
+    select,
+    textarea
+  ) {
+    border-color: transparent;
+    box-shadow: none;
+    outline: none;
+  }
+  /* Generic field rules use :where (zero specificity) so any specific rule below wins cleanly. */
+  :where(
+    input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']),
+    textarea,
+    select:not([data-tone])
+  ) {
+    background-color: transparent;
+  }
+  /*
+   * Fields in real forms (sign-in, dialogs, popovers) get a faint fill so people see where to
+   * type, still without a frame. Inline fields (new record row, cells, titles) stay bare.
+   */
+  :where(form, dialog, [role='dialog'], .app-popover, .block-popover)
+    :where(
+      input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']),
+      textarea,
+      select:not([data-tone])
+    ) {
+    background-color: var(--soft);
+  }
+  /* Toned selects are status chips: they keep their tinted fill. */
+  :is(.inline-record-create, .cell-control, .record-inspector-name, .block-menu-search)
+    :is(input, select:not([data-tone]), textarea),
+  :is(.inline-record-create, .cell-control, .record-inspector-name, .block-menu-search)
+    :is(input, select:not([data-tone]), textarea):focus {
+    background-color: transparent;
+  }
+  /* The new-record row reads as the next table row, confirmed with Enter. */
+  .inline-record-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font: 500 0.857rem/1 var(--ui);
+    cursor: pointer;
+  }
+  .inline-record-submit:not(:disabled):hover {
+    background: var(--selected);
+    color: var(--ink);
+  }
+  .inline-record-submit:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+  .inline-record-submit kbd {
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 0.75rem;
+  }
+  /* :where keeps this at the lowest specificity so bare inline fields can opt out. */
+  :where(
+    input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']),
+    textarea
+  ):focus {
+    background-color: color-mix(in oklab, var(--accent) 7%, transparent);
+  }
+  :is(
+    button,
+    a,
+    summary,
+    [role='button'],
+    [role='menuitem'],
+    [role='tab'],
+    [role='option']
+  ):focus-visible {
+    box-shadow: none;
+  }
+  :is(button, a, summary, [role='button'], [role='menuitem'], [role='tab'], [role='option']):not(
+      .primary
+    ):focus-visible {
+    background-color: var(--selected);
+  }
+  .primary:focus-visible {
+    filter: brightness(1.1);
+  }
+}
+
+@layer finish {
+  /* `hidden` always wins: no component layer may make a hidden element visible again. */
+  [hidden]:not([hidden='until-found']) {
+    display: none !important;
+  }
+}
+
+@layer finish {
+  /*
+   * A field inside a composer or search box shares one quiet surface with it: the wrapper is
+   * the fill, the field inside is bare. No frame on either.
+   */
+  :is(.comment-composer) {
+    border-color: transparent;
+    background-color: var(--soft);
+    box-shadow: none;
+  }
+  :is(.comment-composer) :is(input, textarea),
+  :is(.comment-composer) :is(input, textarea):focus {
+    background-color: transparent;
+  }
+  :is(.comment-composer):focus-within {
+    background-color: color-mix(in oklab, var(--accent) 7%, var(--soft));
+  }
+}
+
+@layer finish {
+  /*
+   * The record inspector and the page context panel share the right-hand slot. While a record
+   * is open it owns the slot, so the content never reserves room for both at once.
+   */
+  .workspace-content:has(.record-inspector) .context-panel,
+  .workspace-content:has(.record-inspector) .details-scrim {
+    display: none;
+  }
+}
+
+@layer finish {
+  /* Empty values say so in properties panels; table cells stay quiet. */
+  .cell-control input::placeholder {
+    color: var(--faint);
+  }
+  .cell-control select[data-empty] {
+    color: var(--faint);
+    background: transparent;
+  }
+  td .cell-control input::placeholder,
+  td .cell-control select[data-empty] {
+    color: transparent;
+  }
+  @media (min-width: 1201px) {
+    /* The inspector sits inside the floating sheet, not over its margin. */
+    .record-inspector {
+      top: 57px;
+      right: 9px;
+      bottom: 9px;
+      border-bottom-right-radius: var(--radius-lg);
+    }
+  }
+}
+
+@layer finish {
+  /* Toolbar selects size to their label so the chevron sits right after the text. */
+  .table-toolbar select,
+  .table-actions select,
+  .database-toolbar select {
+    field-sizing: content;
+    width: auto;
+    min-width: 0;
+  }
+}
+
+@layer finish {
+  /* Status chips hug their label like tags instead of filling the column like inputs. */
+  .cell-control select[data-tone],
+  .cell-control select[data-empty] {
+    field-sizing: content;
+    width: auto;
+    max-width: 100%;
+  }
+}
+
+@layer finish {
+  /* Date cells: an empty date shows nothing until it is pointed at; the picker icon is a hover affordance. */
+  .cell-control input[type='date'][data-empty]:not(:focus, :hover)::-webkit-datetime-edit {
+    color: transparent;
+  }
+  .cell-control input[type='date']::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    cursor: pointer;
+  }
+  .cell-control input[type='date']:is(:hover, :focus)::-webkit-calendar-picker-indicator {
+    opacity: 0.55;
+  }
+}
+
+@layer finish {
+  /* One style for shortcut hints everywhere: no frame, same family as the interface. */
+  kbd {
+    border-color: transparent;
+    font-family: var(--ui);
+  }
+}
+
+@layer finish {
+  /* Search reads like a command bar: the query is bare text, the filters are quiet chips. */
+  .search-input input,
+  .search-input input:focus {
+    background-color: transparent;
+  }
+  .search-filters :is(input, select),
+  .search-filters :is(input, select):focus {
+    border-radius: 6px;
+    background-color: transparent;
+    color: var(--muted);
+  }
+  .search-filters :is(input, select):is(:hover, :focus) {
+    background-color: var(--selected);
+    color: var(--ink);
+  }
+  .search-filters input[type='date']:not(:focus, :hover)::-webkit-datetime-edit {
+    color: var(--faint);
+  }
+  .search-filters input[type='date']::-webkit-calendar-picker-indicator {
+    opacity: 0.4;
+  }
+}
+
+@layer finish {
+  .search-filters select {
+    field-sizing: content;
+    width: auto;
+  }
+  /* One size for the whole filter row: inputs, select and the date label. */
+  .search-filters,
+  .search-filters :is(label, input, select) {
+    font-size: 0.857rem;
+  }
+  .search-filters label {
+    color: var(--muted);
+  }
+}
+
+@layer finish {
+  /* A member's role reads as a quiet label that opens a menu, not a form field. */
+  select.member-role {
+    field-sizing: content;
+    width: auto;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background-color: transparent;
+    color: var(--muted);
+  }
+  select.member-role:not(:disabled):hover {
+    background-color: var(--selected);
+    color: var(--ink);
+  }
+}
+
+@layer finish {
+  .settings-tabs {
+    align-items: flex-end;
+  }
+  .settings-tabs > [role='tablist'] {
+    display: flex;
+    gap: 12px;
+  }
+  .settings-tabs .settings-elsewhere {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    border-bottom-color: transparent;
+    color: var(--muted);
+  }
+  .settings-tabs .settings-elsewhere:hover {
+    color: var(--ink);
+  }
+}
+
+@layer finish {
+  /*
+   * Wide dialogs (settings, search) hold their top edge while their content changes height,
+   * instead of re-centering and jumping on every tab or keystroke.
+   */
+  dialog.dialog-wide {
+    margin-top: min(12vh, 120px);
+    margin-bottom: auto;
+    max-height: calc(100dvh - min(12vh, 120px) - 24px);
+  }
+  /* Section headings sit below the dialog title in the hierarchy. */
+  .settings-section h3 {
+    font: 600 1.07rem/1.35 var(--ui);
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+  }
+  .settings-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .trash-restore {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font: 500 0.857rem/1 var(--ui);
+    cursor: pointer;
+  }
+  .trash-restore svg {
+    width: 15px;
+    height: 15px;
+  }
+  .trash-restore:not(:disabled):hover {
+    background: var(--selected);
+    color: var(--ink);
+  }
+}
+
+@layer finish {
+  /*
+   * Any element that directly wraps a text field is the field's surface, never its frame.
+   * Search boxes (icon + field) get the quiet fill so people still see where to type.
+   */
+  :where(*):has(
+    > :is(
+      input:not(
+        [type='checkbox'],
+        [type='radio'],
+        [type='range'],
+        [type='color'],
+        [type='hidden'],
+        [type='file']
+      ),
+      textarea
+    )
+  ) {
+    border-color: transparent;
+    box-shadow: none;
+  }
+  :where(*):has(> svg):has(
+      > input:not(
+          [type='checkbox'],
+          [type='radio'],
+          [type='range'],
+          [type='color'],
+          [type='hidden'],
+          [type='file']
+        )
+    ) {
+    border-radius: 8px;
+    background-color: var(--soft);
+  }
+  :where(*):has(> svg) > :where(input) {
+    background-color: transparent;
+  }
+  /* Templates: one centered column; the list takes the full width when there is no preview. */
+  .templates-screen {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .templates-screen > * {
+    width: 100%;
+    max-width: 1040px;
+    margin-inline: auto;
+  }
+  .template-workbench:not(:has(> .template-preview)) {
+    grid-template-columns: 1fr;
+  }
+}
+
+@layer finish {
+  /* Selects outside forms size to their label, so the chevron sits next to the text. */
+  :where(select) {
+    field-sizing: content;
+  }
+  :where(dialog, [role='dialog'], form) :where(select) {
+    field-sizing: fixed;
+  }
+}
+
+@layer finish {
+  /* The page title and description are the page itself: no field tint, focused or not. */
+  textarea:is(.page-title, .page-description),
+  textarea:is(.page-title, .page-description):focus {
+    background-color: transparent;
+  }
+}
+
+@layer finish {
+  /* No focus ring on wrappers either: a focused field shows its caret, not a frame around it. */
+  :focus-within {
+    outline: none;
+  }
+  /* Every search box (icon + field) has the same height and rhythm. */
+  :where(*):has(> svg):has(
+      > input:not(
+          [type='checkbox'],
+          [type='radio'],
+          [type='range'],
+          [type='color'],
+          [type='hidden'],
+          [type='file']
+        )
+    ) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 10px;
+  }
+  :where(*):has(> svg) > :where(input) {
+    padding: 0;
+    min-height: 34px;
+    border: 0;
+  }
+  /* Index tables span the same width as their heading and toolbar. */
+  .all-pages .page-index-list {
+    max-width: none;
+  }
+  /* Without a Type column the grid keeps three data columns. */
+  .page-index-list:not(:has(.explorer-kind:not([hidden]))) .explorer-columns,
+  .page-index-list:not(:has(.explorer-kind:not([hidden]))) > button {
+    grid-template-columns: 24px minmax(0, 2fr) minmax(0, 1fr) 90px 20px;
+  }
+}
+
+@layer finish {
+  /* In Connect mode a note is a connection handle, not text to select. */
+  [data-tool='connect'] .canvas-card-rich {
+    cursor: crosshair;
+    user-select: none;
+  }
+}
+
+@layer finish {
+  /* A connection label is a quiet chip: tinted when selected, never framed. */
+  .canvas-edge-label,
+  .canvas-edge-label.selected {
+    border-color: transparent;
+  }
+  .canvas-edge-label.selected {
+    background: color-mix(in oklab, var(--accent) 10%, var(--canvas));
+  }
+}
+
+@layer finish {
+  /* Page details lists (outline, connections, mentions) share one quiet row style. */
+  .connected-list > button {
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink);
+    font-size: 0.857rem;
+  }
+  .connected-list > button:hover {
+    background: var(--hover);
+  }
+  .mention strong {
+    color: var(--ink);
+    font-size: 0.857rem;
+    font-weight: 500;
+  }
+  .mention:hover strong {
+    color: var(--accent);
   }
 }

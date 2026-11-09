@@ -105,7 +105,7 @@ test('sign out preserves disconnected drafts after navigating away, then succeed
   await page.getByRole('button', { name: 'Account menu', exact: true }).click();
 
   await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Data', exact: true }).click();
+  await page.getByRole('dialog').getByRole('tab', { name: 'Data', exact: true }).click();
   await expect(page.locator('.local-draft')).toContainText('Keep this disconnected draft');
   const downloading = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download local drafts', exact: true }).click();

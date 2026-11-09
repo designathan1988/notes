@@ -9,7 +9,11 @@ const context = await browser.newContext({ viewport: { width: 1440, height: 900 
 const page = await context.newPage();
 page.setDefaultTimeout(4000);
 let errors = [];
-page.on('pageerror', (e) => errors.push(`pageerror: ${e.message.split('\n')[0]}`));
+let lastAction = '';
+page.on('pageerror', (e) => {
+  errors.push(`pageerror: ${e.message.split('\n')[0]}`);
+  if (process.env.AUDIT_STACKS) console.log(`STACK after "${lastAction}"\n${e.stack}`);
+});
 page.on('console', (m) => {
   if (m.type() === 'error' && !/status of 40[13]/.test(m.text()))
     errors.push(`console: ${m.text().split('\n')[0].slice(0, 160)}`);
@@ -39,7 +43,8 @@ const open = async (hash) => {
   await page.locator('.workspace-content').waitFor({ timeout: 20000 });
   await page.waitForTimeout(1200);
 };
-for (const [screen, hash] of screens) {
+const only = process.env.AUDIT_SCREENS?.split(',');
+for (const [screen, hash] of screens.filter(([name]) => !only || only.includes(name))) {
   await open(hash);
   // Collect a stable description of each visible, enabled button on this screen.
   const targets = await page.evaluate(() => {
@@ -109,6 +114,7 @@ for (const [screen, hash] of screens) {
     requests = 0;
     let result = 'ok';
     try {
+      lastAction = `${screen} > ${target.name}`;
       await locator.nth(handle).click({ timeout: 3000 });
       await page.waitForTimeout(700);
       const mutations = await page.evaluate(() => window.__mutations).catch(() => 1);

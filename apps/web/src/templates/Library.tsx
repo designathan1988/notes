@@ -12,6 +12,7 @@ import {
 import { useWorkspace } from '../state/store.js';
 import { TemplateDefaults } from './TemplateDefaults.js';
 import { LazyBoundary } from '../ui/LazyBoundary.js';
+import { pageView } from '../workbench/route.js';
 const TemplatePreview = lazy(() => import('./TemplatePreview.js'));
 export default function Library() {
   const state = useWorkspace(),
@@ -31,9 +32,10 @@ export default function Library() {
     );
     return () => clearTimeout(timer);
   }, [workspace, version, query, kind, database]);
+  const activeId = active?.id;
   useEffect(() => {
-    if (active) void useWorkspace.getState().previewTemplate(active.id);
-  }, [active?.id, version]);
+    if (activeId) void useWorkspace.getState().previewTemplate(activeId);
+  }, [activeId, version]);
   return (
     <section
       className={`templates-screen ${selected ? 'template-selected' : ''}`}
@@ -202,9 +204,7 @@ export default function Library() {
               <div>
                 <button
                   className="button"
-                  onClick={() =>
-                    state.navigate(active.id, active.kind === 'database' ? 'database' : 'document')
-                  }
+                  onClick={() => state.navigate(active.id, pageView(active.kind))}
                 >
                   {readOnly ? 'Open template' : 'Edit template'}
                 </button>

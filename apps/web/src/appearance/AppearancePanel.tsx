@@ -33,6 +33,14 @@ const fontChoices = [
   'Consolas',
   'monospace',
 ];
+/** A font stack shown as people name the font: "'Geist Variable', ui-sans-serif" → "Geist". */
+function fontName(stack: string) {
+  return (stack.split(',')[0] ?? stack)
+    .trim()
+    .replace(/^['"]|['"]$/g, '')
+    .replace(/ Variable$/, '');
+}
+
 export function AppearancePanel() {
   const state = useWorkspace(),
     page = state.pages.find((page) => page.id === state.selectedId),
@@ -167,7 +175,9 @@ export function AppearancePanel() {
                   <input
                     aria-label={`${label} font`}
                     list="appearance-fonts"
-                    placeholder={inherited[key] || 'Inherit default'}
+                    placeholder={
+                      inherited[key] ? `${fontName(inherited[key])} (default)` : 'Inherit default'
+                    }
                     value={appearance[key] ?? ''}
                     onChange={(event) => change(key, event.target.value || null)}
                   />
@@ -312,7 +322,9 @@ export function AppearancePanel() {
                     />
                     <input
                       aria-label={`${label} color`}
-                      placeholder={inherited[key] || 'Inherit default'}
+                      placeholder={
+                        inherited[key] ? `${fontName(inherited[key])} (default)` : 'Inherit default'
+                      }
                       value={appearance[key] ?? ''}
                       onChange={(event) => change(key, event.target.value || null)}
                     />

@@ -189,8 +189,8 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
             value={recordName}
             onChange={(event) => setRecordName(event.target.value)}
           />
-          <button className="button primary" disabled={busy}>
-            Add record
+          <button className="inline-record-submit" disabled={busy || !recordName.trim()}>
+            Add <kbd aria-hidden="true">Enter</kbd>
           </button>
           <IconButton label="Cancel new record" onClick={() => setNewRecord(null)}>
             <X />

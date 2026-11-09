@@ -101,3 +101,35 @@ test('the page explorer filters and sorts the authorized collection before pagin
   );
   expect(reverse.pages[0].id).toBe(zulu);
 });
+test('the workspace overview counts every visible page by kind, not just the loaded tree', async () => {
+  const before = await navigation.overview(
+    { userId: 'owner' },
+    'studio',
+    new Date(0).toISOString(),
+  );
+  const folder = await rawPage(db, { title: 'Overview folder' });
+  await rawPage(db, { parent: folder, title: 'Deep child' });
+  const table = await rawPage(db, { kind: 'database', title: 'Overview table' });
+  await rawPage(db, { parent: table, kind: 'record', title: 'Row one' });
+  await rawPage(db, { parent: table, kind: 'record', title: 'Row two' });
+  const hidden = await rawPage(db, {
+    title: 'Someone else private',
+    creator: 'admin',
+    visibility: 'private',
+  });
+  const gone = await rawPage(db, { title: 'Trashed' });
+  await db.query('UPDATE pages SET deleted_at=now() WHERE id=$1', [gone]);
+  const after = await navigation.overview({ userId: 'owner' }, 'studio', new Date(0).toISOString());
+  expect(after.counts.document - before.counts.document).toBe(2);
+  expect(after.counts.database - before.counts.database).toBe(1);
+  expect(after.counts.record - before.counts.record).toBe(2);
+  // "Pages edited" counts pages people write in: records live in their database.
+  expect(after.editedSince - before.editedSince).toBe(3);
+  const future = await navigation.overview(
+    { userId: 'owner' },
+    'studio',
+    new Date(Date.now() + 60_000).toISOString(),
+  );
+  expect(future.editedSince).toBe(0);
+  expect(hidden).toBeTruthy();
+});

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Search as SearchIcon, FileText, ArrowUpLeft } from 'lucide-react';
+import { Search as SearchIcon, ArrowUpLeft } from 'lucide-react';
+import { pageView } from '../workbench/route.js';
+import { KindIcon } from '../ui/PageGlyph.js';
 import { useWorkspace } from '../state/store.js';
 import { Dialog } from '../ui/Dialog.js';
 import type { SearchResult } from '@note/contracts';
@@ -39,10 +41,7 @@ export function Search() {
   }, [query, kind, after, tag, search, version]);
   const open = (index: number) => {
     const result = results[index];
-    if (result)
-      useWorkspace
-        .getState()
-        .navigate(result.id, result.kind === 'database' ? 'database' : 'document');
+    if (result) useWorkspace.getState().navigate(result.id, pageView(result.kind));
   };
   return (
     <Dialog
@@ -113,7 +112,7 @@ export function Search() {
             key={result.id}
             onClick={() => open(index)}
           >
-            <FileText />
+            <KindIcon kind={result.kind} />
             <span>
               <strong>{result.title}</strong>
               <small>{result.snippet || result.parentTitle || 'Workspace page'}</small>

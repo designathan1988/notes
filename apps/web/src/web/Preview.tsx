@@ -1,4 +1,11 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  useEffectEvent,
+} from 'react';
 import type { Editor } from '@tiptap/core';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { api, json } from '../state/api.js';
@@ -89,14 +96,25 @@ export const Preview = forwardRef<
   }
   useImperativeHandle(ref, () => ({ run, stop }));
   useEffect(() => {
-    mounted.current = true;
+    const alive = mounted,
+      operations = sequence,
+      running = current;
+    alive.current = true;
     return () => {
-      mounted.current = false;
-      sequence.current++;
-      retire(current.current);
-      current.current = null;
+      // Leaving this page, workspace or identity ends the running preview and its requests.
+      alive.current = false;
+      operations.current++;
+      retire(running.current);
+      running.current = null;
     };
   }, [identity, workspace, pageId]);
+  // A failed renewal is an event: it stops whatever preview is current at that moment.
+  const expire = useEffectEvent((token: string) => {
+    if (current.current?.token === token) {
+      stop();
+      setError('Preview access expired or changed. Run the current source again.');
+    }
+  });
   useEffect(() => {
     if (!ticket) return;
     const receive = (event: MessageEvent) => {
@@ -116,12 +134,9 @@ export const Preview = forwardRef<
       );
     };
     const renewal = setInterval(() => {
-      void api(`/web-previews/${ticket.token}/renew`, { method: 'POST', body: '{}' }).catch(() => {
-        if (current.current?.token === ticket.token) {
-          stop();
-          setError('Preview access expired or changed. Run the current source again.');
-        }
-      });
+      void api(`/web-previews/${ticket.token}/renew`, { method: 'POST', body: '{}' }).catch(() =>
+        expire(ticket.token),
+      );
     }, 120000);
     window.addEventListener('message', receive);
     return () => {

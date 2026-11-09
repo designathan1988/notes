@@ -5,6 +5,7 @@ import { useWorkspace } from '../state/store.js';
 import { snapshotAcknowledgementCovers } from './durability.js';
 import { openRecovery, type Recovery } from './recovery.js';
 import { DOCUMENT_ACCESS_CHANGED, type Page, type SaveStatus } from '@note/contracts';
+import type { ProsemirrorMapping } from '@tiptap/y-tiptap';
 const activeSessions = new Set<DocumentSession>();
 /** Copy only acknowledged content; retained drafts are never silently omitted or discarded. */
 export async function ensureCopySourcesSaved(
@@ -112,6 +113,8 @@ export class DocumentSession {
   private readonly recoveryWrites = new Set<Promise<void>>();
   private recoverySerial = 0;
   readonly doc = new Y.Doc();
+  /** Links Yjs types to editor nodes; one per document, shared by whichever editor binds it. */
+  readonly mapping: ProsemirrorMapping = new Map();
   provider!: HocuspocusProvider;
   recovery: Recovery | null = null;
   destroyed = false;

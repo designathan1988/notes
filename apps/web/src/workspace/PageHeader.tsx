@@ -1,7 +1,7 @@
 import { Clock3, FileText, Database, Network, Shapes, ChevronDown } from 'lucide-react';
 import type { Page } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, useEffectEvent } from 'react';
 import { PagePresentation, PageTags } from '../pages/PagePresentation.js';
 import { PageProperties } from '../pages/PageProperties.js';
 function fit(element: HTMLTextAreaElement) {
@@ -21,13 +21,17 @@ export function PageHeader({
     description = useRef<HTMLTextAreaElement>(null),
     metadata = useRef<HTMLDetailsElement>(null);
   const [editingDescription, setEditingDescription] = useState(false);
+  // Details open by what the page holds when it is opened; later edits keep the person's choice.
+  const hasDetails = useEffectEvent(
+    () =>
+      page.kind === 'record' ||
+      !!page.templateDatabaseId ||
+      !!page.tags?.length ||
+      !!page.properties?.fields.some((field) => !field.archived),
+  );
   useLayoutEffect(() => {
     if (metadata.current) {
-      metadata.current.open =
-        page.kind === 'record' ||
-        !!page.templateDatabaseId ||
-        !!page.tags?.length ||
-        !!page.properties?.fields.some((field) => !field.archived);
+      metadata.current.open = hasDetails();
       metadata.current
         .querySelector('summary')
         ?.setAttribute('aria-expanded', String(metadata.current.open));

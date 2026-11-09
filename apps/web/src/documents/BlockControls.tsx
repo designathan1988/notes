@@ -3,6 +3,7 @@ import { BlockGutter } from './BlockGutter.js';
 import { Plus } from 'lucide-react';
 import type { Editor } from '@tiptap/react';
 import { blockAt } from '@note/editor/blocks';
+import { blocksInRange } from '@note/editor/block-selection';
 import { BlockMenu, insertBlock } from './BlockMenu.js';
 
 export function BlockControls({
@@ -45,7 +46,10 @@ export function BlockControls({
   }, [requested, actionsRequested, reset, editor]);
   const close = () => setMenu(null);
   const open = (mode: 'insert' | 'actions', target: HTMLElement, position?: number) => {
-    if (position !== undefined) editor.commands.setNodeSelection(position);
+    // A handle on a block inside a block selection acts on the whole selection.
+    const index = position === undefined ? -1 : blockAt(editor.state.doc, position)?.index;
+    if (position !== undefined && !blocksInRange(editor.state.selection).includes(index ?? -1))
+      editor.commands.setNodeSelection(position);
     setAnchor(target);
     setMenu(mode);
   };

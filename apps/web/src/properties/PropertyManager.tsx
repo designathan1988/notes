@@ -3,6 +3,20 @@ import type { RecordField } from '@note/contracts';
 import { Dialog } from '../ui/Dialog.js';
 import { canonicalFormula, displayFormula, formulaReference } from '@note/data/formula-input';
 
+// People read labels; the stored type stays the option value.
+const FIELD_TYPE_LABELS = [
+  ['text', 'Text'],
+  ['number', 'Number'],
+  ['checkbox', 'Checkbox'],
+  ['select', 'Select'],
+  ['multi-select', 'Multi-select'],
+  ['date', 'Date'],
+  ['url', 'URL'],
+  ['relation', 'Relation'],
+  ['formula', 'Formula'],
+  ['button', 'Button'],
+] as const;
+
 export function PropertyManager({
   label,
   fields,
@@ -157,19 +171,10 @@ export function PropertyManager({
                   })
                 }
               >
-                {[
-                  'text',
-                  'number',
-                  'checkbox',
-                  'select',
-                  'multi-select',
-                  'date',
-                  'url',
-                  'relation',
-                  'formula',
-                  'button',
-                ].map((type) => (
-                  <option key={type}>{type}</option>
+                {FIELD_TYPE_LABELS.map(([type, label]) => (
+                  <option key={type} value={type}>
+                    {label}
+                  </option>
                 ))}
               </select>
             </label>

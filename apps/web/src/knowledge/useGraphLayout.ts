@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useEffectEvent } from 'react';
 import type { GraphData } from '@note/contracts';
 import { validPoint, type Point } from '../spatial/geometry.js';
 
@@ -17,7 +17,10 @@ export function useGraphLayout(data: GraphData | undefined) {
     pending: boolean;
     error: boolean;
   }>({ positions: {}, pending: true, error: false });
+  // The layout restarts only when the geometry signature changes; it reads the latest data then.
+  const latestData = useEffectEvent(() => data);
   useEffect(() => {
+    const data = latestData();
     if (!data) return;
     previous.current = signature;
     let current = true,

@@ -1,6 +1,8 @@
 import { Database, FileText, LayoutTemplate, Shapes, Star } from 'lucide-react';
 import type { Page, PageKind } from '@note/contracts';
+import { useEffect, useState } from 'react';
 import { useWorkspace } from '../state/store.js';
+import { api } from '../state/api.js';
 import { pageView } from '../workbench/route.js';
 import { PageGlyph } from '../ui/PageGlyph.js';
 
@@ -48,6 +50,26 @@ export function recentPages(pages: Page[], limit = 8) {
     .slice(0, limit);
 }
 
+type Overview = { counts: Record<PageKind, number>; editedSince: number };
+function useOverview(workspaceId: string | null, version: number, pages: Page[]) {
+  const [overview, setOverview] = useState<Overview | null>(null);
+  useEffect(() => {
+    if (!workspaceId) return;
+    let active = true;
+    const midnight = new Date();
+    midnight.setHours(0, 0, 0, 0);
+    void api<Overview>(
+      `/workspaces/${workspaceId}/overview?since=${encodeURIComponent(midnight.toISOString())}`,
+    )
+      .then((result) => active && setOverview(result))
+      .catch(() => active && setOverview(null));
+    return () => {
+      active = false;
+    };
+  }, [workspaceId, version, pages]);
+  return overview;
+}
+
 export function Home() {
   const state = useWorkspace();
   const workspace = state.workspaces.find((item) => item.id === state.workspaceId);
@@ -55,9 +77,9 @@ export function Home() {
   const now = new Date();
   const live = state.pages.filter((page) => !page.deletedAt && !page.templateRootId);
   const recent = recentPages(live);
-  const today = live.filter(
-    (page) => new Date(page.updatedAt).toDateString() === now.toDateString(),
-  ).length;
+  // The sidebar holds only the loaded part of the tree, so totals come from the server.
+  const overview = useOverview(state.workspaceId, state.knowledgeVersion, state.pages);
+  const today = overview?.editedSince;
   const favorites = live.filter((page) => state.favorites.includes(page.id)).slice(0, 6);
   const titleOf = (id: string | null) => state.pages.find((page) => page.id === id)?.title;
   const open = (page: Page) => state.navigate(page.id, pageView(page.kind));
@@ -86,7 +108,11 @@ export function Home() {
             <p>
               {now.toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric' })}
               {' · '}
-              {today === 1 ? '1 page edited today' : `${today} pages edited today`}
+              {today === undefined
+                ? ''
+                : today === 1
+                  ? '1 page edited today'
+                  : `${today} pages edited today`}
             </p>
           </div>
           <div className="home-actions" role="group" aria-label="Create">
@@ -166,7 +192,7 @@ export function Home() {
               <dl className="home-stats">
                 {(['document', 'database', 'canvas', 'record'] as const).map((kind) => (
                   <div key={kind}>
-                    <dd>{live.filter((page) => page.kind === kind).length}</dd>
+                    <dd>{overview ? overview.counts[kind] : '—'}</dd>
                     <dt>{kindPlural[kind]}</dt>
                   </div>
                 ))}

@@ -9,7 +9,6 @@ import {
   Plus,
   FileText,
   Database,
-  Star,
   PanelRight,
   ArrowLeft,
   ArrowRight,
@@ -171,14 +170,6 @@ export function Workspace() {
                 )}
                 <span>{status}</span>
               </span>
-            )}
-            {page && !globalView && (
-              <IconButton
-                label={state.favorites.includes(page.id) ? 'Remove favorite' : 'Add to favorites'}
-                onClick={() => state.toggleFavorite(page.id)}
-              >
-                <Star fill={state.favorites.includes(page.id) ? 'currentColor' : 'none'} />
-              </IconButton>
             )}
             {['document', 'canvas'].includes(state.view) && (
               <IconButton

@@ -61,7 +61,9 @@ try {
   await page.screenshot({ path: resolve(output, 'workspace-board-desktop.png') });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: resolve(output, 'workspace-board-mobile.png') });
-  const boardOverflow390 = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
+  const boardOverflow390 = await page.evaluate(
+    () => document.documentElement.scrollWidth > innerWidth,
+  );
   await page.setViewportSize({ width: 1536, height: 1024 });
   const report = {
     title: await page.title(),

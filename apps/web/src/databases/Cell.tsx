@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { RecordField } from '@note/contracts';
 import { RelationCell } from './RelationCell.js';
 import { toneOf } from '../ui/tone.js';
@@ -35,12 +35,19 @@ export function Cell({
     baseline.current = { value: initial ?? null, field };
   };
   const cancelled = useRef(false);
-  useEffect(() => {
+  // Values arrive as fresh objects on every refresh; compare them by content.
+  const initialKey = JSON.stringify(initial ?? null),
+    fieldKey = JSON.stringify(field ?? null);
+  // Adopt the stored value unless the person is editing or a save is still in flight.
+  const adoptStoredValue = useEffectEvent(() => {
     if (!focused.current && !error && !pending && !submitting.current) {
       setValue(initial ?? '');
       baseline.current = { value: initial ?? null, field };
     }
-  }, [JSON.stringify(initial), JSON.stringify(field), pending, error]);
+  });
+  useEffect(() => {
+    adoptStoredValue();
+  }, [initialKey, fieldKey, pending, error]);
   async function commit(next: unknown) {
     if (cancelled.current) {
       cancelled.current = false;
@@ -141,7 +148,8 @@ export function Cell({
         <select
           aria-label={label}
           className="status-label"
-          data-tone={toneOf(value)}
+          data-tone={value ? toneOf(value) : undefined}
+          data-empty={value ? undefined : ''}
           disabled={pending}
           value={String(value)}
           onFocus={begin}
@@ -153,7 +161,7 @@ export function Cell({
             void commit(event.target.value);
           }}
         >
-          <option value="" />
+          <option value="">Empty</option>
           {field.options?.map((option) => (
             <option key={option}>{option}</option>
           ))}
@@ -162,6 +170,8 @@ export function Cell({
         <input
           aria-label={label}
           type={field?.type === 'number' ? 'number' : field?.type === 'date' ? 'date' : 'text'}
+          placeholder="Empty"
+          data-empty={value === '' || value == null ? '' : undefined}
           disabled={pending}
           value={Array.isArray(value) ? value.join(', ') : String(value)}
           onFocus={() => {

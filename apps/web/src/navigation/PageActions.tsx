@@ -20,6 +20,7 @@ import type { Page } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { Popover } from '../ui/Popover.js';
 import { download } from '../settings/DataSettings.js';
+import { pageView } from '../workbench/route.js';
 export function PageActions({
   page,
   anchor,
@@ -124,7 +125,7 @@ export function PageActions({
           onClick={() =>
             run(() =>
               navigator.clipboard.writeText(
-                `${location.origin}/#${page.id}/${page.kind === 'database' ? 'database' : 'document'}`,
+                `${location.origin}/#${page.id}/${pageView(page.kind)}`,
               ),
             )
           }

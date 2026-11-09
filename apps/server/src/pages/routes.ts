@@ -69,6 +69,14 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
       request.query.direction,
     ),
   );
+  app.get<{ Params: { workspace: string }; Querystring: { since?: string } }>(
+    '/api/workspaces/:workspace/overview',
+    (request) => {
+      const since = new Date(request.query.since ?? '');
+      if (Number.isNaN(since.getTime())) throw new DomainError('INVALID', 'Invalid overview date.');
+      return navigation.overview(request.actor, request.params.workspace, since.toISOString());
+    },
+  );
   app.get<{ Params: { workspace: string } }>('/api/workspaces/:workspace/favorites', (request) =>
     pages.favorites(request.actor, request.params.workspace),
   );

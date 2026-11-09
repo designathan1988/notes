@@ -29,11 +29,14 @@ export function DataSettings() {
         .catch(() => {});
   };
   useEffect(() => {
-    refresh();
+    if (role !== 'viewer')
+      void api<Report[]>(`/workspaces/${workspace}/imports`)
+        .then(setJobs)
+        .catch(() => {});
     return () => {
       stop.current = true;
     };
-  }, [workspace]);
+  }, [workspace, role]);
   async function advance(id: string) {
     setBusy(true);
     stop.current = false;

@@ -76,7 +76,7 @@ test('two editors discuss, resolve and reopen; saved history previews and restor
     await first.getByRole('button', { name: 'Insert template', exact: true }).click();
     await first.getByRole('menuitem', { name: /Meeting notes/ }).click();
     await expect(first.locator('.save-status')).toHaveText('Saved');
-    await first.getByRole('button', { name: 'Version history', exact: true }).click();
+    await first.getByRole('tab', { name: 'Version history', exact: true }).click();
     await first
       .getByRole('textbox', { name: 'Version name', exact: true })
       .fill('Reviewed evidence');
@@ -145,7 +145,7 @@ test('two editors discuss, resolve and reopen; saved history previews and restor
       await first.setViewportSize({ width, height: 844 });
       await first.getByRole('button', { name: 'Page actions', exact: true }).click();
       await first.getByRole('menuitem', { name: 'Comments', exact: true }).click();
-      await first.getByRole('button', { name: 'Version history', exact: true }).click();
+      await first.getByRole('tab', { name: 'Version history', exact: true }).click();
       await first.getByRole('button', { name: /Reviewed evidence/ }).click();
       await expect(preview).toContainText('Original evidence');
       expect(await first.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(
@@ -252,7 +252,7 @@ test('a disconnected collaborator recovers retained drafts as private pages and 
     await second.getByRole('button', { name: 'Account menu', exact: true }).click();
 
     await second.getByRole('menuitem', { name: 'Settings', exact: true }).click();
-    await second.getByRole('dialog').getByRole('button', { name: 'Data', exact: true }).click();
+    await second.getByRole('dialog').getByRole('tab', { name: 'Data', exact: true }).click();
     const downloading = second.waitForEvent('download');
     await second.getByRole('button', { name: 'Download local drafts', exact: true }).click();
     const download = await downloading,
@@ -378,7 +378,7 @@ test('a disconnected collaborator recovers retained drafts as private pages and 
       await second.getByRole('button', { name: 'Account menu', exact: true }).click();
 
       await second.getByRole('menuitem', { name: 'Settings', exact: true }).click();
-      await second.getByRole('dialog').getByRole('button', { name: 'Data', exact: true }).click();
+      await second.getByRole('dialog').getByRole('tab', { name: 'Data', exact: true }).click();
     }
     await expect(
       second.getByRole('button', { name: 'Recover as private page', exact: true }),
@@ -483,8 +483,8 @@ test('commenting on a record selection targets that record and retains failed co
     await expect(page.getByRole('textbox', { name: 'New comment', exact: true })).toHaveValue(
       'Next feedback draft',
     );
-    await page.getByRole('button', { name: 'Version history', exact: true }).click();
-    await page.getByRole('button', { name: 'Comments', exact: true }).click();
+    await page.getByRole('tab', { name: 'Version history', exact: true }).click();
+    await page.getByRole('tab', { name: 'Comments', exact: true }).click();
     await expect(page.getByRole('textbox', { name: 'New comment', exact: true })).toHaveValue(
       'Next feedback draft',
     );
@@ -558,7 +558,7 @@ test('a private move revokes discussion and history access and clears displayed 
     await expect(
       page.getByRole('button', { name: new RegExp(`Confidential discussion ${stamp}`) }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Version history', exact: true }).click();
+    await page.getByRole('tab', { name: 'Version history', exact: true }).click();
     await page.getByRole('button', { name: new RegExp(`Access version ${stamp}`) }).click();
     await expect(page.getByRole('region', { name: 'Version preview', exact: true })).toContainText(
       `Access version ${stamp}`,
@@ -644,7 +644,7 @@ test('paging discussions and history retains the selected page during live refre
     await expect(page.locator('.discussion-summary')).toHaveCount(1);
     await page.getByRole('button', { name: 'Previous discussions', exact: true }).click();
     await expect(page.locator('.discussion-summary')).toHaveCount(40);
-    await page.getByRole('button', { name: 'Version history', exact: true }).click();
+    await page.getByRole('tab', { name: 'Version history', exact: true }).click();
     await expect(page.locator('.version-entry')).toHaveCount(40);
     await page.getByRole('button', { name: 'Older versions', exact: true }).click();
     const oldest = page

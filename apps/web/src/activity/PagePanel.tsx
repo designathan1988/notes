@@ -71,11 +71,12 @@ export function PagePanel() {
           <X />
         </IconButton>
       </header>
-      <div className="page-panel-tabs" role="group" aria-label="Page tools">
+      <div className="page-panel-tabs" role="tablist" aria-label="Page tools">
         {tabs.map(({ id, label, Icon }) => (
           <button
             key={id}
-            aria-pressed={id === tab}
+            role="tab"
+            aria-selected={id === tab}
             aria-label={id === 'history' ? 'Version history' : label}
             onClick={() => useWorkspace.getState().openPagePanel(id as PagePanelTab)}
           >

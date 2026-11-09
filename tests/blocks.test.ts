@@ -80,3 +80,36 @@ test('transforms text into headings, callouts and checklists while preserving ri
   expect(list.doc.firstChild?.firstChild?.attrs.checked).toBe(false);
   expect(list.doc.firstChild?.textContent).toBe('First');
 });
+
+test('a toggle section turns back into text: the title becomes the block and its contents follow', () => {
+  const doc = schema.nodeFromJSON({
+    type: 'doc',
+    content: [
+      {
+        type: 'toggleBlock',
+        content: [
+          { type: 'toggleTitle', content: [{ type: 'text', text: 'Summary' }] },
+          {
+            type: 'toggleContent',
+            content: [
+              { type: 'paragraph', content: [{ type: 'text', text: 'First detail' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Second detail' }] },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+  const state = EditorState.create({ schema, doc });
+  const turned = state.apply(changeBlock(state, 0, 'paragraph')!);
+  const blocks: string[] = [];
+  turned.doc.forEach((node) => blocks.push(`${node.type.name}:${node.textContent}`));
+  expect(blocks).toEqual([
+    'paragraph:Summary',
+    'paragraph:First detail',
+    'paragraph:Second detail',
+  ]);
+  const heading = state.apply(changeBlock(state, 0, 'heading', 2)!);
+  expect(heading.doc.firstChild?.type.name).toBe('heading');
+  expect(heading.doc.childCount).toBe(3);
+});

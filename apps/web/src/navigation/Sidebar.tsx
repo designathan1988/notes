@@ -34,6 +34,7 @@ import { Popover } from '../ui/Popover.js';
 import { BrandMark } from '../ui/BrandMark.js';
 import { GLOBAL_VIEWS } from '../state/views.js';
 import { applyTheme, useTheme, type Theme } from '../ui/theme.js';
+import { pageView } from '../workbench/route.js';
 function PageRow({
   page,
   depth,
@@ -94,9 +95,8 @@ function PageRow({
           className="tree-page"
           onClick={(event) => {
             const state = useWorkspace.getState();
-            if (event.ctrlKey || event.metaKey)
-              state.openTab(page.id, page.kind === 'database' ? 'database' : 'document');
-            else state.navigate(page.id, page.kind === 'database' ? 'database' : 'document');
+            if (event.ctrlKey || event.metaKey) state.openTab(page.id, pageView(page.kind));
+            else state.navigate(page.id, pageView(page.kind));
           }}
         >
           {page.icon ? (
@@ -268,7 +268,11 @@ export function Sidebar() {
           </button>
           <nav className="workspace-destinations" aria-label="Workspace tools">
             {destinations.map(({ view, label, Icon }) => {
-              const active = template ? view === 'templates' : state.view === view;
+              // Databases and Canvases are indexes: an open database or canvas page is
+              // highlighted in the page tree, not as the index.
+              const active = template
+                ? view === 'templates'
+                : state.view === view && (GLOBAL_VIEWS.includes(view) || !state.selectedId);
               return (
                 <button
                   key={view}
@@ -295,12 +299,7 @@ export function Sidebar() {
                       <button
                         key={page.id}
                         data-kind={page.kind}
-                        onClick={() =>
-                          state.navigate(
-                            page.id,
-                            page.kind === 'database' ? 'database' : 'document',
-                          )
-                        }
+                        onClick={() => state.navigate(page.id, pageView(page.kind))}
                       >
                         {page.icon ? (
                           <span className="page-reference-icon" aria-hidden="true">
@@ -381,7 +380,7 @@ export function Sidebar() {
             </button>
             {accountMenu && (
               <Popover anchor={accountMenu} label="Account" close={() => setAccountMenu(null)}>
-                <div className="theme-switch" role="radiogroup" aria-label="Theme">
+                <div className="theme-switch" role="group" aria-label="Theme">
                   {(
                     [
                       ['light', 'Light', Sun],
@@ -391,7 +390,7 @@ export function Sidebar() {
                   ).map(([value, label, Icon]) => (
                     <button
                       key={value}
-                      role="radio"
+                      role="menuitemradio"
                       aria-checked={theme === value}
                       onClick={() => applyTheme(value)}
                     >

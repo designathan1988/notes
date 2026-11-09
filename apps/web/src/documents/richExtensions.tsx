@@ -2,6 +2,7 @@ import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tip
 import { editorExtensions, databaseView } from '@note/editor/schema';
 import { toggleBlock } from '@note/editor/structure';
 import { ToggleSection } from './ToggleSection.js';
+import { interactiveNodeView } from './nodeViewEvents.js';
 import { DatabaseView } from '../databases/DatabaseView.js';
 import { webEditorExtensions } from '../web/extensions.js';
 function EmbeddedDatabase({ node }: NodeViewProps) {
@@ -23,7 +24,11 @@ export const richEditorExtensions = (pageId = '') => [
         extension.name,
       ),
   ),
-  toggleBlock.extend({ addNodeView: () => ReactNodeViewRenderer(ToggleSection) }),
-  databaseView.extend({ addNodeView: () => ReactNodeViewRenderer(EmbeddedDatabase) }),
+  toggleBlock.extend({
+    addNodeView: () => ReactNodeViewRenderer(ToggleSection, interactiveNodeView),
+  }),
+  databaseView.extend({
+    addNodeView: () => ReactNodeViewRenderer(EmbeddedDatabase, interactiveNodeView),
+  }),
   ...webEditorExtensions(pageId),
 ];

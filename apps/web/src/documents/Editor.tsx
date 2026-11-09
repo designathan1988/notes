@@ -2,13 +2,13 @@ import {
   lazy,
   Suspense,
   useCallback,
-  useMemo,
   useEffect,
   useRef,
   useState,
   useSyncExternalStore,
+  useEffectEvent,
 } from 'react';
-import { initProseMirrorDoc, type ProsemirrorMapping } from '@tiptap/y-tiptap';
+import { initProseMirrorDoc } from '@tiptap/y-tiptap';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
@@ -37,6 +37,7 @@ import { safeEmbedSource } from '@note/editor/embeds';
 import { LinkPicker } from './LinkPicker.js';
 import { BlockSurface } from './BlockSurface.js';
 import { BlockControls } from './BlockControls.js';
+import { BlockMarquee } from './BlockMarquee.js';
 import { TableTools } from './TableTools.js';
 import { DatabasePicker } from './DatabasePicker.js';
 import { SelectionToolbar } from './SelectionToolbar.js';
@@ -52,11 +53,13 @@ export function DocumentEditor({ page, embedded = false }: { page: Page; embedde
   const [session, setSession] = useState<DocumentSession | null>(null);
   const [failure, setFailure] = useState('');
   const [attempt, setAttempt] = useState(0);
+  // A session starts from the page as it is at that moment; later page edits do not restart it.
+  const openSession = useEffectEvent(() => new DocumentSession(page));
   useEffect(() => {
     let active = true;
     setFailure('');
     setSession(null);
-    const next = new DocumentSession(page);
+    const next = openSession();
     void next
       .start()
       .then(() => {
@@ -114,7 +117,7 @@ function ReadyDocument({ session, embedded }: { session: DocumentSession; embedd
   );
 }
 function ConnectedEditor({ session, embedded }: { session: DocumentSession; embedded: boolean }) {
-  const mapping = useMemo<ProsemirrorMapping>(() => new Map(), [session]);
+  const mapping = session.mapping;
   const status = useSyncExternalStore(session.subscribeStatus, session.getStatus);
   const [commands, setCommands] = useState(false);
   const [blockActions, setBlockActions] = useState(false);
@@ -292,7 +295,7 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
           aria-label="Document statistics"
           title={`${statistics.characters.toLocaleString()} characters · ${statistics.minutes} min read`}
         >
-          {statistics.words.toLocaleString()} words
+          {statistics.words.toLocaleString()} {statistics.words === 1 ? 'word' : 'words'}
           <span className="statistics-reading"> · {statistics.minutes} min read</span>
         </span>
         <IconButton label="Find in page" onClick={() => setFindOpen(true)}>
@@ -328,6 +331,7 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
       {!session.readOnly && !formatting?.website && (
         <SelectionToolbar editor={editor} pageId={session.page.id} link={() => setLinkOpen(true)} />
       )}
+      {!session.readOnly && !formatting?.website && <BlockMarquee editor={editor} />}
       {!session.readOnly && !formatting?.website && (
         <BlockControls
           editor={editor}

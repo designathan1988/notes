@@ -147,6 +147,21 @@ export class Navigation {
     }
     return { ...snapshot, pages: [...pages.values()] };
   }
+  /** Counts of every page the actor can see, by kind, plus how many changed since a moment. */
+  async overview(actor: Actor, workspace: string, since: string) {
+    const scope = await new Access(this.db).scope(actor, workspace);
+    const rows = await this.db.query<{ kind: string; total: string; edited: string }>(
+      `${scope.sql} SELECT p.kind,count(*) AS total,count(*) FILTER (WHERE p.updated_at>=$3::timestamptz) AS edited FROM visible p WHERE p.template_root_id IS NULL GROUP BY p.kind`,
+      [...scope.params, since],
+    );
+    const counts = { document: 0, database: 0, canvas: 0, record: 0 };
+    let editedSince = 0;
+    for (const row of rows) {
+      if (row.kind in counts) counts[row.kind as keyof typeof counts] = Number(row.total);
+      if (row.kind !== 'record') editedSince += Number(row.edited);
+    }
+    return { counts, editedSince };
+  }
   async flat(
     actor: Actor,
     workspace: string,

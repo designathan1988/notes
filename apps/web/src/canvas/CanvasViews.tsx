@@ -270,7 +270,11 @@ export function CanvasCardView({ node }: NodeViewProps) {
         contentEditable={c.readOnly ? false : undefined}
         aria-readonly={c.readOnly}
         aria-multiline="true"
-        onPointerDown={() => c.select(id, false, false)}
+        onPointerDown={(event) => {
+          // With the Connect tool the whole note is the connection source, not just its grip.
+          if (c.tool === 'connect' && !c.readOnly) c.gesture(id, event);
+          else c.select(id, false, false);
+        }}
       />
       {c.selected.includes(id) && !c.readOnly && (
         <span

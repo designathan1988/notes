@@ -8,6 +8,12 @@ const kindIcon: Record<PageKind, LucideIcon> = {
   record: FileText,
 };
 
+/** The plain glyph for a page kind, for lists that do not use the colored tile. */
+export function KindIcon({ kind, size }: { kind: PageKind; size?: number }) {
+  const Icon = kindIcon[kind];
+  return <Icon size={size} data-kind={kind} aria-hidden="true" />;
+}
+
 /** Page icon on a tile colored by page kind; a chosen emoji replaces the glyph. */
 export function PageGlyph({
   page,

@@ -101,9 +101,10 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
     void preview.current?.run();
     return () => narrow.removeEventListener('change', resize);
   }, []);
+  const operationKind = operation?.kind;
   useEffect(() => {
-    if (operation) operationInput.current?.focus();
-  }, [operation?.kind]);
+    if (operationKind) operationInput.current?.focus();
+  }, [operationKind]);
   function current() {
     const position = getPos();
     if (position === undefined || editor.isDestroyed) throw new Error('This website was removed.');

@@ -12,6 +12,7 @@ import {
   MessageSquarePlus,
 } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
+import { AllSelection, TextSelection } from '@tiptap/pm/state';
 
 export function SelectionToolbar({
   editor,
@@ -44,6 +45,12 @@ export function SelectionToolbar({
       const { from, to, empty } = editor.state.selection;
       if (
         empty ||
+        // Only selected text gets text formatting; whole blocks (node or block-range
+        // selections) get block actions instead.
+        !(
+          editor.state.selection instanceof TextSelection ||
+          editor.state.selection instanceof AllSelection
+        ) ||
         !editor.isEditable ||
         !editor.isFocused ||
         !editor.state.doc.textBetween(from, to).trim()

@@ -42,7 +42,7 @@ test('a delayed page removal preserves settings opened while the request is pend
 
   await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByRole('button', { name: 'Trash', exact: true }).click();
+  await dialog.getByRole('tab', { name: 'Trash', exact: true }).click();
   release();
   await expect(dialog.locator('.trash-row').filter({ hasText: note.title })).toBeVisible();
   await expect(dialog).toBeVisible();

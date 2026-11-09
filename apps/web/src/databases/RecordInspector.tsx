@@ -38,7 +38,8 @@ export function RecordInspector({
     const identity = useWorkspace.getState().user?.id,
       workspace = useWorkspace.getState().workspaceId;
     let active = true;
-    if (!page)
+    // Load the record's page once on open when the workspace does not hold it yet.
+    if (!useWorkspace.getState().pages.some((item) => item.id === pageId))
       void api<Page>(`/pages/${pageId}`)
         .then((page) => {
           const state = useWorkspace.getState();
@@ -62,8 +63,10 @@ export function RecordInspector({
       role="region"
       aria-label="Record details"
       onKeyDown={(event) => {
+        // The record's own editor uses Escape first (it lifts the caret into a block selection).
         if (
           event.key === 'Escape' &&
+          !event.defaultPrevented &&
           !document.querySelector('dialog[open],.app-popover,.block-popover')
         ) {
           event.preventDefault();

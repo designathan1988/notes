@@ -92,7 +92,7 @@ test('database controls save typed values, relations, filtered views, sorting, f
   await page.getByRole('button', { name: 'Account menu', exact: true }).click();
 
   await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
-  await dialog.getByRole('button', { name: 'Trash', exact: true }).click();
+  await dialog.getByRole('tab', { name: 'Trash', exact: true }).click();
   await dialog
     .locator('.trash-row')
     .filter({ hasText: title })

@@ -26,7 +26,14 @@ import {
   Link,
   ChevronRight,
 } from 'lucide-react';
-import { blockAt, changeBlock, duplicateBlock, moveBlock, removeBlock } from '@note/editor/blocks';
+import { blockAt, changeBlock, type moveBlock } from '@note/editor/blocks';
+import {
+  blocksInRange,
+  changeBlocks,
+  duplicateBlocks,
+  moveBlocks,
+  removeBlocks,
+} from '@note/editor/block-selection';
 
 const choices = [
   {
@@ -171,6 +178,7 @@ export function BlockMenu({
   const ref = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState('');
   const selected = blockAt(editor.state.doc, editor.state.selection.from);
+  const count = blocksInRange(editor.state.selection).length;
   const box = anchor?.getBoundingClientRect();
   const width = Math.min(306, window.innerWidth - 24);
   const left = Math.max(
@@ -243,45 +251,38 @@ export function BlockMenu({
           <button
             role="menuitem"
             aria-label="Move up"
-            onClick={() =>
-              run(() => apply(moveBlock(editor.state, editor.state.selection.from, -1)))
-            }
-            disabled={selected.index === 0}
+            onClick={() => run(() => apply(moveBlocks(editor.state, -1)))}
+            disabled={!moveBlocks(editor.state, -1)}
           >
             <ArrowUp />
-            Move up<kbd aria-hidden="true">↑</kbd>
+            Move up<kbd aria-hidden="true">Ctrl ⇧ ↑</kbd>
           </button>
           <button
             role="menuitem"
             aria-label="Move down"
-            onClick={() =>
-              run(() => apply(moveBlock(editor.state, editor.state.selection.from, 1)))
-            }
-            disabled={selected.index === editor.state.doc.childCount - 1}
+            onClick={() => run(() => apply(moveBlocks(editor.state, 1)))}
+            disabled={!moveBlocks(editor.state, 1)}
           >
             <ArrowDown />
-            Move down<kbd aria-hidden="true">↓</kbd>
+            Move down<kbd aria-hidden="true">Ctrl ⇧ ↓</kbd>
           </button>
-          <button
-            role="menuitem"
-            onClick={() =>
-              run(() => apply(duplicateBlock(editor.state, editor.state.selection.from)))
-            }
-          >
+          <button role="menuitem" onClick={() => run(() => apply(duplicateBlocks(editor.state)))}>
             <Copy />
             Duplicate
           </button>
           <button
             role="menuitem"
             className="danger"
-            onClick={() => run(() => apply(removeBlock(editor.state, editor.state.selection.from)))}
+            onClick={() => run(() => apply(removeBlocks(editor.state)))}
           >
             <Trash2 />
             Delete
           </button>
         </div>
       )}
-      <div className="block-menu-caption">{mode === 'actions' ? 'Turn into' : 'Basic blocks'}</div>
+      <div className="block-menu-caption">
+        {mode === 'insert' ? 'Basic blocks' : count > 1 ? `Turn ${count} blocks into` : 'Turn into'}
+      </div>
       <div className="block-type-list">
         {choices
           .filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
@@ -292,24 +293,12 @@ export function BlockMenu({
               key={label}
               disabled={
                 mode === 'actions' &&
-                !changeBlock(
-                  editor.state,
-                  editor.state.selection.from,
-                  type,
-                  'level' in rest ? rest.level : 2,
-                )
+                !changeBlocks(editor.state, type, 'level' in rest ? rest.level : 2)
               }
               onClick={() =>
                 run(() => {
                   if (mode === 'actions')
-                    apply(
-                      changeBlock(
-                        editor.state,
-                        editor.state.selection.from,
-                        type,
-                        'level' in rest ? rest.level : 2,
-                      ),
-                    );
+                    apply(changeBlocks(editor.state, type, 'level' in rest ? rest.level : 2));
                   else {
                     const block = blockAt(editor.state.doc, editor.state.selection.from);
                     const position =

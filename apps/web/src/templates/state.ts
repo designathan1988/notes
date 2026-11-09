@@ -5,6 +5,7 @@ import { commandPreferences, type PreferenceStorage } from '../workbench/prefere
 import { copyKey, readCopies, sameCopy, writeCopies } from './commands.js';
 import { api, ApiError, json } from '../state/api.js';
 import { mergeDefinition, type TableDefinition } from '../databases/state.js';
+import { pageView } from '../workbench/route.js';
 export interface TemplateFilters {
   q?: string;
   kind?: string;
@@ -371,8 +372,7 @@ export function templateSlice(
             'The copy was created, but could not be opened. Refresh the workspace to find it.',
           );
         set({ templateDialog: null });
-        if (options.navigate !== false)
-          get().navigate(visible.id, visible.kind === 'database' ? 'database' : 'document');
+        if (options.navigate !== false) get().navigate(visible.id, pageView(visible.kind));
         return visible;
       } catch (error) {
         if (

@@ -6,10 +6,13 @@ export function TemplateBanner({ page }: { page: Page }) {
   const root = useWorkspace((state) => state.pages.find((item) => item.id === page.templateRootId)),
     canUse = useWorkspace((state) => state.canUseTemplate(page.templateRootId ?? '')),
     version = useWorkspace((state) => state.knowledgeVersion);
+  const rootId = root?.id,
+    rootRevision = root?.revision,
+    rootDatabase = root?.templateDatabaseId;
   useEffect(() => {
-    if (root?.templateDatabaseId && root.id !== page.id)
-      void useWorkspace.getState().loadTemplateDefaults(root.id);
-  }, [root?.id, root?.revision, page.id, version]);
+    if (rootId && rootDatabase && rootId !== page.id)
+      void useWorkspace.getState().loadTemplateDefaults(rootId);
+  }, [rootId, rootRevision, rootDatabase, page.id, version]);
   if (!page.templateRootId) return null;
   return (
     <section className="template-banner" aria-label="Template definition">

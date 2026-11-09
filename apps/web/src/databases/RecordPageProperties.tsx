@@ -17,7 +17,9 @@ export function RecordPageProperties({ page, readOnly }: { page: Page; readOnly:
   const refresh = () => useWorkspace.getState().loadRecord(page.parentId!, page.id);
   useEffect(() => {
     let active = true;
-    void refresh()
+    void useWorkspace
+      .getState()
+      .loadRecord(page.parentId!, page.id)
       .then(() => {
         if (active) setError('');
       })

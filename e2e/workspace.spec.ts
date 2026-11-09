@@ -230,7 +230,7 @@ test('imports a versioned workspace ZIP through settings and downloads an export
   await page.getByRole('button', { name: 'Account menu', exact: true }).click();
 
   await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
-  await page.getByRole('button', { name: 'Data', exact: true }).click();
+  await page.getByRole('tab', { name: 'Data', exact: true }).click();
   const title = `Imported fixture ${Date.now()}`;
   const bytes = zipSync({
     'manifest.json': strToU8(

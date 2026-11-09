@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { EditorContent, ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Placeholder from '@tiptap/extension-placeholder';
-import { initProseMirrorDoc, type ProsemirrorMapping } from '@tiptap/y-tiptap';
+import { initProseMirrorDoc } from '@tiptap/y-tiptap';
 import { documentRoot, pageLink } from '@note/editor/schema';
 import { canvasRoot, canvasCard, canvasGroup, canvasEdge } from '@note/editor/canvas';
+import { CanvasSelectionBoundary } from '@note/editor/canvas-selection';
 import type { DocumentSession } from '../documents/session.js';
 import { richEditorExtensions } from '../documents/richExtensions.js';
 import { captureClipboard, fileNode, type ClipboardContent } from '../documents/capture.js';
@@ -19,6 +20,7 @@ import { useWorkspace } from '../state/store.js';
 import { CanvasProvider, type CanvasApi } from './context.js';
 import { CanvasPageReference } from './PageReference.js';
 import { CanvasRootView, CanvasCardView, CanvasGroupView, CanvasEdgeView } from './CanvasViews.js';
+import { interactiveNodeView } from '../documents/nodeViewEvents.js';
 
 export default function CanvasEditor({ session }: { session: DocumentSession }) {
   const subscribe = useCallback(
@@ -45,7 +47,7 @@ export default function CanvasEditor({ session }: { session: DocumentSession }) 
 }
 
 function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
-  const mapping = useMemo<ProsemirrorMapping>(() => new Map(), [session]);
+  const mapping = session.mapping;
   const page =
     useWorkspace((state) => state.pages.find((page) => page.id === session.page.id)) ??
     session.page;
@@ -67,12 +69,23 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
               extension.name,
             ),
         ),
-        pageLink.extend({ addNodeView: () => ReactNodeViewRenderer(CanvasPageReference) }),
+        pageLink.extend({
+          addNodeView: () => ReactNodeViewRenderer(CanvasPageReference, interactiveNodeView),
+        }),
         documentRoot.extend({ content: 'canvasRoot' }),
-        canvasRoot.extend({ addNodeView: () => ReactNodeViewRenderer(CanvasRootView) }),
-        canvasCard.extend({ addNodeView: () => ReactNodeViewRenderer(CanvasCardView) }),
-        canvasGroup.extend({ addNodeView: () => ReactNodeViewRenderer(CanvasGroupView) }),
-        canvasEdge.extend({ addNodeView: () => ReactNodeViewRenderer(CanvasEdgeView) }),
+        canvasRoot.extend({
+          addNodeView: () => ReactNodeViewRenderer(CanvasRootView, interactiveNodeView),
+        }),
+        canvasCard.extend({
+          addNodeView: () => ReactNodeViewRenderer(CanvasCardView, interactiveNodeView),
+        }),
+        canvasGroup.extend({
+          addNodeView: () => ReactNodeViewRenderer(CanvasGroupView, interactiveNodeView),
+        }),
+        canvasEdge.extend({
+          addNodeView: () => ReactNodeViewRenderer(CanvasEdgeView, interactiveNodeView),
+        }),
+        CanvasSelectionBoundary,
         Collaboration.configure({ document: session.doc, ySyncOptions: { mapping } }),
         CollaborationCaret.configure({
           provider: session.provider,

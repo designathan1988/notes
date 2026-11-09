@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-import { Plus, RotateCcw } from 'lucide-react';
+import { useEffect, useState, useRef, useEffectEvent } from 'react';
+import { ArrowUpRight, Plus, RotateCcw } from 'lucide-react';
 import { Dialog } from '../ui/Dialog.js';
 import { api, json } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
@@ -39,22 +39,38 @@ export function Settings() {
         if (current()) setError(error.message);
       });
   };
+  // Reloading is the same action the restore buttons trigger; the effect fires it on changes.
+  const reload = useEffectEvent(refresh);
   useEffect(() => {
-    refresh();
+    const requests = sequence;
+    reload();
     return () => {
-      sequence.current++;
+      // Invalidate requests still in flight for the previous workspace or version.
+      requests.current++;
     };
   }, [state.workspaceId, state.knowledgeVersion]);
   return (
     <Dialog title="Workspace settings" wide onClose={() => state.openDialog(null)}>
-      <nav className="settings-tabs">
-        <button onClick={() => state.openAppearance('app')}>Appearance</button>
-        {['members', 'data', 'trash', 'account'].map((item) => (
-          <button key={item} className={tab === item ? 'active' : ''} onClick={() => setTab(item)}>
-            {item[0].toUpperCase() + item.slice(1)}
-          </button>
-        ))}
-      </nav>
+      <div className="settings-tabs">
+        <div role="tablist" aria-label="Settings sections">
+          {['members', 'data', 'trash', 'account'].map((item) => (
+            <button
+              key={item}
+              role="tab"
+              aria-selected={tab === item}
+              className={tab === item ? 'active' : ''}
+              onClick={() => setTab(item)}
+            >
+              {item[0].toUpperCase() + item.slice(1)}
+            </button>
+          ))}
+        </div>
+        {/* Appearance lives in its own panel; this opens it rather than switching a tab. */}
+        <button className="settings-elsewhere" onClick={() => state.openAppearance('app')}>
+          Appearance
+          <ArrowUpRight size={14} />
+        </button>
+      </div>
       {tab === 'members' && (
         <section className="settings-section">
           <div className="settings-heading">
@@ -76,6 +92,7 @@ export function Settings() {
                   <small>{member.email}</small>
                 </span>
                 <select
+                  className="member-role"
                   aria-label={`Role for ${member.email}`}
                   value={member.role}
                   disabled={
@@ -101,7 +118,7 @@ export function Settings() {
                     : ['admin', 'editor', 'viewer']
                   ).map((role) => (
                     <option key={role} value={role}>
-                      {role}
+                      {role[0].toUpperCase() + role.slice(1)}
                     </option>
                   ))}
                   <option value="remove">Remove member</option>
@@ -124,7 +141,7 @@ export function Settings() {
               <div className="trash-row" key={page.id}>
                 <span>{page.title}</span>
                 <button
-                  className="button"
+                  className="trash-restore"
                   disabled={workspace?.role === 'viewer'}
                   onClick={async () => {
                     try {
@@ -151,42 +168,44 @@ export function Settings() {
           <p className="info-note">
             Collaborative web beta. Billing and production sales are not enabled.
           </p>
-          {creating ? (
-            <form
-              onSubmit={async (event) => {
-                event.preventDefault();
-                const data = new FormData(event.currentTarget);
-                try {
-                  const created = await api<{ id: string }>('/workspaces', {
-                    method: 'POST',
-                    body: json({ name: data.get('name') }),
-                  });
-                  await state.initialize();
-                  await state.chooseWorkspace(created.id);
-                  state.openDialog(null);
-                } catch (error) {
-                  setError((error as Error).message);
-                }
-              }}
+          <div className="settings-actions">
+            {creating ? (
+              <form
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  const data = new FormData(event.currentTarget);
+                  try {
+                    const created = await api<{ id: string }>('/workspaces', {
+                      method: 'POST',
+                      body: json({ name: data.get('name') }),
+                    });
+                    await state.initialize();
+                    await state.chooseWorkspace(created.id);
+                    state.openDialog(null);
+                  } catch (error) {
+                    setError((error as Error).message);
+                  }
+                }}
+              >
+                <label>
+                  Workspace name
+                  <input name="name" required autoFocus maxLength={300} />
+                </label>
+                <button className="button primary">Create workspace</button>
+              </form>
+            ) : (
+              <button className="button" onClick={() => setCreating(true)}>
+                <Plus />
+                New workspace
+              </button>
+            )}
+            <button
+              className="text-button"
+              onClick={() => void state.signOut().catch(state.setError)}
             >
-              <label>
-                Workspace name
-                <input name="name" required autoFocus maxLength={300} />
-              </label>
-              <button className="button primary">Create workspace</button>
-            </form>
-          ) : (
-            <button className="button" onClick={() => setCreating(true)}>
-              <Plus />
-              New workspace
+              Sign out
             </button>
-          )}
-          <button
-            className="text-button"
-            onClick={() => void state.signOut().catch(state.setError)}
-          >
-            Sign out
-          </button>
+          </div>
         </section>
       )}
       {error && (

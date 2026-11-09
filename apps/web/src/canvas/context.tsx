@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -608,13 +609,15 @@ export function CanvasProvider({
     window.addEventListener('blur', stop);
     cleanup.current = stop;
   }
-  useEffect(
-    () => () => {
-      cleanup.current?.();
-      api.current = null;
-    },
-    [],
-  );
+  useEffect(() => {
+    const gestures = cleanup,
+      handle = api;
+    return () => {
+      // Unmounting ends any gesture in progress and releases the editor's command handle.
+      gestures.current?.();
+      handle.current = null;
+    };
+  }, [api]);
   useEffect(() => {
     const release = (event: KeyboardEvent) => {
       if (event.code === 'Space') setSpace(false);
@@ -627,26 +630,27 @@ export function CanvasProvider({
       window.removeEventListener('blur', blur);
     };
   }, []);
-  useEffect(() => {
-    if (
-      !saved &&
-      view.size.width > 0 &&
-      view.size.height > 0 &&
-      useWorkspace.getState().workspaceId === page.workspaceId
-    )
+  // The first measured camera is remembered once; panning afterwards saves through its own path.
+  const rememberCamera = useEffectEvent(() => {
+    if (useWorkspace.getState().workspaceId === page.workspaceId)
       useWorkspace.getState().setCanvasCamera(page.id, view.camera);
-  }, [saved, view.size.width, view.size.height, page.id]);
+  });
   useEffect(() => {
-    if (readOnly) {
-      cleanup.current?.();
-      view.cancelItem();
-    }
+    if (!saved && view.size.width > 0 && view.size.height > 0) rememberCamera();
+  }, [saved, view.size.width, view.size.height, page.id]);
+  // Losing edit rights stops whatever gesture is in progress.
+  const stopGestures = useEffectEvent(() => {
+    cleanup.current?.();
+    view.cancelItem();
+  });
+  useEffect(() => {
+    if (readOnly) stopGestures();
   }, [readOnly]);
   useEffect(() => {
     setSelected((ids) =>
       ids.every((id) => byId.has(id)) ? ids : ids.filter((id) => byId.has(id)),
     );
-  }, [doc]);
+  }, [byId]);
   const value: Context = {
     editor,
     page,

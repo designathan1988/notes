@@ -1,4 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 export function Popover({
   anchor,
@@ -29,19 +36,22 @@ export function Popover({
     window.addEventListener('resize', place);
     return () => window.removeEventListener('resize', place);
   }, [anchor]);
+  // Clicking outside is an event: it must call the latest close without re-running the effect.
+  const dismiss = useEffectEvent(() => close());
   useEffect(() => {
     const previous = document.activeElement as HTMLElement;
     const element = root.current;
     if (role === 'menu')
       element
-        ?.querySelectorAll('button')
+        // Buttons that declare their own role (e.g. menuitemradio) keep it.
+        ?.querySelectorAll('button:not([role])')
         .forEach((button) => button.setAttribute('role', 'menuitem'));
     const initial =
       role === 'dialog' ? element?.querySelector<HTMLElement>('[aria-selected="true"]') : null;
     (initial ?? element?.querySelector<HTMLElement>('button:not(:disabled),input'))?.focus();
     const outside = (event: PointerEvent) => {
       if (!root.current?.contains(event.target as Node) && !anchor?.contains(event.target as Node))
-        close();
+        dismiss();
     };
     document.addEventListener('pointerdown', outside);
     return () => {

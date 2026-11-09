@@ -15,6 +15,13 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
     return () => clearTimeout(timer);
   }, [input]);
   const title = kind === 'canvas' ? 'Canvases' : kind === 'database' ? 'Databases' : 'All pages';
+  // Each index speaks about what it lists.
+  const noun =
+    kind === 'canvas'
+      ? { one: 'a canvas', many: 'canvases' }
+      : kind === 'database'
+        ? { one: 'a database', many: 'databases' }
+        : { one: 'a page', many: 'pages' };
   const workspace = useWorkspace((state) => state.workspaceId);
   const identity = useWorkspace((state) => state.user?.id);
   const version = useWorkspace((state) => state.knowledgeVersion);
@@ -75,9 +82,11 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
     [workspace, identity, version, kind, type, query, sort, scope],
   );
   useEffect(() => {
+    const requests = request;
     void load(0);
     return () => {
-      request.current++;
+      // Invalidate the read still in flight for the previous filters.
+      requests.current++;
     };
   }, [load]);
   // Permission invalidation hides the old projection before the replacement read finishes.
@@ -111,7 +120,7 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
           <Search size={15} />
           <input
             aria-label="Search pages"
-            placeholder="Find a page…"
+            placeholder={`Find ${noun.one}…`}
             value={input}
             onChange={(event) => setInput(event.target.value)}
           />
@@ -149,7 +158,7 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
         <div className="explorer-columns" aria-hidden="true">
           <span>Name</span>
           <span>Location</span>
-          <span>Type</span>
+          {!kind && <span>Type</span>}
           <span>Edited</span>
         </div>
         {pages.map((page) => (
@@ -162,7 +171,7 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
             <PageGlyph page={page} size={16} />
             <span className="explorer-name">{page.title}</span>
             <small className="explorer-location">{page.parentTitle ?? 'Workspace'}</small>
-            <small className="explorer-kind">
+            <small className="explorer-kind" hidden={!!kind}>
               {page.kind === 'document'
                 ? 'Document'
                 : page.kind === 'canvas'
@@ -182,7 +191,7 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
       </div>
       {!busy && !pages.length && !error && (
         <p className="explorer-empty">
-          {query || type ? 'No pages match these filters.' : 'No pages yet.'}
+          {query || type ? `No ${noun.many} match these filters.` : `No ${noun.many} yet.`}
         </p>
       )}
       {busy && <p className="muted-text">Loading pages…</p>}

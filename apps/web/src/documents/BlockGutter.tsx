@@ -4,6 +4,7 @@ import { GripVertical, Plus } from 'lucide-react';
 import { ySyncPluginKey } from '@tiptap/y-tiptap';
 import type { Editor } from '@tiptap/react';
 import { blockAt, moveBlockTo } from '@note/editor/blocks';
+import { blocksInRange, moveBlocksTo } from '@note/editor/block-selection';
 
 type Hover = { from: number; left: number; top: number };
 type Drop = { position: number; left: number; top: number; width: number };
@@ -92,6 +93,10 @@ export function BlockGutter({
     const block = blockAt(editor.state.doc, hover.from);
     if (!block) return;
     const binding = ySyncPluginKey.getState(editor.state);
+    // Dragging any block of a block selection carries the whole selection.
+    const group = blocksInRange(editor.state.selection);
+    const carriesGroup = group.includes(block.index);
+    if (!carriesGroup) group.length = 0;
     gesture.current = {
       pointer: event.pointerId,
       x: event.clientX,
@@ -100,7 +105,10 @@ export function BlockGutter({
       source: binding?.type.toArray()[block.index],
       fallback: block.from,
       target: null,
-      label: block.node.textContent.slice(0, 85) || block.node.type.name,
+      label:
+        group.length > 1
+          ? `${group.length} blocks`
+          : block.node.textContent.slice(0, 85) || block.node.type.name,
     };
     const button = event.currentTarget;
     try {
@@ -171,7 +179,9 @@ export function BlockGutter({
       stop();
       if (source === null) return;
       if (dragged && target) {
-        const tr = moveBlockTo(editor.state, source, target.position);
+        const tr = carriesGroup
+          ? moveBlocksTo(editor.state, target.position)
+          : moveBlockTo(editor.state, source, target.position);
         if (tr) editor.view.dispatch(tr);
         editor.view.focus();
       } else if (!dragged) actions(source, button);

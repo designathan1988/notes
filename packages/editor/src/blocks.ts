@@ -74,36 +74,63 @@ export function changeBlock(
 ): Transaction | null {
   const block = blockAt(state.doc, position);
   if (!block) return null;
-  const { schema } = state;
-  let source = block.node;
+  const replacement = convertedBlock(block.node, kind, level);
+  if (!replacement) return null;
+  const tr = state.tr.replaceWith(block.from, block.to, replacement);
+  return tr.setSelection(NodeSelection.create(tr.doc, block.from)).scrollIntoView();
+}
+/**
+ * The block rewritten as another kind, or null when converting would lose structure.
+ * A toggle section converts its title and keeps its contents as the blocks that follow it.
+ */
+export function convertedBlock(
+  node: ProseMirrorNode,
+  kind: BlockKind,
+  level = 2,
+): ProseMirrorNode[] | null {
+  const schema = node.type.schema;
+  if (node.type.name === 'toggleBlock') {
+    if (kind === 'toggleBlock') return [node];
+    const title = node.firstChild;
+    if (!title?.isTextblock) return null;
+    const contents: ProseMirrorNode[] = [];
+    node.lastChild?.forEach((child) => {
+      // An untouched toggle holds one empty paragraph: nothing worth keeping.
+      if (!(child.type.name === 'paragraph' && !child.content.size)) contents.push(child);
+    });
+    const converted = convertTextblock(title, kind, level);
+    return converted ? [converted, ...contents] : null;
+  }
+  let source = node;
   while (!source.isTextblock && source.childCount === 1) source = source.firstChild!;
   if (!source.isTextblock) return null;
-  const content = source.content;
-  const paragraph = schema.nodes.paragraph.create(null, content);
-  const replacement =
-    kind === 'toggleBlock'
+  const converted = convertTextblock(source, kind, level);
+  return converted ? [converted] : null;
+  function convertTextblock(textblock: ProseMirrorNode, target: BlockKind, headingLevel: number) {
+    const content = textblock.content;
+    const paragraph = schema.nodes.paragraph.create(null, content);
+    return target === 'toggleBlock'
       ? schema.nodes.toggleBlock.create(null, [
           schema.nodes.toggleTitle.create(null, content),
           schema.nodes.toggleContent.create(null, schema.nodes.paragraph.create()),
         ])
-      : kind === 'heading'
-        ? schema.nodes.heading.create({ level }, content)
-        : kind === 'codeBlock'
+      : target === 'heading'
+        ? schema.nodes.heading.create({ level: headingLevel }, content)
+        : target === 'codeBlock'
           ? schema.nodes.codeBlock.create(
               null,
-              source.textContent ? schema.text(source.textContent) : null,
+              textblock.textContent ? schema.text(textblock.textContent) : null,
             )
-          : ['callout', 'blockquote'].includes(kind)
-            ? schema.nodes[kind].create(null, paragraph)
-            : ['bulletList', 'orderedList', 'taskList'].includes(kind)
-              ? schema.nodes[kind].create(
+          : ['callout', 'blockquote'].includes(target)
+            ? schema.nodes[target].create(null, paragraph)
+            : ['bulletList', 'orderedList', 'taskList'].includes(target)
+              ? schema.nodes[target].create(
                   null,
-                  schema.nodes[kind === 'taskList' ? 'taskItem' : 'listItem'].create(
-                    kind === 'taskList' ? { checked: false } : null,
+                  schema.nodes[target === 'taskList' ? 'taskItem' : 'listItem'].create(
+                    target === 'taskList' ? { checked: false } : null,
                     paragraph,
                   ),
                 )
               : paragraph;
-  const tr = state.tr.replaceWith(block.from, block.to, replacement);
-  return tr.setSelection(NodeSelection.create(tr.doc, block.from)).scrollIntoView();
+  }
 }
