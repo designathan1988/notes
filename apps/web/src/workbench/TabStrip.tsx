@@ -10,8 +10,9 @@ import {
   PanelLeft,
   RotateCcw,
   LayoutTemplate,
-  SquareDashed,
+  Shapes,
   PanelsTopLeft,
+  House,
 } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
 import { tabKey } from './state.js';
@@ -109,33 +110,38 @@ export function TabStrip() {
       {state.tabs.map((tab) => {
         const page = state.pages.find((page) => page.id === tab.pageId),
           label =
-            tab.view === 'templates'
-              ? 'Templates'
-              : tab.view === 'all'
-                ? 'All pages'
-                : tab.view === 'graph'
-                  ? 'Knowledge graph'
-                  : tab.view === 'database' && !tab.pageId
-                    ? 'Databases'
-                    : tab.view === 'canvas' && !tab.pageId
-                      ? 'Canvases'
-                      : (page?.title ?? 'Page');
+            tab.view === 'home'
+              ? 'Home'
+              : tab.view === 'templates'
+                ? 'Templates'
+                : tab.view === 'all'
+                  ? 'All pages'
+                  : tab.view === 'graph'
+                    ? 'Knowledge graph'
+                    : tab.view === 'database' && !tab.pageId
+                      ? 'Databases'
+                      : tab.view === 'canvas' && !tab.pageId
+                        ? 'Canvases'
+                        : (page?.title ?? 'Page');
         const Icon =
-          tab.view === 'templates'
-            ? LayoutTemplate
-            : tab.view === 'graph'
-              ? Network
-              : tab.view === 'all'
-                ? Files
-                : tab.view === 'database'
-                  ? Database
-                  : tab.view === 'canvas'
-                    ? SquareDashed
-                    : FileText;
+          tab.view === 'home'
+            ? House
+            : tab.view === 'templates'
+              ? LayoutTemplate
+              : tab.view === 'graph'
+                ? Network
+                : tab.view === 'all'
+                  ? Files
+                  : tab.view === 'database'
+                    ? Database
+                    : tab.view === 'canvas'
+                      ? Shapes
+                      : FileText;
         return (
           <div
             key={tab.id}
             data-workbench-tab={tab.id}
+            data-kind={page?.kind}
             className={`workbench-tab ${active === tab.id ? 'active' : ''} ${!tab.pinned ? 'preview' : ''} ${dragged === tab.id ? 'dragging' : ''}`}
             onContextMenu={(event) => {
               event.preventDefault();

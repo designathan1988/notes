@@ -36,6 +36,7 @@ import { CommandPalette } from '../workbench/CommandPalette.js';
 import { TemplateBanner } from '../templates/TemplateBanner.js';
 import { TemplateDialog } from '../templates/TemplateDialog.js';
 import { LazyBoundary } from '../ui/LazyBoundary.js';
+import { Home } from '../home/Home.js';
 const Library = lazy(() => import('../templates/Library.js'));
 const Graph = lazy(() => import('../knowledge/Graph.js'));
 const DatabaseView = lazy(() =>
@@ -51,6 +52,7 @@ export function Workspace() {
   const databaseIndex = state.view === 'database' && page?.kind !== 'database';
   const canvasIndex = state.view === 'canvas' && page?.kind !== 'canvas';
   const globalView =
+    state.view === 'home' ||
     state.view === 'all' ||
     state.view === 'graph' ||
     state.view === 'templates' ||
@@ -136,17 +138,19 @@ export function Workspace() {
               </>
             )}
             <strong>
-              {state.view === 'templates'
-                ? 'Templates'
-                : state.view === 'all'
-                  ? 'All pages'
-                  : state.view === 'graph'
-                    ? 'Knowledge graph'
-                    : databaseIndex
-                      ? 'Databases'
-                      : canvasIndex
-                        ? 'Canvases'
-                        : (page?.title ?? 'Workspace')}
+              {state.view === 'home'
+                ? 'Home'
+                : state.view === 'templates'
+                  ? 'Templates'
+                  : state.view === 'all'
+                    ? 'All pages'
+                    : state.view === 'graph'
+                      ? 'Knowledge graph'
+                      : databaseIndex
+                        ? 'Databases'
+                        : canvasIndex
+                          ? 'Canvases'
+                          : (page?.title ?? 'Workspace')}
             </strong>
             {page && !globalView && ['document', 'canvas'].includes(state.view) && (
               <small className="mobile-save-label">{status}</small>
@@ -216,7 +220,9 @@ export function Workspace() {
           </div>
         )}
         <div className="workspace-content">
-          {state.view === 'templates' ? (
+          {state.view === 'home' ? (
+            <Home />
+          ) : state.view === 'templates' ? (
             <LazyBoundary key={`templates:${state.workspaceId}`} name="Templates">
               <Suspense fallback={<p className="table-empty">Opening templates…</p>}>
                 <Library key={state.workspaceId} />
@@ -267,7 +273,7 @@ export function Workspace() {
             </>
           ) : page ? (
             <>
-              <div className="document-scroll">
+              <div className="document-scroll" data-kind={page.kind}>
                 <TemplateBanner page={page} />
                 <article
                   className={`document-canvas ${state.view === 'database' ? 'database-page' : ''}`}

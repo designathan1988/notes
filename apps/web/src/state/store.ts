@@ -17,7 +17,8 @@ async function settlePageWrites(ids: string[]) {
   await Promise.all(ids.flatMap((id) => (pageWrites.get(id) ? [pageWrites.get(id)!] : [])));
 }
 let navigationSequence = 0;
-export type View = 'document' | 'database' | 'graph' | 'all' | 'templates' | 'canvas';
+import { isView, type View } from './views.js';
+export * from './views.js';
 export type Dialog = 'search' | 'new-page' | 'page-menu' | 'settings' | 'invite' | 'move' | null;
 export interface WorkspaceState
   extends
@@ -208,9 +209,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
           (!fromHash[0] && ['canvas', 'database'].includes(fromHash[1]))
           ? null
           : snapshot.selectedId,
-        (['document', 'database', 'graph', 'all', 'templates', 'canvas'].includes(fromHash[1])
-          ? fromHash[1]
-          : 'document') as View,
+        isView(fromHash[1]) ? fromHash[1] : 'document',
         'replace',
       );
       // The authorized bootstrap can render now; tab reconciliation refreshes in the background.
@@ -281,7 +280,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
           const next = get().tabs.find((tab) => tab.pageId);
           get().navigate(
             next?.pageId ?? snapshot.selectedId,
-            ['all', 'graph'].includes(get().view) ? get().view : next?.view,
+            ['all', 'graph', 'home'].includes(get().view) ? get().view : next?.view,
             'replace',
             { preserveOverlays: true },
           );

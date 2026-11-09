@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Database, FileText, ArrowUpRight, Plus, SquareDashed, Search } from 'lucide-react';
+import { ArrowUpRight, Plus, Search } from 'lucide-react';
 import type { Page } from '@note/contracts';
 import { api } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
 import { pageView } from '../workbench/route.js';
+import { PageGlyph } from '../ui/PageGlyph.js';
 export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
   const [input, setInput] = useState(''),
     [query, setQuery] = useState(''),
@@ -155,19 +156,10 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
           <button
             key={page.id}
             aria-label={`${page.title} ${page.kind}`}
+            data-kind={page.kind}
             onClick={() => useWorkspace.getState().navigate(page.id, pageView(page.kind))}
           >
-            {page.icon ? (
-              <span className="page-reference-icon" aria-hidden="true">
-                {page.icon}
-              </span>
-            ) : page.kind === 'canvas' ? (
-              <SquareDashed />
-            ) : page.kind === 'database' ? (
-              <Database />
-            ) : (
-              <FileText />
-            )}
+            <PageGlyph page={page} size={16} />
             <span className="explorer-name">{page.title}</span>
             <small className="explorer-location">{page.parentTitle ?? 'Workspace'}</small>
             <small className="explorer-kind">

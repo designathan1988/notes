@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowRight, LoaderCircle } from 'lucide-react';
+import { ArrowRight, Database, FileText, LoaderCircle, Network, Shapes } from 'lucide-react';
+import { BrandMark } from '../ui/BrandMark.js';
 import { api, json } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
 export function SignIn() {
@@ -32,15 +33,41 @@ export function SignIn() {
   }
   return (
     <main className="auth-screen">
-      <div className="auth-brand">
-        <span className="brand-mark">
+      <section className="auth-hero" aria-label="About Note">
+        <div className="auth-aurora" aria-hidden="true">
           <i />
           <i />
           <i />
-          <i />
-        </span>
-        <span>Note</span>
-      </div>
+        </div>
+        <div className="auth-brand">
+          <BrandMark size={30} />
+          <span>Note</span>
+        </div>
+        <div className="auth-pitch">
+          <h2>
+            Think in pages.
+            <br />
+            Organize in data.
+            <br />
+            <span>See the connections.</span>
+          </h2>
+          <ul>
+            <li>
+              <FileText size={16} /> Documents that write like a notebook
+            </li>
+            <li>
+              <Database size={16} /> Databases with real views and formulas
+            </li>
+            <li>
+              <Shapes size={16} /> Canvases for spatial thinking
+            </li>
+            <li>
+              <Network size={16} /> A live graph of everything you link
+            </li>
+          </ul>
+        </div>
+        <footer>Capture what matters. Connect what comes next.</footer>
+      </section>
       <div className="auth-form">
         <h1>{signup ? 'Room for your next idea.' : 'Welcome back.'}</h1>
         <p>A shared space for connected thinking.</p>
@@ -100,7 +127,6 @@ export function SignIn() {
           </button>
         )}
       </div>
-      <footer>Capture what matters. Connect what comes next.</footer>
     </main>
   );
 }

@@ -1,8 +1,23 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Command, Search, ArrowUpLeft } from 'lucide-react';
+import { Search, Plus, Compass, Settings2, FileText } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
 import { Dialog } from '../ui/Dialog.js';
 import { availableCommands, type AppCommand } from './commands.js';
+
+const groupStyle: Record<AppCommand['group'], { Icon: typeof Plus; tone: number }> = {
+  Create: { Icon: Plus, tone: 0 },
+  Navigate: { Icon: Compass, tone: 3 },
+  Workspace: { Icon: Settings2, tone: 1 },
+  Page: { Icon: FileText, tone: 4 },
+};
+function GroupIcon({ group }: { group: AppCommand['group'] }) {
+  const { Icon, tone } = groupStyle[group];
+  return (
+    <span className="kind-tile command-tile" data-tone={tone} aria-hidden="true">
+      <Icon size={15} />
+    </span>
+  );
+}
 export function CommandPalette() {
   const state = useWorkspace(),
     [query, setQuery] = useState(''),
@@ -64,12 +79,12 @@ export function CommandPalette() {
             onMouseEnter={() => setActive(index)}
             onClick={() => run(command)}
           >
-            <Command size={16} />
+            <GroupIcon group={command.group} />
             <span>
               <strong>{command.title}</strong>
               <small>{command.group}</small>
             </span>
-            {command.shortcut ? <kbd>{command.shortcut.label}</kbd> : <ArrowUpLeft size={15} />}
+            {command.shortcut && <kbd>{command.shortcut.label}</kbd>}
           </button>
         ))}
         {!results.length && <p className="table-empty">No matching commands.</p>}

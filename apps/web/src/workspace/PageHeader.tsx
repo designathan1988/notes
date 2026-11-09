@@ -1,4 +1,4 @@
-import { Clock3, FileText, Database, Network, SquareDashed, ChevronDown } from 'lucide-react';
+import { Clock3, FileText, Database, Network, Shapes, ChevronDown } from 'lucide-react';
 import type { Page } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { useLayoutEffect, useRef, useState } from 'react';
@@ -52,8 +52,7 @@ export function PageHeader({
     return () => observer.disconnect();
   }, [page.id, page.title, page.description]);
   const parent = useWorkspace((state) => state.pages.find((item) => item.id === page.parentId));
-  const Icon =
-    page.kind === 'canvas' ? SquareDashed : page.kind === 'database' ? Database : FileText;
+  const Icon = page.kind === 'canvas' ? Shapes : page.kind === 'database' ? Database : FileText;
   const readOnly = useWorkspace(
     (state) => state.workspaces.find((item) => item.id === state.workspaceId)?.role === 'viewer',
   );

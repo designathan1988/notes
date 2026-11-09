@@ -295,6 +295,7 @@ function GraphSurface({
                   aria-label={`Open ${node.title}`}
                   aria-describedby="graph-help"
                   className="graph-point"
+                  data-kind={node.kind}
                   data-active={chosen || undefined}
                   data-related={neighbors.has(node.id) || undefined}
                   data-muted={(!!active && !chosen && !neighbors.has(node.id)) || undefined}

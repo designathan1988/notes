@@ -14,7 +14,9 @@
     "start": "node dist/server/main.js",
     "lint": "eslint .",
     "format:check": "prettier --check \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"tests/**/*.ts\" \"e2e/**/*.ts\" eslint.config.mjs",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build"
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build",
+    "ui:shots": "node scripts/ui-shots.mjs",
+    "ui:audit": "node scripts/ui-audit.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
@@ -30,8 +32,8 @@
     "@electric-sql/pglite": "0.5.15",
     "@fastify/static": "10.1.10",
     "@fastify/websocket": "^11.2.0",
-    "@fontsource/inter": "^5.2.8",
-    "@fontsource/newsreader": "^5.2.8",
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
     "@hocuspocus/provider": "4.8.0",
     "@hocuspocus/server": "4.8.0",
     "@lezer/highlight": "1.2.5",

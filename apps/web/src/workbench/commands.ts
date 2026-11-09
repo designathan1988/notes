@@ -143,6 +143,13 @@ export const commands: AppCommand[] = [
     run: (state) => state.openDialog('search'),
   },
   {
+    id: 'workspace.home',
+    title: 'Go to home',
+    group: 'Navigate',
+    keywords: 'start dashboard recent overview',
+    run: (state) => state.navigate(null, 'home'),
+  },
+  {
     id: 'workspace.all',
     title: 'Open all pages',
     group: 'Navigate',

@@ -1,5 +1,6 @@
 import type { Page } from '@note/contracts';
-import type { View, WorkspaceState } from '../state/store.js';
+import type { WorkspaceState } from '../state/store.js';
+import { GLOBAL_VIEWS, isView, type View } from '../state/views.js';
 import { browserPreferences, type PreferenceStorage } from './preferences.js';
 import { navigateHistory, type WorkbenchHistory } from './history.js';
 import { validPoint, validCamera, type Point, type Camera } from '../spatial/geometry.js';
@@ -313,9 +314,7 @@ export function workbenchSlice(
             .filter(
               (tab: WorkbenchTab) =>
                 tab &&
-                ['document', 'database', 'graph', 'all', 'templates', 'canvas'].includes(
-                  tab.view,
-                ) &&
+                isView(tab.view) &&
                 (tab.pageId === null || typeof tab.pageId === 'string') &&
                 tab.id === tabKey(tab.pageId, tab.view),
             )
@@ -388,7 +387,7 @@ export function workbenchSlice(
     reconcileTabs(pages) {
       const ids = new Set(pages.map((page) => page.id));
       const visible = (tab: WorkbenchTab) =>
-        !tab.pageId || ids.has(tab.pageId) || ['graph', 'all', 'templates'].includes(tab.view);
+        !tab.pageId || ids.has(tab.pageId) || GLOBAL_VIEWS.includes(tab.view);
       const normalize = (tab: WorkbenchTab): WorkbenchTab => {
         if (tab.pageId && !ids.has(tab.pageId)) return { ...tab, pageId: null };
         if (

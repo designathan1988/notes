@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RecordField } from '@note/contracts';
 import { RelationCell } from './RelationCell.js';
+import { toneOf } from '../ui/tone.js';
 export function Cell({
   initial,
   field,
@@ -107,7 +108,10 @@ export function Cell({
     );
   if (readOnly)
     return (
-      <span className={field?.type === 'select' ? 'status-label' : ''}>
+      <span
+        className={field?.type === 'select' ? 'status-label' : ''}
+        data-tone={field?.type === 'select' ? toneOf(initial) : undefined}
+      >
         {Array.isArray(initial) ? initial.join(', ') : String(initial ?? '')}
       </span>
     );
@@ -137,6 +141,7 @@ export function Cell({
         <select
           aria-label={label}
           className="status-label"
+          data-tone={toneOf(value)}
           disabled={pending}
           value={String(value)}
           onFocus={begin}

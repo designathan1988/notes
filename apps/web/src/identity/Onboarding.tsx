@@ -1,18 +1,14 @@
 import { useEffect, useState } from 'react';
 import { api, json } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
+import { BrandMark } from '../ui/BrandMark.js';
 export function WorkspaceSetup() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   return (
     <main className="onboarding">
       <div className="auth-brand">
-        <span className="brand-mark">
-          <i />
-          <i />
-          <i />
-          <i />
-        </span>
+        <BrandMark size={30} />
         Note
       </div>
       <section>
@@ -73,12 +69,7 @@ export function InvitationAccept({ id }: { id: string }) {
   return (
     <main className="onboarding">
       <div className="auth-brand">
-        <span className="brand-mark">
-          <i />
-          <i />
-          <i />
-          <i />
-        </span>
+        <BrandMark size={30} />
         Note
       </div>
       <section>

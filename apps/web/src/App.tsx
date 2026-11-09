@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { useWorkspace } from './state/store.js';
+import { isView } from './state/views.js';
+import { BrandMark } from './ui/BrandMark.js';
 import { SignIn } from './identity/SignIn.js';
 import { Workspace } from './workspace/Workspace.js';
 import { WorkspaceSetup, InvitationAccept } from './identity/Onboarding.js';
@@ -29,15 +31,7 @@ export default function App() {
     window.addEventListener('keydown', keys);
     const back = () => {
       const [id, view] = location.hash.slice(1).split('/');
-      useWorkspace
-        .getState()
-        .navigate(
-          id || null,
-          ['document', 'database', 'graph', 'all', 'templates', 'canvas'].includes(view)
-            ? (view as import('./state/store.js').View)
-            : 'document',
-          'none',
-        );
+      useWorkspace.getState().navigate(id || null, isView(view) ? view : 'document', 'none');
     };
     window.addEventListener('popstate', back);
     return () => {
@@ -50,14 +44,20 @@ export default function App() {
   if (loading)
     return (
       <main className="loading-screen">
-        <span className="brand">Note</span>
+        <span className="brand">
+          <BrandMark size={28} />
+          Note
+        </span>
         <p>Opening your workspace…</p>
       </main>
     );
   if (!user && connectionError)
     return (
       <main className="loading-screen">
-        <span className="brand">Note</span>
+        <span className="brand">
+          <BrandMark size={28} />
+          Note
+        </span>
         <p>We couldn’t reach your workspace.</p>
         <button
           className="button primary"

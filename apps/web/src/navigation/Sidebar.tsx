@@ -16,8 +16,11 @@ import {
   SlidersHorizontal,
   MoreHorizontal,
   LayoutTemplate,
-  SquareDashed,
-  BookOpen,
+  Shapes,
+  House,
+  Monitor,
+  Moon,
+  Sun,
   Palette,
   SquarePen,
 } from 'lucide-react';
@@ -28,6 +31,9 @@ import type { Page } from '@note/contracts';
 import { useTreeDrag } from './useTreeDrag.js';
 import { PageActions } from './PageActions.js';
 import { Popover } from '../ui/Popover.js';
+import { BrandMark } from '../ui/BrandMark.js';
+import { GLOBAL_VIEWS } from '../state/views.js';
+import { applyTheme, useTheme, type Theme } from '../ui/theme.js';
 function PageRow({
   page,
   depth,
@@ -43,7 +49,10 @@ function PageRow({
     (state) =>
       state.workspaces.find((workspace) => workspace.id === state.workspaceId)?.role === 'viewer',
   );
-  const selected = useWorkspace((state) => state.selectedId);
+  // Highlight the open page only while a page is on screen, not on workspace-wide views.
+  const selected = useWorkspace((state) =>
+    GLOBAL_VIEWS.includes(state.view) ? null : state.selectedId,
+  );
   const expanded = useWorkspace((state) => state.expanded.includes(page.id));
   const cursor = useWorkspace((state) => state.navigationCursors[page.id]);
   const children = pages
@@ -52,7 +61,7 @@ function PageRow({
   const hasChildren = page.hasChildren || children.length > 0;
   const Icon =
     page.kind === 'canvas'
-      ? SquareDashed
+      ? Shapes
       : page.kind === 'database'
         ? Database
         : hasChildren
@@ -63,6 +72,7 @@ function PageRow({
       <div
         className={`tree-row ${selected === page.id ? 'selected' : ''} ${drop?.id === page.id ? 'tree-drop-' + drop.edge : ''}`}
         data-tree-page={page.id}
+        data-kind={page.kind}
         onContextMenu={(event) => {
           event.preventDefault();
           setMenu(event.currentTarget);
@@ -144,6 +154,7 @@ function PageRow({
 export function Sidebar() {
   const state = useWorkspace();
   const [accountMenu, setAccountMenu] = useState<HTMLElement | null>(null);
+  const theme = useTheme();
   const drag = useTreeDrag();
   const drawer = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -186,11 +197,12 @@ export function Sidebar() {
   const templateId = state.pages.find((page) => page.id === state.selectedId)?.templateRootId,
     template = state.pages.find((page) => page.id === templateId);
   const destinations = [
+    { view: 'home', label: 'Home', Icon: House },
     { view: 'all', label: 'All pages', Icon: Files },
     { view: 'graph', label: 'Knowledge graph', Icon: Network },
     { view: 'database', label: 'Databases', Icon: Database },
     { view: 'templates', label: 'Templates', Icon: LayoutTemplate },
-    { view: 'canvas', label: 'Canvases', Icon: SquareDashed },
+    { view: 'canvas', label: 'Canvases', Icon: Shapes },
   ] as const;
   const utilities = [
     { label: 'Commands', Icon: Command, run: state.showCommands },
@@ -224,7 +236,7 @@ export function Sidebar() {
         <div className="sidebar-pane">
           <div className="workspace-identity">
             <label className="workspace-select">
-              <BookOpen size={19} />
+              <BrandMark size={26} />
               <select
                 aria-label="Workspace"
                 value={state.workspaceId ?? ''}
@@ -253,9 +265,7 @@ export function Sidebar() {
           </button>
           <nav className="workspace-destinations" aria-label="Workspace tools">
             {destinations.map(({ view, label, Icon }) => {
-              const active = template
-                ? view === 'templates'
-                : state.view === view || (view === 'all' && state.view === 'document');
+              const active = template ? view === 'templates' : state.view === view;
               return (
                 <button
                   key={view}
@@ -281,6 +291,7 @@ export function Sidebar() {
                     .map((page) => (
                       <button
                         key={page.id}
+                        data-kind={page.kind}
                         onClick={() =>
                           state.navigate(
                             page.id,
@@ -367,6 +378,25 @@ export function Sidebar() {
             </button>
             {accountMenu && (
               <Popover anchor={accountMenu} label="Account" close={() => setAccountMenu(null)}>
+                <div className="theme-switch" role="radiogroup" aria-label="Theme">
+                  {(
+                    [
+                      ['light', 'Light', Sun],
+                      ['dark', 'Dark', Moon],
+                      ['system', 'System', Monitor],
+                    ] as [Theme, string, typeof Sun][]
+                  ).map(([value, label, Icon]) => (
+                    <button
+                      key={value}
+                      role="radio"
+                      aria-checked={theme === value}
+                      onClick={() => applyTheme(value)}
+                    >
+                      <Icon size={14} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
                 <div className="menu-list">
                   <button
                     onClick={() => {
