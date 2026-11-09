@@ -236,18 +236,21 @@ export function Sidebar() {
         <div className="sidebar-pane">
           <div className="workspace-identity">
             <label className="workspace-select">
-              <BrandMark size={26} />
-              <select
-                aria-label="Workspace"
-                value={state.workspaceId ?? ''}
-                onChange={(event) => void state.chooseWorkspace(event.target.value)}
-              >
-                {state.workspaces.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+              <BrandMark size={24} />
+              <span className="workspace-names">
+                <strong>Mosaic</strong>
+                <select
+                  aria-label="Workspace"
+                  value={state.workspaceId ?? ''}
+                  onChange={(event) => void state.chooseWorkspace(event.target.value)}
+                >
+                  {state.workspaces.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </span>
               <ChevronDown size={14} />
             </label>
             <IconButton
@@ -259,8 +262,8 @@ export function Sidebar() {
             </IconButton>
           </div>
           <button className="search-trigger" onClick={() => state.openDialog('search')}>
-            <Search size={18} />
-            <span>Search anything</span>
+            <Search size={15} />
+            <span>Search</span>
             <kbd>Ctrl K</kbd>
           </button>
           <nav className="workspace-destinations" aria-label="Workspace tools">

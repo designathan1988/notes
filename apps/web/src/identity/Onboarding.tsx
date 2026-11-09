@@ -9,7 +9,7 @@ export function WorkspaceSetup() {
     <main className="onboarding">
       <div className="auth-brand">
         <BrandMark size={30} />
-        Note
+        Mosaic
       </div>
       <section>
         <h1>Make room for your ideas.</h1>
@@ -70,7 +70,7 @@ export function InvitationAccept({ id }: { id: string }) {
     <main className="onboarding">
       <div className="auth-brand">
         <BrandMark size={30} />
-        Note
+        Mosaic
       </div>
       <section>
         <h1>You’ve been invited.</h1>

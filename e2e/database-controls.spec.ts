@@ -46,6 +46,8 @@ test('database controls save typed values, relations, filtered views, sorting, f
   }
   await page.getByLabel(`Effort for ${alpha}`, { exact: true }).fill('42');
   await page.getByLabel(`Effort for ${alpha}`, { exact: true }).press('Tab');
+  // Let the effort save and its row refresh settle before toggling the next cell.
+  await expect(page.locator('.cell-saving')).toHaveCount(0);
   await page.getByLabel(`Done for ${alpha}`, { exact: true }).check();
   await page.getByRole('button', { name: `Related for ${alpha}`, exact: true }).click();
   await dialog.getByLabel('Find a record', { exact: true }).fill(zeta);

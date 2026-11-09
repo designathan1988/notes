@@ -1,4 +1,4 @@
-# Note
+# Mosaic
 
 A collaborative knowledge workspace with rich documents, structured records, indexed search, and connected knowledge. The web beta is the first checkpoint of the approved product design. It is not a live billing launch or a native desktop/mobile release.
 

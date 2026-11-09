@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowRight, Database, FileText, LoaderCircle, Network, Shapes } from 'lucide-react';
+import { LoaderCircle } from 'lucide-react';
 import { BrandMark } from '../ui/BrandMark.js';
 import { api, json } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
@@ -33,44 +33,61 @@ export function SignIn() {
   }
   return (
     <main className="auth-screen">
-      <section className="auth-hero" aria-label="About Note">
-        <div className="auth-aurora" aria-hidden="true">
-          <i />
-          <i />
-          <i />
+      <section className="auth-hero" aria-label="About Mosaic">
+        <div className="auth-watermark" aria-hidden="true">
+          <BrandMark size={620} />
         </div>
         <div className="auth-brand">
-          <BrandMark size={30} />
-          <span>Note</span>
+          <BrandMark size={28} />
+          <span>Mosaic</span>
         </div>
         <div className="auth-pitch">
-          <h2>
-            Think in pages.
-            <br />
-            Organize in data.
-            <br />
-            <span>See the connections.</span>
-          </h2>
-          <ul>
-            <li>
-              <FileText size={16} /> Documents that write like a notebook
-            </li>
-            <li>
-              <Database size={16} /> Databases with real views and formulas
-            </li>
-            <li>
-              <Shapes size={16} /> Canvases for spatial thinking
-            </li>
-            <li>
-              <Network size={16} /> A live graph of everything you link
-            </li>
-          </ul>
+          <h2>Documents, data and ideas in one connected workspace.</h2>
+          <p>
+            Write freely, organize records in real views, and see how every piece fits — with your
+            team, in real time.
+          </p>
+          <div className="auth-preview" aria-hidden="true">
+            <div className="auth-preview-nav">
+              <i />
+              <i className="wide" />
+              <i />
+              <i />
+              <i data-kind="document" />
+              <i />
+              <i data-kind="database" />
+            </div>
+            <div className="auth-preview-doc">
+              <i className="title" />
+              <i className="sub" />
+              <i />
+              <i />
+              <i className="short" />
+              <div className="auth-preview-table">
+                <span>
+                  <i />
+                  <b data-kind="record" />
+                  <b data-kind="canvas" />
+                </span>
+                <span>
+                  <i />
+                  <b data-kind="document" />
+                  <b data-kind="database" />
+                </span>
+                <span>
+                  <i />
+                  <b data-kind="record" />
+                  <b />
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
         <footer>Capture what matters. Connect what comes next.</footer>
       </section>
       <div className="auth-form">
-        <h1>{signup ? 'Room for your next idea.' : 'Welcome back.'}</h1>
-        <p>A shared space for connected thinking.</p>
+        <h1>{signup ? 'Create your account' : 'Welcome back'}</h1>
+        <p>{signup ? 'Start a workspace in under a minute.' : 'Sign in to your workspace.'}</p>
         <form onSubmit={submit}>
           {signup && (
             <label>
@@ -80,7 +97,13 @@ export function SignIn() {
           )}
           <label>
             Email
-            <input autoComplete="email" type="email" name="email" required />
+            <input
+              autoComplete="email"
+              type="email"
+              name="email"
+              placeholder="you@company.com"
+              required
+            />
           </label>
           <label>
             Password
@@ -98,34 +121,34 @@ export function SignIn() {
             </p>
           )}
           <button className="button primary" disabled={busy}>
-            {busy ? (
-              <LoaderCircle className="spin" />
-            ) : (
-              <>
-                {signup ? 'Create account' : 'Sign in'}
-                <ArrowRight size={17} />
-              </>
-            )}
+            {busy ? <LoaderCircle className="spin" /> : signup ? 'Create account' : 'Sign in'}
           </button>
         </form>
-        <button
-          className="text-button"
-          onClick={() => {
-            setSignup(!signup);
-            setError('');
-          }}
-        >
-          {signup ? 'Already have an account? Sign in' : 'New here? Create an account'}
-        </button>
         {import.meta.env.DEV && (
-          <button
-            className="button demo-button"
-            disabled={busy}
-            onClick={() => void authenticate('jonathan@note.test', 'Note-local-demo-2026')}
-          >
-            Open demo workspace <ArrowRight size={16} />
-          </button>
+          <>
+            <div className="auth-divider">or</div>
+            <button
+              className="button demo-button"
+              disabled={busy}
+              onClick={() => void authenticate('jonathan@note.test', 'Note-local-demo-2026')}
+            >
+              Open demo workspace
+            </button>
+          </>
         )}
+        <p className="auth-switch">
+          {signup ? 'Already have an account?' : 'New to Mosaic?'}{' '}
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => {
+              setSignup(!signup);
+              setError('');
+            }}
+          >
+            {signup ? 'Sign in' : 'Create an account'}
+          </button>
+        </p>
       </div>
     </main>
   );

@@ -8,7 +8,7 @@ const groupStyle: Record<AppCommand['group'], { Icon: typeof Plus; tone: number 
   Create: { Icon: Plus, tone: 0 },
   Navigate: { Icon: Compass, tone: 3 },
   Workspace: { Icon: Settings2, tone: 1 },
-  Page: { Icon: FileText, tone: 4 },
+  Page: { Icon: FileText, tone: 2 },
 };
 function GroupIcon({ group }: { group: AppCommand['group'] }) {
   const { Icon, tone } = groupStyle[group];

@@ -59,8 +59,8 @@ test('two independent identities edit, persist, and reopen one shared document',
       const element = anchor instanceof Element ? anchor : anchor?.parentElement;
       return [...root.querySelectorAll('p')].indexOf(element?.closest('p') as HTMLParagraphElement);
     };
-    expect(await one.evaluate(caretParagraph)).toBe(0);
-    expect(await two.evaluate(caretParagraph)).toBe(1);
+    await expect.poll(() => one.evaluate(caretParagraph)).toBe(0);
+    await expect.poll(() => two.evaluate(caretParagraph)).toBe(1);
     await Promise.all([a.keyboard.type('Alpha '), b.keyboard.type('Beta ')]);
     await expect(one).toContainText('Alpha');
     await expect(one).toContainText('Beta');
@@ -200,7 +200,7 @@ test('creates and edits a structured record, finds its body, and follows its gra
     .getByRole('button', { name: 'Product direction', exact: true })
     .click();
   await expect(page.locator('.save-status')).toHaveText('Saved');
-  await page.getByRole('button', { name: 'Search anything Ctrl K' }).click();
+  await page.getByRole('button', { name: 'Search Ctrl K' }).click();
   await page.getByLabel('Search query', { exact: true }).fill('uniquediscoveryphrase');
   await expect(page.getByRole('option').filter({ hasText: title })).toBeVisible();
   await page.getByRole('option').filter({ hasText: title }).click();

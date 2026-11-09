@@ -200,10 +200,12 @@ export function Workspace() {
             >
               <MoreHorizontal />
             </IconButton>
-            <button className="button share-button" onClick={() => state.openDialog('invite')}>
-              <Users />
-              Share
-            </button>
+            {page && !globalView && (
+              <button className="button share-button" onClick={() => state.openDialog('invite')}>
+                <Users />
+                Share
+              </button>
+            )}
           </div>
         </header>
         {state.error && (

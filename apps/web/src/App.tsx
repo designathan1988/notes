@@ -46,7 +46,7 @@ export default function App() {
       <main className="loading-screen">
         <span className="brand">
           <BrandMark size={28} />
-          Note
+          Mosaic
         </span>
         <p>Opening your workspace…</p>
       </main>
@@ -56,7 +56,7 @@ export default function App() {
       <main className="loading-screen">
         <span className="brand">
           <BrandMark size={28} />
-          Note
+          Mosaic
         </span>
         <p>We couldn’t reach your workspace.</p>
         <button

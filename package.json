@@ -8,7 +8,7 @@
     "dev:web": "vite --host 127.0.0.1",
     "dev:server": "tsx apps/server/src/main.ts",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "node -e \"require('fs').rmSync('.runtime-e2e',{recursive:true,force:true})\" && playwright test",
     "typecheck": "tsc --noEmit",
     "build": "vite build && node scripts/build-server.mjs",
     "start": "node dist/server/main.js",
