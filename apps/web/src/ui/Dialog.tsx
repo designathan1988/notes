@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useRef, useId, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { createPortal } from 'react-dom';
@@ -19,7 +20,11 @@ export function Dialog({
     const dialog = ref.current!;
     const previous = document.activeElement as HTMLElement | null;
     dialog.showModal();
-    dialog.querySelector<HTMLElement>('input:not([type=hidden]),textarea,select')?.focus();
+    dialog
+      .querySelector<HTMLElement>(
+        'input:not([type=hidden]):not(:disabled),textarea:not(:disabled),select:not(.select-native):not(:disabled),[role="combobox"]:not(:disabled)',
+      )
+      ?.focus();
     return () => {
       if (dialog.open) dialog.close();
       if (previous?.isConnected) previous.focus({ preventScroll: true });
@@ -37,7 +42,7 @@ export function Dialog({
     >
       <header>
         <h2 id={id}>{title}</h2>
-        <IconButton label="Close dialog" onClick={onClose}>
+        <IconButton label={t('Close dialog')} onClick={onClose}>
           <X />
         </IconButton>
       </header>

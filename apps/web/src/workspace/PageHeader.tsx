@@ -1,3 +1,4 @@
+import { t, formatDate, formatNumber } from '../i18n/index.js';
 import { Clock3, FileText, Database, Network, Shapes, ChevronDown } from 'lucide-react';
 import type { Page } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
@@ -82,7 +83,7 @@ export function PageHeader({
         />
       )}
       {parent && !compact && (
-        <nav className="page-ancestry" aria-label="Page ancestry">
+        <nav className="page-ancestry" aria-label={t('Page ancestry')}>
           <button onClick={() => useWorkspace.getState().navigate(parent.id)}>
             {parent.title}
           </button>
@@ -106,12 +107,12 @@ export function PageHeader({
             } else if (event.key === 'Enter') {
               event.preventDefault();
               event.currentTarget.blur();
-              document.querySelector<HTMLElement>('[aria-label="Page content"]')?.focus();
+              document.querySelector<HTMLElement>('.note-editor[role="textbox"]')?.focus();
             }
           }}
           key={page.id + page.title}
           readOnly={readOnly}
-          aria-label="Page title"
+          aria-label={t('Page title')}
           className="page-title"
           rows={1}
           defaultValue={page.title}
@@ -121,7 +122,7 @@ export function PageHeader({
               void useWorkspace
                 .getState()
                 .updatePage(page.id, { title: event.target.value })
-                .catch(useWorkspace.getState().setError);
+                .catch((error) => useWorkspace.getState().setPageError(page.id, error));
           }}
         />
       </div>
@@ -136,10 +137,10 @@ export function PageHeader({
             onInput={(event) => fit(event.currentTarget)}
             key={page.id + page.description}
             readOnly={readOnly}
-            aria-label="Page description"
+            aria-label={t('Page description')}
             className="page-description"
             rows={1}
-            placeholder="Add a description…"
+            placeholder={t('Add a description…')}
             defaultValue={page.description}
             maxLength={2000}
             onBlur={(event) => {
@@ -148,22 +149,18 @@ export function PageHeader({
                 void useWorkspace
                   .getState()
                   .updatePage(page.id, { description: event.target.value })
-                  .catch(useWorkspace.getState().setError);
+                  .catch((error) => useWorkspace.getState().setPageError(page.id, error));
             }}
           />
           <div className="page-metadata-row">
             <div className="page-meta">
               <span>
                 <Clock3 />
-                {new Date(page.updatedAt).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
+                {formatDate(page.updatedAt, { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
               <span>
                 <Network />
-                {connections} connections
+                {t('{{count}} connections', { count: formatNumber(connections) })}
               </span>
             </div>
             <details
@@ -177,10 +174,10 @@ export function PageHeader({
             >
               <summary
                 role="button"
-                aria-label="Page properties"
+                aria-label={t('Page properties')}
                 aria-controls={`page-properties-${page.id}`}
               >
-                Properties <ChevronDown size={13} />
+                {t('Properties')} <ChevronDown size={13} />
               </summary>
               <div className="page-metadata-content" id={`page-properties-${page.id}`}>
                 <PageTags key={`tags-${page.id}`} page={page} readOnly={readOnly} />

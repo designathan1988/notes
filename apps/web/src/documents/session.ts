@@ -1,3 +1,4 @@
+import { sourceMessage } from '../i18n/index.js';
 import * as Y from 'yjs';
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import { api } from '../state/api.js';
@@ -28,13 +29,44 @@ export async function ensureCopySourcesSaved(
   const recovery = await openRecovery();
   try {
     const pending = new Set(await recovery.pendingIdentity(identity));
-    const page = pages.find((page) =>
-      pending.has(`${identity}:${workspace}:${page.id}:${page.generation}`),
-    );
-    if (page)
-      throw new Error(
-        `Open “${page.title}” to synchronize its local draft before copying. Your local content has been kept.`,
-      );
+    const current = () => {
+      const state = useWorkspace.getState();
+      return state.user?.id === identity && state.workspaceId === workspace;
+    };
+    for (const page of pages) {
+      const key = `${identity}:${workspace}:${page.id}:${page.generation}`;
+      if (!pending.has(key)) continue;
+      let confirmed = false;
+      try {
+        const retained = await recovery.read(key);
+        if (retained && current()) {
+          // Initial sync can be interrupted after the bytes are durable but before
+          // the socket acknowledgement arrives. Verify rather than assume that a
+          // retained pending marker represents unpublished work.
+          const ack = await api<{ pageId: string; generation: number; snapshot: string }>(
+            `/pages/${page.id}/document/acknowledgement`,
+          );
+          if (
+            current() &&
+            ack.pageId === page.id &&
+            ack.generation === page.generation &&
+            snapshotAcknowledgementCovers(retained, ack.snapshot)
+          )
+            // Compare in the same IndexedDB transaction that clears the flag. A
+            // newer local write must remain pending, including an unsent deletion.
+            confirmed = await recovery.acknowledge(key, retained);
+        }
+      } catch {
+        // Unavailable/unauthorized verification never discards local recovery.
+      }
+      if (!confirmed)
+        throw new Error(
+          sourceMessage(
+            'Open “{{title}}” to synchronize its local draft before copying. Your local content has been kept.',
+            { title: page.title },
+          ),
+        );
+    }
   } finally {
     recovery.close();
   }
@@ -131,6 +163,16 @@ export class DocumentSession {
     this.key = `${this.userId}:${page.workspaceId}:${page.id}:${page.generation}`;
     activeSessions.add(this);
   }
+  private reportError(error: unknown) {
+    const state = useWorkspace.getState();
+    if (
+      this.destroyed ||
+      state.user?.id !== this.userId ||
+      state.workspaceId !== this.page.workspaceId
+    )
+      return;
+    state.setPageError(this.page.id, error);
+  }
   private setStatus(status: SaveStatus) {
     if (!this.destroyed) {
       this.status = status;
@@ -168,22 +210,18 @@ export class DocumentSession {
           key !== this.key,
       );
       if (retained)
-        useWorkspace
-          .getState()
-          .setError(
-            'A local draft from before this page was restored is retained on this device. Download local drafts in Settings → Data to recover your work.',
-          );
+        this.reportError(
+          'A local draft from before this page was restored is retained on this device. Download local drafts in Settings → Data to recover your work.',
+        );
       const update = await this.recovery.read(this.key);
       if (update) {
         Y.applyUpdate(this.doc, update, 'recovery');
         this.dirty = true;
       }
     } catch {
-      useWorkspace
-        .getState()
-        .setError(
-          'Local recovery is unavailable. Keep this tab open until changes are saved to the server.',
-        );
+      this.reportError(
+        'Local recovery is unavailable. Keep this tab open until changes are saved to the server.',
+      );
     }
     if (this.destroyed) {
       this.recovery?.close();
@@ -217,7 +255,7 @@ export class DocumentSession {
           const ack = JSON.parse(payload);
           if (ack.type === 'save-error') {
             this.setStatus('error');
-            useWorkspace.getState().setError(ack.message);
+            this.reportError(ack.message);
           } else if (
             ack.type === 'durable' &&
             ack.pageId === this.page.id &&
@@ -228,11 +266,9 @@ export class DocumentSession {
               this.dirty = false;
               if (this.recovery) {
                 const clearing = this.recovery.setPending(this.key, false).catch(() => {
-                  useWorkspace
-                    .getState()
-                    .setError(
-                      'Could not update local recovery. Reopen this page before signing out.',
-                    );
+                  this.reportError(
+                    'Could not update local recovery. Reopen this page before signing out.',
+                  );
                 });
                 this.recoveryWrites.add(clearing);
                 void clearing.finally(() => this.recoveryWrites.delete(clearing));
@@ -246,9 +282,7 @@ export class DocumentSession {
       },
       onAuthenticationFailed: () => {
         this.setStatus('error');
-        useWorkspace
-          .getState()
-          .setError('Access to this document changed. Your local draft has not been sent.');
+        this.reportError('Access to this document changed. Your local draft has not been sent.');
       },
     });
     this.provider.setAwarenessField('user', {
@@ -301,7 +335,7 @@ export class DocumentSession {
     } catch (error) {
       if (this.destroyed || sequence !== this.accessRefresh) return;
       this.setStatus('error');
-      useWorkspace.getState().setError(error);
+      this.reportError(error);
     }
   }
   private beforeUnload = (event: BeforeUnloadEvent) => {
@@ -332,7 +366,7 @@ export class DocumentSession {
           if (this.destroyed || serial !== this.recoverySerial) return;
           this.locallySaved = false;
           if (!this.connected) this.setStatus('error');
-          useWorkspace.getState().setError('Local recovery storage is full or unavailable.');
+          this.reportError('Local recovery storage is full or unavailable.');
         });
       this.recoveryWrites.add(writing);
       void writing.finally(() => this.recoveryWrites.delete(writing));

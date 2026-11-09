@@ -1,3 +1,4 @@
+import { t, formatNumber } from '../i18n/index.js';
 import { useEffect, useRef, useState } from 'react';
 import { Download, Upload, Play, Pause } from 'lucide-react';
 import { api } from '../state/api.js';
@@ -57,10 +58,11 @@ export function DataSettings() {
   }
   return (
     <section className="settings-section">
-      <h3>Your information stays yours.</h3>
+      <h3>{t('Your information stays yours.')}</h3>
       <p className="muted-text">
-        Workspace ZIP includes versioned JSON, page content, database properties, internal links,
-        and available attachment files.
+        {t(
+          'Workspace ZIP includes versioned JSON, page content, database properties, internal links, and available attachment files.',
+        )}
       </p>
       <button
         className="button"
@@ -71,15 +73,16 @@ export function DataSettings() {
         }
       >
         <Download />
-        Export workspace ZIP
+        {t('Export workspace ZIP')}
       </button>
       <hr />
       <LocalRecovery key={`${identity}:${workspace}`} />
       <hr />
-      <h3>Import a workspace</h3>
+      <h3>{t('Import a workspace')}</h3>
       <p className="muted-text">
-        Import creates new pages in this workspace and remaps links. It does not overwrite existing
-        pages. You can pause and resume between batches.
+        {t(
+          'Import creates new pages in this workspace and remaps links. It does not overwrite existing pages. You can pause and resume between batches.',
+        )}
       </p>
       {role !== 'viewer' && (
         <>
@@ -88,7 +91,7 @@ export function DataSettings() {
             type="file"
             hidden
             accept=".zip,application/zip"
-            aria-label="Choose workspace archive"
+            aria-label={t('Choose workspace archive')}
             onChange={async (event) => {
               const file = event.target.files?.[0];
               if (!file) return;
@@ -113,16 +116,22 @@ export function DataSettings() {
           />
           <button className="button" disabled={busy} onClick={() => input.current?.click()}>
             <Upload />
-            Choose ZIP to import
+            {t('Choose ZIP to import')}
           </button>
         </>
       )}
       {progress && (
         <div className="import-progress" role="status">
-          <strong>{progress.complete ? 'Import complete' : `Importing ${progress.stage}`}</strong>
-          <span>{progress.createdPages} pages created</span>
+          <strong>
+            {progress.complete
+              ? t('Import complete')
+              : t('Importing {{stage}}', { stage: t(progress.stage) })}
+          </strong>
+          <span>
+            {t('{{count}} pages created', { count: formatNumber(progress.createdPages) })}
+          </span>
           {progress.warnings.map((warning, index) => (
-            <small key={index}>{warning}</small>
+            <small key={index}>{t(warning)}</small>
           ))}
           {busy && (
             <button
@@ -132,7 +141,7 @@ export function DataSettings() {
               }}
             >
               <Pause size={15} />
-              Pause after this batch
+              {t('Pause after this batch')}
             </button>
           )}
         </div>
@@ -141,17 +150,20 @@ export function DataSettings() {
         jobs.map((job) => (
           <div className="resume-job" key={job.jobId}>
             <span>
-              {job.createdPages} pages · {job.stage}
+              {t('{{count}} pages · {{stage}}', {
+                count: formatNumber(job.createdPages),
+                stage: t(job.stage),
+              })}
             </span>
             <button className="button" onClick={() => void advance(job.jobId)}>
               <Play />
-              Resume
+              {t('Resume')}
             </button>
           </div>
         ))}
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
     </section>

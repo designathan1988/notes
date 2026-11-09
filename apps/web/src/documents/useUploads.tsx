@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useState } from 'react';
 import { uploadFile, UploadError, type CapturedFile } from './capture.js';
 export function useUploads(pageId: string) {
@@ -39,13 +40,13 @@ export function FailedFile({
   return (
     <div className="upload-failure">
       <span>
-        {label}: {file.name}
+        {t(label)}: {file.name}
       </span>
       <button onClick={retry} disabled={disabled}>
-        Retry
+        {t('Retry')}
       </button>
       <a download={file.name} href={url}>
-        Save original
+        {t('Save original')}
       </a>
     </div>
   );

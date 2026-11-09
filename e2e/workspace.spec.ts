@@ -1,3 +1,4 @@
+import { selectOption, selectValue } from './select.js';
 import { APP_ORIGIN } from './origin.js';
 import { test, expect, type BrowserContext } from '@playwright/test';
 import { zipSync, strToU8 } from 'fflate';
@@ -184,8 +185,10 @@ test('creates and edits a structured record, finds its body, and follows its gra
   await page.getByLabel('New record name', { exact: true }).fill(title);
   await page.getByLabel('New record name', { exact: true }).press('Enter');
   await page.getByRole('button', { name: 'Close record', exact: true }).click();
-  await page.getByLabel(`Status for ${title}`, { exact: true }).selectOption('Active');
-  await expect(page.getByLabel(`Status for ${title}`, { exact: true })).toHaveValue('Active');
+  await selectOption(page.getByLabel(`Status for ${title}`, { exact: true }), 'Active');
+  await expect(selectValue(page.getByLabel(`Status for ${title}`, { exact: true }))).toHaveValue(
+    'Active',
+  );
   await page.getByRole('button', { name: `Open ${title}`, exact: true }).click();
   await expect(page.getByLabel('Page title', { exact: true })).toHaveValue(title);
   await expect(page.locator('.save-status')).toHaveText('Saved');
@@ -214,7 +217,7 @@ test('creates and edits a structured record, finds its body, and follows its gra
     })
     .toBe(true);
   await page.getByRole('button', { name: 'Knowledge graph', exact: true }).click();
-  await expect(page.getByRole('img', { name: 'Workspace knowledge graph' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Workspace knowledge graph' })).toBeVisible();
   await page.getByRole('link', { name: 'Open Product direction', exact: true }).click();
   await expect(page.getByLabel('Page title', { exact: true })).toHaveValue('Product direction');
   await context.request.delete(`/api/pages/${id}`, { headers: { 'x-note-request': '1' } });

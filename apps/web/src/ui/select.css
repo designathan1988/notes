@@ -1,0 +1,188 @@
+.select-control {
+  display: inline-flex;
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+  vertical-align: middle;
+  flex-wrap: wrap;
+}
+.select-error {
+  flex-basis: 100%;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--danger);
+}
+.select-native {
+  display: none !important;
+}
+.select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 30px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 5px 9px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--canvas);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.select-trigger:hover {
+  background: var(--hover);
+}
+.select-trigger:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.select-trigger > svg {
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+.select-value {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.select-menu {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  z-index: 1200;
+  box-sizing: border-box;
+  padding: 5px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+  background: var(--canvas);
+  color: var(--ink);
+  box-shadow: var(--shadow-lg);
+  font: 12px/1.4 var(--ui, sans-serif);
+  text-align: left;
+}
+.select-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 4px;
+  min-height: 30px;
+  box-sizing: border-box;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.select-option.is-active {
+  background: var(--hover);
+}
+.select-option[aria-selected='true'] {
+  color: var(--accent-ink, var(--accent));
+}
+.select-option[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: default;
+}
+.select-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 14px;
+  height: 14px;
+}
+.select-check.is-checkbox {
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+}
+.select-option[aria-selected='true'] .is-checkbox {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.select-group {
+  padding: 7px 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.select-chip {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--tone) var(--tint), transparent);
+  color: color-mix(in oklab, var(--tone) 78%, var(--ink));
+  font-size: 11px;
+}
+.select-placeholder {
+  color: var(--muted);
+}
+label > .select-control {
+  display: flex;
+}
+label > .select-control > .select-trigger {
+  width: 100%;
+}
+.cell-control .select-trigger {
+  border-color: transparent;
+  background: transparent;
+  min-height: 24px;
+  padding: 2px 6px;
+}
+.cell-control .select-trigger:hover {
+  background: var(--hover);
+}
+.cell-control .select-multiple {
+  width: 100%;
+}
+.cell-control .select-multiple .select-trigger {
+  width: 100%;
+}
+.select-multiple .select-value {
+  flex-wrap: wrap;
+  white-space: normal;
+}
+.cell-control .select-trigger.status-label[data-tone] {
+  min-height: 22px;
+  height: 22px;
+  padding: 0 8px;
+  border: 0;
+  background: color-mix(in oklab, var(--tone) var(--tint), transparent);
+  color: color-mix(in oklab, var(--tone) 78%, var(--ink));
+  font-weight: 500;
+}
+.table-toolbar .select-trigger,
+.table-actions .select-trigger,
+.database-toolbar .select-trigger,
+.document-tools .select-trigger {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text2);
+}
+.table-toolbar .select-trigger:hover,
+.table-actions .select-trigger:hover,
+.database-toolbar .select-trigger:hover,
+.document-tools .select-trigger:hover {
+  background: var(--hover);
+}
+.workspace-select .select-control {
+  width: 100%;
+  flex: 1;
+  overflow: hidden;
+}
+.workspace-select .select-trigger {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+.workspace-select .select-value {
+  display: block;
+}

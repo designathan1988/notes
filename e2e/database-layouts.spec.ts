@@ -1,3 +1,4 @@
+import { selectOption, selectValue } from './select.js';
 import { APP_ORIGIN } from './origin.js';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
@@ -58,8 +59,8 @@ test('connected layouts, pointer grouping, record panel, computed values and act
     if (['error', 'warning'].includes(message.type())) errors.push(message.text());
   });
   await page.goto(`/#${database.id}/database`);
-  await page.getByRole('combobox', { name: 'Layout', exact: true }).selectOption('board');
-  await page.getByRole('combobox', { name: 'Group by', exact: true }).selectOption('status');
+  await selectOption(page.getByRole('combobox', { name: 'Layout', exact: true }), 'board');
+  await selectOption(page.getByRole('combobox', { name: 'Group by', exact: true }), 'status');
   await page.getByRole('button', { name: 'Drag Interview', exact: true }).press('ArrowRight');
   await expect(page.getByRole('region', { name: 'Active group', exact: true })).toContainText(
     'Interview',
@@ -99,11 +100,11 @@ test('connected layouts, pointer grouping, record panel, computed values and act
   ).toHaveText('Saved');
   await capture(page, 'record-inspector-desktop');
   await panel.getByRole('button', { name: 'Close record', exact: true }).click();
-  await page.getByRole('combobox', { name: 'Layout', exact: true }).selectOption('list');
+  await selectOption(page.getByRole('combobox', { name: 'Layout', exact: true }), 'list');
   await expect(page.getByRole('list', { name: 'Database list', exact: true })).toContainText(
     'Interview',
   );
-  await page.getByRole('combobox', { name: 'Layout', exact: true }).selectOption('calendar');
+  await selectOption(page.getByRole('combobox', { name: 'Layout', exact: true }), 'calendar');
   await expect(page.locator(`[data-calendar-date="${today}"]`)).toContainText('Interview');
   const tomorrowDate = new Date(today + 'T12:00:00');
   tomorrowDate.setDate(tomorrowDate.getDate() + 1);
@@ -126,12 +127,16 @@ test('connected layouts, pointer grouping, record panel, computed values and act
   await page.getByRole('button', { name: 'Save view', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Save this view', exact: true })).toBeHidden();
   await page.reload();
-  await expect(page.getByRole('combobox', { name: 'Layout', exact: true })).toHaveValue('calendar');
-  await page.getByRole('button', { name: 'Editorial calendar', exact: true }).click();
-  await expect(page.getByRole('combobox', { name: 'Layout', exact: true })).toHaveValue('calendar');
-  await page.getByRole('combobox', { name: 'Layout', exact: true }).selectOption('table');
   await expect(
-    page.getByRole('combobox', { name: 'Status for Interview', exact: true }),
+    selectValue(page.getByRole('combobox', { name: 'Layout', exact: true })),
+  ).toHaveValue('calendar');
+  await page.getByRole('button', { name: 'Editorial calendar', exact: true }).click();
+  await expect(
+    selectValue(page.getByRole('combobox', { name: 'Layout', exact: true })),
+  ).toHaveValue('calendar');
+  await selectOption(page.getByRole('combobox', { name: 'Layout', exact: true }), 'table');
+  await expect(
+    selectValue(page.getByRole('combobox', { name: 'Status for Interview', exact: true })),
   ).toHaveValue('Active');
   await expect(page.getByLabel('Cost for Interview', { exact: true })).toHaveText('45');
   await page.getByRole('button', { name: 'Related for Interview', exact: true }).click();
@@ -158,7 +163,7 @@ test('connected layouts, pointer grouping, record panel, computed values and act
   });
   const colleague = await second.newPage();
   await colleague.goto(`/#${database.id}/database`);
-  await colleague.getByRole('combobox', { name: 'Layout', exact: true }).selectOption('list');
+  await selectOption(colleague.getByRole('combobox', { name: 'Layout', exact: true }), 'list');
   await colleague.getByRole('spinbutton', { name: 'Hours for Interview', exact: true }).fill('4');
   await colleague
     .getByRole('spinbutton', { name: 'Hours for Interview', exact: true })
@@ -201,18 +206,18 @@ test('connected layouts, pointer grouping, record panel, computed values and act
     page.getByRole('spinbutton', { name: 'Effort for Interview', exact: true }),
   ).toHaveValue('4');
   await expect(page.getByLabel('Cost for Interview', { exact: true })).toHaveText('80');
-  await page.getByRole('combobox', { name: 'Layout', exact: true }).selectOption('board');
+  await selectOption(page.getByRole('combobox', { name: 'Layout', exact: true }), 'board');
   await capture(page, 'board-desktop');
-  await page.getByRole('combobox', { name: 'Layout', exact: true }).selectOption('calendar');
+  await selectOption(page.getByRole('combobox', { name: 'Layout', exact: true }), 'calendar');
   await capture(page, 'calendar-desktop');
   for (const width of [390, 360]) {
     await page.setViewportSize({ width, height: 844 });
-    await page.getByRole('combobox', { name: 'Layout', exact: true }).selectOption('board');
+    await selectOption(page.getByRole('combobox', { name: 'Layout', exact: true }), 'board');
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(
       false,
     );
     await capture(page, 'board-mobile-' + width);
-    await page.getByRole('combobox', { name: 'Layout', exact: true }).selectOption('calendar');
+    await selectOption(page.getByRole('combobox', { name: 'Layout', exact: true }), 'calendar');
     await expect(
       page
         .getByRole('grid', { name: 'Record calendar', exact: true })

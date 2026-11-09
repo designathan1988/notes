@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { Crosshair, ExternalLink, PinOff, FileText, Database, X } from 'lucide-react';
 import type { GraphData } from '@note/contracts';
 export function GraphInspector({
@@ -26,13 +27,16 @@ export function GraphInspector({
     ...outgoing.map((edge) => edge.target),
   ]);
   return (
-    <aside className="graph-inspector" data-spatial-control aria-label="Graph connections">
+    <aside className="graph-inspector" data-spatial-control aria-label={t('Graph connections')}>
       <header>
         <strong>{node.title}</strong>
-        <span>{related.size} connections</span>
+        <span>
+          {related.size}
+          {t('connections')}
+        </span>
         <button
-          aria-label="Close graph connections"
-          title="Close graph connections"
+          aria-label={t('Close graph connections')}
+          title={t('Close graph connections')}
           onClick={onClose}
         >
           <X />
@@ -41,16 +45,16 @@ export function GraphInspector({
       <div className="graph-inspector-actions">
         <button onClick={() => onOpen(node)}>
           <ExternalLink />
-          Open page
+          {t('Open page')}
         </button>
         <button onClick={onFocus}>
           <Crosshair />
-          Focus connections
+          {t('Focus connections')}
         </button>
         {placed && (
           <button
-            aria-label="Release node position"
-            title="Release node position"
+            aria-label={t('Release node position')}
+            title={t('Release node position')}
             onClick={onRelease}
           >
             <PinOff />
@@ -70,19 +74,24 @@ export function GraphInspector({
                   <small>
                     {incoming.some((edge) => edge.source === item.id) &&
                     outgoing.some((edge) => edge.target === item.id)
-                      ? 'Both'
+                      ? t('Both')
                       : incoming.some((edge) => edge.source === item.id)
-                        ? 'Incoming'
-                        : 'Outgoing'}
+                        ? t('Incoming')
+                        : t('Outgoing')}
                   </small>
                 </button>
               </li>
             ))}
         </ul>
       ) : (
-        <p>No links yet. Link this page from another note to connect it.</p>
+        <p>{t('No links yet. Link this page from another note to connect it.')}</p>
       )}
-      {related.size > 5 && <p>{related.size - 5} more · Focus connections to explore</p>}
+      {related.size > 5 && (
+        <p>
+          {related.size - 5}
+          {t('more · Focus connections to explore')}
+        </p>
+      )}
     </aside>
   );
 }

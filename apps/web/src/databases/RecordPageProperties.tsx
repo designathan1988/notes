@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useMemo, useState } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import type { Page } from '@note/contracts';
@@ -33,7 +34,7 @@ export function RecordPageProperties({ page, readOnly }: { page: Page; readOnly:
   if (error)
     return (
       <p className="activity-error" role="alert">
-        {error}{' '}
+        {t(error)}{' '}
         <button
           onClick={() =>
             void refresh()
@@ -41,14 +42,14 @@ export function RecordPageProperties({ page, readOnly }: { page: Page; readOnly:
               .catch((failure) => setError(failure.message))
           }
         >
-          Retry properties
+          {t('Retry properties')}
         </button>
       </p>
     );
-  if (!definition || !record) return <p className="muted-text">Loading properties…</p>;
+  if (!definition || !record) return <p className="muted-text">{t('Loading properties…')}</p>;
   const current = { ...record, computedValues: calculate(record.values) };
   return (
-    <section className="page-properties" aria-label="Record properties">
+    <section className="page-properties" aria-label={t('Record properties')}>
       <dl className="record-properties">
         {definition.fields
           .filter((field) => !field.archived)
@@ -69,9 +70,9 @@ export function RecordPageProperties({ page, readOnly }: { page: Page; readOnly:
       </dl>
       {!readOnly && (
         <div className="page-property-tools">
-          <button aria-label="Manage database properties" onClick={() => setManager(true)}>
+          <button aria-label={t('Manage database properties')} onClick={() => setManager(true)}>
             <SlidersHorizontal size={12} />
-            Database properties
+            {t('Database properties')}
           </button>
         </div>
       )}

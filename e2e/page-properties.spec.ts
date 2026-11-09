@@ -1,3 +1,4 @@
+import { selectOption } from './select.js';
 import { APP_ORIGIN } from './origin.js';
 import { test, expect, type BrowserContext } from '@playwright/test';
 const headers = { 'x-note-request': '1' };
@@ -192,7 +193,7 @@ test('opening a property editor waits for this page’s own pending value write'
     release();
     await expect(dialog).toBeVisible();
     await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill('Cost');
-    await dialog.getByRole('combobox', { name: 'Type', exact: true }).selectOption('formula');
+    await selectOption(dialog.getByRole('combobox', { name: 'Type', exact: true }), 'formula');
     await dialog.getByRole('textbox', { name: 'Formula', exact: true }).fill('prop("Hours") * 15');
     await dialog.getByRole('button', { name: 'Add property', exact: true }).click();
     await expect(page.getByLabel(`Cost for ${note.title}`, { exact: true })).toHaveText('30');
@@ -241,14 +242,14 @@ test('ordinary-page properties edit inline, calculate, retain conflicts and arch
     await topic.press('Enter');
     await first.getByRole('button', { name: 'Add page property', exact: true }).click();
     await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill('Hours');
-    await dialog.getByRole('combobox', { name: 'Type', exact: true }).selectOption('number');
+    await selectOption(dialog.getByRole('combobox', { name: 'Type', exact: true }), 'number');
     await dialog.getByRole('button', { name: 'Add property', exact: true }).click();
     const hours = first.getByRole('spinbutton', { name: `Hours for ${note.title}`, exact: true });
     await hours.fill('4');
     await hours.press('Enter');
     await first.getByRole('button', { name: 'Add page property', exact: true }).click();
     await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill('Cost');
-    await dialog.getByRole('combobox', { name: 'Type', exact: true }).selectOption('formula');
+    await selectOption(dialog.getByRole('combobox', { name: 'Type', exact: true }), 'formula');
     await dialog.getByRole('textbox', { name: 'Formula', exact: true }).fill('prop("Hours") * 15');
     await dialog.getByRole('button', { name: 'Add property', exact: true }).click();
     await expect(first.getByLabel(`Cost for ${note.title}`, { exact: true })).toHaveText('60');
@@ -338,7 +339,7 @@ test('ordinary-page properties edit inline, calculate, retain conflicts and arch
     await expect(topic).toHaveValue('Colleague decision');
     await first.getByRole('button', { name: 'Add page property', exact: true }).click();
     await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill('Source');
-    await dialog.getByRole('combobox', { name: 'Type', exact: true }).selectOption('relation');
+    await selectOption(dialog.getByRole('combobox', { name: 'Type', exact: true }), 'relation');
     await dialog.getByRole('button', { name: 'Add property', exact: true }).click();
     await first.getByRole('button', { name: `Source for ${note.title}`, exact: true }).click();
     const links = first.getByRole('dialog', { name: 'Link a page', exact: true });

@@ -1,4 +1,5 @@
-import { useId, useMemo, useState, type CSSProperties } from 'react';
+import { t, useLocale } from '../i18n/index.js';
+import { useEffect, useId, useMemo, useState, type CSSProperties } from 'react';
 import {
   EditorContent,
   NodeViewContent,
@@ -34,6 +35,7 @@ function snapshotBoxes(doc: ProseMirrorNode) {
 
 /** Ephemeral camera only. A saved scene never attaches to a document session or store. */
 function SavedRoot({ editor }: NodeViewProps) {
+  useLocale();
   const scope = useId().replace(/[^\w-]/g, ''),
     help = `${scope}-help`;
   const items = useMemo(() => canvasItems(editor.state.doc), [editor]);
@@ -47,6 +49,7 @@ function SavedRoot({ editor }: NodeViewProps) {
     [boxes],
   );
   const view = useSpatialView({
+    responsive: true,
     points,
     fitPadding: 24,
     commitCamera() {},
@@ -62,7 +65,7 @@ function SavedRoot({ editor }: NodeViewProps) {
         className="canvas-stage"
         data-tool="hand"
         role="application"
-        aria-label="Saved canvas"
+        aria-label={t('Saved canvas')}
         aria-describedby={help}
         tabIndex={0}
         {...view.handlers}
@@ -118,24 +121,25 @@ function SavedRoot({ editor }: NodeViewProps) {
         </div>
         {!items.length && (
           <div className="canvas-empty">
-            <p>This saved canvas is empty.</p>
+            <p>{t('This saved canvas is empty.')}</p>
           </div>
         )}
         <div className="canvas-zoom" data-spatial-control>
-          <IconButton label="Zoom out saved canvas" onClick={() => view.zoom(1 / 1.2)}>
+          <IconButton label={t('Zoom out saved canvas')} onClick={() => view.zoom(1 / 1.2)}>
             <ZoomOut />
           </IconButton>
-          <output aria-label="Saved canvas zoom">{Math.round(camera.zoom * 100)}%</output>
-          <IconButton label="Zoom in saved canvas" onClick={() => view.zoom(1.2)}>
+          <output aria-label={t('Saved canvas zoom')}>{Math.round(camera.zoom * 100)}%</output>
+          <IconButton label={t('Zoom in saved canvas')} onClick={() => view.zoom(1.2)}>
             <ZoomIn />
           </IconButton>
-          <IconButton label="Fit saved canvas" onClick={() => view.fit()}>
+          <IconButton label={t('Fit saved canvas')} onClick={() => view.fit()}>
             <Focus />
           </IconButton>
         </div>
         <p className="sr-only" id={help}>
-          Read-only saved layout. Drag the background to pan. Use arrow keys to pan, plus and minus
-          to zoom, and Home to fit. Note content can be selected and scrolled.
+          {t(
+            'Read-only saved layout. Drag the background to pan. Use arrow keys to pan, plus and minus to zoom, and Home to fit. Note content can be selected and scrolled.',
+          )}
         </p>
       </div>
     </NodeViewWrapper>
@@ -143,6 +147,7 @@ function SavedRoot({ editor }: NodeViewProps) {
 }
 
 function SavedBox({ node, editor }: NodeViewProps) {
+  useLocale();
   const attrs = node.attrs,
     group = node.type.name === 'canvasGroup';
   const frame = snapshotBoxes(editor.state.doc).get(attrs.id)!;
@@ -173,7 +178,7 @@ function SavedBox({ node, editor }: NodeViewProps) {
           data-spatial-control
           tabIndex={0}
           role="textbox"
-          aria-label="Saved note content"
+          aria-label={t('Saved note content')}
           aria-readonly="true"
           aria-multiline="true"
         />
@@ -183,6 +188,7 @@ function SavedBox({ node, editor }: NodeViewProps) {
 }
 
 function SavedEdge({ node, editor }: NodeViewProps) {
+  useLocale();
   const boxes = snapshotBoxes(editor.state.doc),
     a = boxes.get(node.attrs.fromNode),
     b = boxes.get(node.attrs.toNode);
@@ -205,6 +211,7 @@ function SavedEdge({ node, editor }: NodeViewProps) {
 }
 
 function Snapshot({ content }: { content: JSONContent }) {
+  const locale = useLocale();
   const editor = useEditor(
     {
       extensions: [
@@ -221,7 +228,7 @@ function Snapshot({ content }: { content: JSONContent }) {
       content,
       editable: false,
       editorProps: {
-        attributes: { class: 'canvas-snapshot-editor', 'aria-label': 'Saved canvas content' },
+        attributes: { class: 'canvas-snapshot-editor', 'aria-label': t('Saved canvas content') },
       },
       onCreate: ({ editor }) =>
         editor.view.dom.querySelectorAll('input').forEach((input) => {
@@ -230,6 +237,13 @@ function Snapshot({ content }: { content: JSONContent }) {
     },
     [content],
   );
+  useEffect(() => {
+    editor?.setOptions({
+      editorProps: {
+        attributes: { class: 'canvas-snapshot-editor', 'aria-label': t('Saved canvas content') },
+      },
+    });
+  }, [editor, locale]);
   return (
     <div className="canvas-snapshot-host">
       <EditorContent editor={editor} />
@@ -242,14 +256,14 @@ export default function CanvasPreview({ content }: { content: JSONContent }) {
   return (
     <div className="version-canvas">
       <div className="canvas-preview-heading">
-        <small>Saved canvas · Read only</small>
+        <small>{t('Saved canvas · Read only')}</small>
         <button className="text-button" onClick={() => setExpanded(true)}>
           <Expand size={14} />
-          Expand canvas preview
+          {t('Expand canvas preview')}
         </button>
       </div>
       {expanded ? (
-        <Dialog title="Canvas preview" wide onClose={() => setExpanded(false)}>
+        <Dialog title={t('Canvas preview')} wide onClose={() => setExpanded(false)}>
           <Snapshot content={content} />
         </Dialog>
       ) : (

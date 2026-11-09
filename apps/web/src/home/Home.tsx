@@ -1,3 +1,4 @@
+import { t, formatDate, formatNumber, formatRelative } from '../i18n/index.js';
 import { Database, FileText, LayoutTemplate, Shapes, Star } from 'lucide-react';
 import type { Page, PageKind } from '@note/contracts';
 import { useEffect, useState } from 'react';
@@ -13,7 +14,6 @@ const kindPlural: Record<PageKind, string> = {
   record: 'Records',
 };
 
-const relative = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 export function edited(iso: string, now = Date.now()) {
   const seconds = Math.round((new Date(iso).getTime() - now) / 1000);
   const units: [Intl.RelativeTimeFormatUnit, number][] = [
@@ -25,27 +25,24 @@ export function edited(iso: string, now = Date.now()) {
     ['minute', 60],
   ];
   for (const [unit, size] of units)
-    if (Math.abs(seconds) >= size) return relative.format(Math.round(seconds / size), unit);
-  return 'just now';
+    if (Math.abs(seconds) >= size) return formatRelative(Math.round(seconds / size), unit);
+  return t('just now');
 }
 
 function greeting(hour: number) {
   return hour < 5
-    ? 'Working late'
+    ? t('Working late')
     : hour < 12
-      ? 'Good morning'
+      ? t('Good morning')
       : hour < 18
-        ? 'Good afternoon'
-        : 'Good evening';
+        ? t('Good afternoon')
+        : t('Good evening');
 }
 
-/** Recent work first: empty untitled pages are noise, not something to jump back into. */
+/** Untitled work is still recent work and must remain easy to recover. */
 export function recentPages(pages: Page[], limit = 8) {
   return pages
     .filter((page) => !page.deletedAt && !page.templateRootId && page.kind !== 'record')
-    .filter(
-      (page) => page.title.trim() && !/^Untitled( canvas| template)?$/.test(page.title.trim()),
-    )
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     .slice(0, limit);
 }
@@ -106,30 +103,38 @@ export function Home() {
               {state.user ? `, ${state.user.name.split(' ')[0]}` : ''}
             </h1>
             <p>
-              {now.toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric' })}
+              {formatDate(now, { weekday: 'long', month: 'long', day: 'numeric' })}
               {' · '}
               {today === undefined
                 ? ''
                 : today === 1
-                  ? '1 page edited today'
-                  : `${today} pages edited today`}
+                  ? t('1 page edited today')
+                  : t('{{count}} pages edited today', { count: formatNumber(today) })}
             </p>
           </div>
-          <div className="home-actions" role="group" aria-label="Create">
+          <div className="home-actions" role="group" aria-label={t('Create')}>
             {actions.map(({ label, kind, Icon, run }) => (
               <button
-                key={label}
+                key={t(label)}
                 type="button"
                 className="home-action"
                 data-kind={kind}
                 aria-label={
-                  kind === 'template' ? 'New from template' : `New ${label.toLowerCase()}`
+                  kind === 'template'
+                    ? t('New from template')
+                    : t(
+                        kind === 'document'
+                          ? 'New page'
+                          : kind === 'database'
+                            ? 'New database'
+                            : 'New canvas',
+                      )
                 }
                 disabled={kind !== 'template' && !canWrite}
                 onClick={run}
               >
                 <Icon size={14} />
-                {label}
+                {t(label)}
               </button>
             ))}
           </div>
@@ -138,9 +143,9 @@ export function Home() {
         <div className="home-grid">
           <section className="home-section" aria-labelledby="home-recent">
             <div className="home-section-head">
-              <h2 id="home-recent">Recent</h2>
+              <h2 id="home-recent">{t('Recent')}</h2>
               <button className="text-button" onClick={() => state.navigate(null, 'all')}>
-                View all
+                {t('View all')}
               </button>
             </div>
             {recent.length ? (
@@ -150,9 +155,9 @@ export function Home() {
                     <button type="button" data-kind={page.kind} onClick={() => open(page)}>
                       <PageGlyph page={page} size={15} />
                       <span className="home-recent-text">
-                        <strong>{page.title}</strong>
+                        <strong>{page.title || t('Untitled')}</strong>
                         <small>
-                          {titleOf(page.parentId) ?? workspace?.name ?? 'Workspace'}
+                          {titleOf(page.parentId) ?? workspace?.name ?? t('Workspace')}
                           {page.description ? ` · ${page.description}` : ''}
                         </small>
                       </span>
@@ -162,58 +167,59 @@ export function Home() {
                 ))}
               </ul>
             ) : (
-              <p className="home-empty">Pages you edit will appear here.</p>
+              <p className="home-empty">{t('Pages you edit will appear here.')}</p>
             )}
           </section>
 
           <aside className="home-aside">
             <section className="home-section" aria-labelledby="home-favorites">
-              <h2 id="home-favorites">Favorites</h2>
+              <h2 id="home-favorites">{t('Favorites')}</h2>
               {favorites.length ? (
                 <ul className="home-links">
                   {favorites.map((page) => (
                     <li key={page.id}>
                       <button type="button" data-kind={page.kind} onClick={() => open(page)}>
                         <PageGlyph page={page} size={14} />
-                        <span>{page.title || 'Untitled'}</span>
+                        <span>{page.title || t('Untitled')}</span>
                       </button>
                     </li>
                   ))}
                 </ul>
               ) : (
                 <p className="home-empty">
-                  <Star size={14} /> Star a page to pin it here.
+                  <Star size={14} />
+                  {t('Star a page to pin it here.')}
                 </p>
               )}
             </section>
 
             <section className="home-section" aria-labelledby="home-overview">
-              <h2 id="home-overview">Workspace</h2>
+              <h2 id="home-overview">{t('Workspace')}</h2>
               <dl className="home-stats">
                 {(['document', 'database', 'canvas', 'record'] as const).map((kind) => (
                   <div key={kind}>
-                    <dd>{overview ? overview.counts[kind] : '—'}</dd>
-                    <dt>{kindPlural[kind]}</dt>
+                    <dd>{overview ? formatNumber(overview.counts[kind]) : '—'}</dd>
+                    <dt>{t(kindPlural[kind])}</dt>
                   </div>
                 ))}
               </dl>
             </section>
 
             <section className="home-section" aria-labelledby="home-keys">
-              <h2 id="home-keys">Shortcuts</h2>
+              <h2 id="home-keys">{t('Shortcuts')}</h2>
               <div className="home-keys">
                 <button type="button" onClick={() => state.openDialog('search')}>
-                  Search <kbd>Ctrl K</kbd>
+                  {t('Search')} <kbd>Ctrl K</kbd>
                 </button>
                 <button type="button" onClick={state.showCommands}>
-                  Commands <kbd>Ctrl Shift P</kbd>
+                  {t('Commands')} <kbd>Ctrl Shift P</kbd>
                 </button>
                 <button
                   type="button"
                   disabled={!canWrite}
                   onClick={() => void state.createQuickPage().catch(state.setError)}
                 >
-                  New page <kbd>Ctrl Alt N</kbd>
+                  {t('New page')} <kbd>Ctrl Alt N</kbd>
                 </button>
               </div>
             </section>

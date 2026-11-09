@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js';
+import { Select } from '../ui/Select.js';
 import { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { Dialog } from '../ui/Dialog.js';
@@ -13,13 +15,16 @@ export function Invite() {
   const canInvite = workspace && ['owner', 'admin'].includes(workspace.role);
   const page = state.pages.find((page) => page.id === state.selectedId);
   return (
-    <Dialog title="Invite to your workspace" onClose={() => state.openDialog(null)}>
+    <Dialog title={t('Invite to your workspace')} onClose={() => state.openDialog(null)}>
       <p className="muted-text">
-        Invite someone to {workspace?.name}. Their role controls what they can do in shared pages.
+        {t(
+          'Invite someone to {{workspace}}. This invitation grants access to shared pages throughout the workspace, not just the current page. Their role controls what they can do.',
+          { workspace: workspace?.name ?? '' },
+        )}
       </p>
       {page?.visibility === 'private' && (
         <p className="info-note">
-          This page is private. A workspace invitation does not share private pages.
+          {t('This page is private. A workspace invitation does not share private pages.')}
         </p>
       )}
       {canInvite ? (
@@ -46,38 +51,45 @@ export function Invite() {
           }}
         >
           <label>
-            Email address
-            <input type="email" name="email" required autoFocus placeholder="name@company.com" />
+            {t('Email address')}
+            <input
+              type="email"
+              name="email"
+              required
+              autoFocus
+              placeholder={t('name@company.com')}
+            />
           </label>
           <label>
-            Role
-            <select name="role" defaultValue="editor">
-              <option value="editor">Editor — can edit shared content</option>
-              <option value="viewer">Viewer — can read shared content</option>
-              <option value="admin">Admin — can manage the workspace</option>
-            </select>
+            {t('Role')}
+            <Select name="role" defaultValue="editor">
+              <option value="editor">{t('Editor — can edit shared content')}</option>
+              <option value="viewer">{t('Viewer — can read shared content')}</option>
+              <option value="admin">{t('Admin — can manage the workspace')}</option>
+            </Select>
           </label>
           <button className="button primary" disabled={busy}>
-            Create invitation
+            {t('Create invitation')}
           </button>
         </form>
       ) : (
-        <p className="info-note">Only workspace owners and admins can invite people.</p>
+        <p className="info-note">{t('Only workspace owners and admins can invite people.')}</p>
       )}
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
       {url && (
         <div className="invite-result">
           <p className="info-note">
-            The invitation is in the local development outbox. No email was sent. Share this link
-            with the intended recipient to test the flow.
+            {t(
+              'The invitation is in the local development outbox. No email was sent. Share this link with the intended recipient to test the flow.',
+            )}
           </p>
           <label>
-            Invitation link
-            <input aria-label="Invitation link" readOnly value={url} />
+            {t('Invitation link')}
+            <input aria-label={t('Invitation link')} readOnly value={url} />
           </label>
           <button
             className="button"
@@ -89,7 +101,7 @@ export function Invite() {
             }
           >
             {copied ? <Check /> : <Copy />}
-            {copied ? 'Copied' : 'Copy invitation link'}
+            {copied ? t('Copied') : t('Copy invitation link')}
           </button>
         </div>
       )}

@@ -27,7 +27,7 @@ async function graphFixture(page: Page) {
 }
 async function cameraOf(page: Page) {
   return page
-    .getByRole('img', { name: 'Workspace knowledge graph', exact: true })
+    .getByRole('group', { name: 'Workspace knowledge graph', exact: true })
     .evaluate((svg) => ({
       x: Number(svg.getAttribute('data-camera-x')),
       y: Number(svg.getAttribute('data-camera-y')),
@@ -235,7 +235,7 @@ test('focus connections uses the inspected page and revoking that local center r
       page.getByRole('checkbox', { name: 'Local graph', exact: true }),
     ).not.toBeChecked();
     await expect(
-      page.getByRole('img', { name: 'Workspace knowledge graph', exact: true }),
+      page.getByRole('group', { name: 'Workspace knowledge graph', exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole('complementary', { name: 'Graph connections', exact: true }),

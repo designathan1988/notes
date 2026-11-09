@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useState, useRef } from 'react';
 import { BlockGutter } from './BlockGutter.js';
 import { Plus } from 'lucide-react';
@@ -35,7 +36,7 @@ export function BlockControls({
       );
       setAnchor(
         actionsRequested
-          ? document.querySelector<HTMLElement>('[aria-label="Block actions"]')
+          ? document.querySelector<HTMLElement>('[data-block-actions]')
           : current instanceof HTMLElement
             ? current
             : button.current,
@@ -77,10 +78,10 @@ export function BlockControls({
           else insertBlock(editor, editor.state.doc.content.size, 'paragraph');
           open('insert', event.currentTarget);
         }}
-        aria-label="Add a block"
+        aria-label={t('Add a block')}
       >
         <Plus size={15} />
-        <span>Add a block</span>
+        <span>{t('Add a block')}</span>
       </button>
       {menu && (
         <BlockMenu

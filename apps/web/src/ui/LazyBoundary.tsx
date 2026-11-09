@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { Component, type ReactNode } from 'react';
 /** A failed lazy import must leave navigation and retained drafts available. */
 export class LazyBoundary extends Component<
@@ -12,10 +13,10 @@ export class LazyBoundary extends Component<
     if (!this.state.failed) return this.props.children;
     return (
       <section className="empty-state" role="alert">
-        <h2>{this.props.name} could not be opened</h2>
-        <p>Reconnect and reload this view. Your saved local drafts are kept.</p>
+        <h2>{t('{{name}} could not be opened', { name: t(this.props.name) })}</h2>
+        <p>{t('Reconnect and reload this view. Your saved local drafts are kept.')}</p>
         <button className="button" onClick={() => location.reload()}>
-          Reload view
+          {t('Reload view')}
         </button>
       </section>
     );

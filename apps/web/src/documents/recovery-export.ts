@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import * as Y from 'yjs';
 import { yDocToProsemirrorJSON } from 'y-prosemirror';
 import { zipSync, strToU8 } from 'fflate';
@@ -7,13 +8,13 @@ import { useWorkspace } from '../state/store.js';
 
 export async function localDraftExcerpt(storage: Recovery, key: string) {
   const state = await storage.read(key);
-  if (!state) return 'No readable content is available.';
+  if (!state) return t('No readable content is available.');
   const doc = new Y.Doc();
   try {
     Y.applyUpdate(doc, state);
     return (
       projectDocument(yDocToProsemirrorJSON(doc, 'default')).text.slice(0, 180) ||
-      'Structured content'
+      t('Structured content')
     );
   } finally {
     doc.destroy();
@@ -53,7 +54,7 @@ export async function downloadLocalDrafts() {
           pageId,
           workspaceId,
           generation,
-          title: page?.title ?? 'Local draft',
+          title: page?.title ?? t('Local draft'),
           jsonFile: `${filename}.json`,
           yjsFile: `${filename}.yjs`,
         });

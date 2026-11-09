@@ -1,3 +1,4 @@
+import { selectValue } from './select.js';
 import { APP_ORIGIN } from './origin.js';
 import { expect, test } from '@playwright/test';
 
@@ -35,7 +36,9 @@ test('switching databases closes the previous record panel and keeps each saved 
     .getByRole('button', { name: databases[1].title, exact: true })
     .click();
   await page.getByRole('button', { name: 'Second list', exact: true }).click();
-  await expect(page.getByRole('combobox', { name: 'Layout', exact: true })).toHaveValue('list');
+  await expect(
+    selectValue(page.getByRole('combobox', { name: 'Layout', exact: true })),
+  ).toHaveValue('list');
   await page
     .locator('.page-tree')
     .getByRole('button', { name: databases[0].title, exact: true })
@@ -45,7 +48,9 @@ test('switching databases closes the previous record panel and keeps each saved 
     .locator('.page-tree')
     .getByRole('button', { name: databases[1].title, exact: true })
     .click();
-  await expect(page.getByRole('combobox', { name: 'Layout', exact: true })).toHaveValue('list');
+  await expect(
+    selectValue(page.getByRole('combobox', { name: 'Layout', exact: true })),
+  ).toHaveValue('list');
   await expect(page.getByRole('region', { name: 'Record details', exact: true })).toHaveCount(0);
   for (const database of databases)
     await context.request.delete(`/api/pages/${database.id}`, {

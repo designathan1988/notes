@@ -1,3 +1,4 @@
+import { t, getLocale } from '../i18n/index.js';
 import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 import type { DatabaseRecord } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
@@ -16,6 +17,7 @@ export function CalendarView({
   inspect,
   refresh,
   error,
+  addDateProperty,
 }: {
   id: string;
   records: DatabaseRecord[];
@@ -28,6 +30,7 @@ export function CalendarView({
   inspect(id: string): void;
   refresh(): Promise<void>;
   error(message: string): void;
+  addDateProperty(): void;
 }) {
   const move = async (recordId: string, date: string) => {
     if (!dateField || readOnly) return;
@@ -38,13 +41,20 @@ export function CalendarView({
   const days = calendarDays(month);
   if (!dateField)
     return (
-      <div className="table-empty">Add a date property to place your records on a calendar.</div>
+      <div className="table-empty">
+        <p>{t('Add a date property to place your records on a calendar.')}</p>
+        {!readOnly && (
+          <button className="button" onClick={addDateProperty}>
+            {t('Add date property')}
+          </button>
+        )}
+      </div>
     );
   const card = (record: DatabaseRecord) => (
     <div className="calendar-record" key={record.pageId}>
       <button
         className="record-open"
-        aria-label={`Inspect ${record.title}`}
+        aria-label={t('Inspect {{value0}}', { value0: record.title })}
         onClick={() => inspect(record.pageId)}
       >
         {record.title}
@@ -52,8 +62,8 @@ export function CalendarView({
       {!readOnly && (
         <button
           className="record-grip"
-          aria-label={`Drag ${record.title}`}
-          title="Drag to another date"
+          aria-label={t('Drag {{value0}}', { value0: record.title })}
+          title={t('Drag to another date')}
           onPointerDown={(event) => drag.begin(record.pageId, record.title, event)}
         >
           <GripVertical size={13} />
@@ -64,28 +74,30 @@ export function CalendarView({
   return (
     <div className="database-calendar" ref={drag.root}>
       <header>
-        <h3>{new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric' }).format(month)}</h3>
-        <button aria-label="Previous month" onClick={() => changeMonth(-1)}>
+        <h3>
+          {new Intl.DateTimeFormat(getLocale(), { month: 'long', year: 'numeric' }).format(month)}
+        </h3>
+        <button aria-label={t('Previous month')} onClick={() => changeMonth(-1)}>
           <ChevronLeft size={17} />
         </button>
-        <button aria-label="Next month" onClick={() => changeMonth(1)}>
+        <button aria-label={t('Next month')} onClick={() => changeMonth(1)}>
           <ChevronRight size={17} />
         </button>
         <button aria-pressed={undated} onClick={toggleUndated}>
-          Undated
+          {t('Undated')}
         </button>
       </header>
       {undated && (
-        <div className="calendar-undated" aria-label="Undated records">
+        <div className="calendar-undated" aria-label={t('Undated records')}>
           {records.map(card)}
-          {!records.length && <p>No undated records in this view.</p>}
+          {!records.length && <p>{t('No undated records in this view.')}</p>}
         </div>
       )}
-      <div className="calendar-grid" role="grid" aria-label="Record calendar">
+      <div className="calendar-grid" role="grid" aria-label={t('Record calendar')}>
         <div role="row" className="calendar-week">
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-            <div key={day} role="columnheader" className="calendar-weekday">
-              {day}
+            <div key={t(day)} role="columnheader" className="calendar-weekday">
+              {t(day)}
             </div>
           ))}
         </div>
@@ -96,7 +108,9 @@ export function CalendarView({
               return (
                 <div
                   role="gridcell"
-                  aria-label={new Intl.DateTimeFormat('en', { dateStyle: 'full' }).format(date)}
+                  aria-label={new Intl.DateTimeFormat(getLocale(), { dateStyle: 'full' }).format(
+                    date,
+                  )}
                   key={key}
                   data-calendar-date={key}
                   data-record-drop={key}
@@ -112,7 +126,7 @@ export function CalendarView({
         ))}
       </div>
       {!undated && (
-        <ul className="calendar-agenda" aria-label="Monthly agenda">
+        <ul className="calendar-agenda" aria-label={t('Monthly agenda')}>
           {records.map((record) => (
             <li key={record.pageId}>
               <time dateTime={String(record.values[dateField] ?? '')}>
@@ -123,7 +137,7 @@ export function CalendarView({
               {card(record)}
             </li>
           ))}
-          {!records.length && <li>No records in this calendar view.</li>}
+          {!records.length && <li>{t('No records in this calendar view.')}</li>}
         </ul>
       )}
       {drag.ghost}

@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, SlidersHorizontal } from 'lucide-react';
 import type { Page, RecordField } from '@note/contracts';
@@ -22,7 +23,7 @@ function PageProperty({
 }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
-  const label = `${field.name} for ${page.title}`;
+  const label = t('{{field}} for {{title}}', { field: field.name, title: page.title });
   if (field.type === 'formula')
     return (
       <output
@@ -56,7 +57,7 @@ function PageProperty({
         >
           {field.name}
         </button>
-        {error && <small role="alert">{error}</small>}
+        {error && <small role="alert">{t(error)}</small>}
       </span>
     );
   return (
@@ -121,7 +122,7 @@ function DocumentProperties({ page, readOnly }: { page: Page; readOnly: boolean 
     }
   }
   return (
-    <section className="page-properties" aria-label="Page properties">
+    <section className="page-properties" aria-label={t('Page properties')}>
       {!!properties.fields.filter((field) => !field.archived).length && (
         <dl className="record-properties">
           {properties.fields
@@ -139,33 +140,33 @@ function DocumentProperties({ page, readOnly }: { page: Page; readOnly: boolean 
       {!readOnly && (
         <div className="page-property-tools">
           <button
-            aria-label="Add page property"
+            aria-label={t('Add page property')}
             disabled={opening}
             onClick={() => void openManager('add')}
           >
             <Plus size={12} />
-            Add property
+            {t('Add property')}
           </button>
           {!!properties.fields.length && (
             <button
-              aria-label="Manage page properties"
+              aria-label={t('Manage page properties')}
               disabled={opening}
               onClick={() => void openManager('manage')}
             >
               <SlidersHorizontal size={12} />
-              Properties
+              {t('Properties')}
             </button>
           )}
           {opening && (
             <small className="muted-text" role="status">
-              Saving current edits…
+              {t('Saving current edits…')}
             </small>
           )}
         </div>
       )}
       {manager && (
         <PropertyManager
-          label="Page properties"
+          label={t('Page properties')}
           fields={properties.fields}
           revision={page.revision}
           initialAdd={manager === 'add'}

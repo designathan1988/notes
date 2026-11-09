@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { FileText } from 'lucide-react';
 import type { DatabaseRecord, RecordField } from '@note/contracts';
 import { RecordProperty } from './RecordProperty.js';
@@ -18,12 +19,12 @@ export function ListView({
   refresh(): Promise<void>;
 }) {
   return (
-    <ul className="database-list" aria-label="Database list">
+    <ul className="database-list" aria-label={t('Database list')}>
       {records.map((record) => (
         <li key={record.pageId}>
           <button
             className="record-open"
-            aria-label={`Inspect ${record.title}`}
+            aria-label={t('Inspect {{value0}}', { value0: record.title })}
             onClick={() => inspect(record.pageId)}
           >
             <FileText size={17} />

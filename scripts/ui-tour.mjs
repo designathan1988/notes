@@ -136,13 +136,8 @@ await step('db-record-panel', async () => {
 await step('db-board', async () => {
   await page.keyboard.press('Escape');
   await go(`${id('Research')}/database`);
-  const layout = page.getByLabel('Layout', { exact: true }).or(page.getByRole('combobox').first());
-  await layout
-    .first()
-    .selectOption({ label: 'Board' })
-    .catch(async () => {
-      await page.getByRole('button', { name: 'Board' }).first().click();
-    });
+  await page.getByRole('combobox', { name: 'Layout', exact: true }).click();
+  await page.getByRole('option', { name: 'Board', exact: true }).click();
 });
 
 // --- workspace surfaces ---

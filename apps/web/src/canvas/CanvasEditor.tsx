@@ -1,3 +1,4 @@
+import { t, useLocale, formatNumber } from '../i18n/index.js';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { EditorContent, ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import Collaboration from '@tiptap/extension-collaboration';
@@ -41,12 +42,13 @@ export default function CanvasEditor({ session }: { session: DocumentSession }) 
     <ConnectedCanvasEditor session={session} />
   ) : (
     <p className="editor-prompt" role="status">
-      Opening canvas…
+      {t('Opening canvas…')}
     </p>
   );
 }
 
 function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
+  const locale = useLocale();
   const mapping = session.mapping;
   const page =
     useWorkspace((state) => state.pages.find((page) => page.id === session.page.id)) ??
@@ -92,7 +94,7 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
           user: { name: useWorkspace.getState().user?.name, color: '#2468c4' },
         }),
         Placeholder.configure({
-          placeholder: ({ node }) => (node.type.name === 'paragraph' ? 'Write a note…' : ''),
+          placeholder: ({ node }) => (node.type.name === 'paragraph' ? t('Write a note…') : ''),
         }),
       ],
       editable: !readOnly,
@@ -113,7 +115,7 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
       editorProps: {
         attributes: {
           class: 'canvas-editor',
-          'aria-label': 'Page content',
+          'aria-label': t('Page content'),
           role: 'group',
           spellcheck: 'false',
         },
@@ -161,6 +163,20 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
     },
     [session],
   );
+  useEffect(() => {
+    if (!editor) return;
+    editor.setOptions({
+      editorProps: {
+        ...editor.options.editorProps,
+        attributes: {
+          class: 'canvas-editor',
+          'aria-label': t('Page content'),
+          role: 'group',
+          spellcheck: 'false',
+        },
+      },
+    });
+  }, [editor, locale]);
   useDocumentProjection(editor, page.id);
   useEffect(() => {
     if (editor) {
@@ -247,7 +263,7 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
         hidden
         multiple
         ref={input}
-        aria-label="Upload canvas media"
+        aria-label={t('Upload canvas media')}
         onChange={(event) => {
           for (const file of event.currentTarget.files ?? []) void insertFile(file);
           event.currentTarget.value = '';
@@ -255,7 +271,9 @@ function ConnectedCanvasEditor({ session }: { session: DocumentSession }) {
       />
       {uploading > 0 && (
         <p className="canvas-upload-status" role="status">
-          Uploading {uploading} {uploading === 1 ? 'file' : 'files'}…
+          {t(uploading === 1 ? 'Uploading {{count}} file…' : 'Uploading {{count}} files…', {
+            count: formatNumber(uploading),
+          })}
         </p>
       )}
       {failed.map(({ file, id, label }, index) => (

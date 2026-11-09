@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import {
   Check,
   CloudOff,
@@ -104,14 +105,14 @@ export function Workspace() {
         <header className="topbar">
           <div className="history-controls">
             <IconButton
-              label="Go back"
+              label={t('Go back')}
               disabled={state.navigationHistory.index <= 0}
               onClick={state.goBack}
             >
               <ArrowLeft size={16} />
             </IconButton>
             <IconButton
-              label="Go forward"
+              label={t('Go forward')}
               disabled={state.navigationHistory.index >= state.navigationHistory.entries.length - 1}
               onClick={state.goForward}
             >
@@ -120,7 +121,8 @@ export function Workspace() {
           </div>
           <div className="mobile-brand">
             <IconButton
-              label="Open navigation"
+              label={t('Open navigation')}
+              data-open-navigation
               onClick={() => useWorkspace.getState().setSidebarOpen(true)}
             >
               <Menu />
@@ -138,25 +140,29 @@ export function Workspace() {
             )}
             <strong>
               {state.view === 'home'
-                ? 'Home'
+                ? t('Home')
                 : state.view === 'templates'
-                  ? 'Templates'
+                  ? t('Templates')
                   : state.view === 'all'
-                    ? 'All pages'
+                    ? t('All pages')
                     : state.view === 'graph'
-                      ? 'Knowledge graph'
+                      ? t('Knowledge graph')
                       : databaseIndex
-                        ? 'Databases'
+                        ? t('Databases')
                         : canvasIndex
-                          ? 'Canvases'
-                          : (page?.title ?? 'Workspace')}
+                          ? t('Canvases')
+                          : (page?.title ?? t('Workspace'))}
             </strong>
             {page && !globalView && ['document', 'canvas'].includes(state.view) && (
-              <small className="mobile-save-label">{status}</small>
+              <small className="mobile-save-label">{t(status)}</small>
             )}
           </div>
           <div className="topbar-actions">
-            <IconButton label="Command palette" onClick={state.showCommands}>
+            <IconButton
+              label={t('Command palette')}
+              data-command-palette
+              onClick={state.showCommands}
+            >
               <Command size={16} />
             </IconButton>
             {page && !globalView && ['document', 'canvas'].includes(state.view) && (
@@ -168,46 +174,58 @@ export function Workspace() {
                 ) : (
                   <LoaderCircle className={state.saveStatus === 'saving' ? 'spin' : ''} />
                 )}
-                <span>{status}</span>
+                <span>{t(status)}</span>
               </span>
             )}
             {['document', 'canvas'].includes(state.view) && (
               <IconButton
-                label={state.contextOpen ? 'Close page details' : 'Open page details'}
+                label={state.contextOpen ? t('Close page details') : t('Open page details')}
                 onClick={() => useWorkspace.getState().setContextOpen(!state.contextOpen)}
               >
                 <PanelRight />
               </IconButton>
             )}
             {page && !globalView && (
-              <IconButton label="Open comments" onClick={() => state.openPagePanel('discussion')}>
+              <IconButton
+                label={t('Open comments')}
+                data-open-comments
+                onClick={() => state.openPagePanel('discussion')}
+              >
                 <MessageSquare size={17} />
               </IconButton>
             )}
             <IconButton
-              label="Page actions"
+              label={t('Page actions')}
+              data-page-actions
               disabled={!page || globalView}
               onClick={() => state.openDialog('page-menu')}
             >
               <MoreHorizontal />
             </IconButton>
             {page && !globalView && (
-              <button className="button share-button" onClick={() => state.openDialog('invite')}>
+              <button
+                className="button share-button"
+                title={t('Invite people to the workspace')}
+                onClick={() => state.openDialog('invite')}
+              >
                 <Users />
-                Share
+                {t('Invite people')}
               </button>
             )}
           </div>
         </header>
         {state.error && (
           <div className="error-banner" role="alert">
-            <span>{state.error}</span>
+            <span>{t(state.error)}</span>
             {state.connectionError && (
               <button className="text-button" onClick={() => void state.reload()}>
-                Retry connection
+                {t('Retry connection')}
               </button>
             )}
-            <IconButton label="Dismiss error" onClick={() => useWorkspace.getState().clearError()}>
+            <IconButton
+              label={t('Dismiss error')}
+              onClick={() => useWorkspace.getState().clearError()}
+            >
               <X />
             </IconButton>
           </div>
@@ -217,13 +235,13 @@ export function Workspace() {
             <Home />
           ) : state.view === 'templates' ? (
             <LazyBoundary key={`templates:${state.workspaceId}`} name="Templates">
-              <Suspense fallback={<p className="table-empty">Opening templates…</p>}>
+              <Suspense fallback={<p className="table-empty">{t('Opening templates…')}</p>}>
                 <Library key={state.workspaceId} />
               </Suspense>
             </LazyBoundary>
           ) : state.view === 'graph' ? (
             <LazyBoundary key={`graph:${state.workspaceId}`} name="Knowledge graph">
-              <Suspense fallback={<p className="table-empty">Opening graph…</p>}>
+              <Suspense fallback={<p className="table-empty">{t('Opening graph…')}</p>}>
                 <Graph />
               </Suspense>
             </LazyBoundary>
@@ -248,7 +266,7 @@ export function Workspace() {
                 />
                 <TemplateBanner page={page} />
                 <LazyBoundary key={page.id} name="Canvas">
-                  <Suspense fallback={<p className="editor-prompt">Opening canvas…</p>}>
+                  <Suspense fallback={<p className="editor-prompt">{t('Opening canvas…')}</p>}>
                     <DocumentEditor key={page.id} page={page} />
                   </Suspense>
                 </LazyBoundary>
@@ -257,7 +275,7 @@ export function Workspace() {
                 <>
                   <button
                     className="details-scrim"
-                    aria-label="Close page details overlay"
+                    aria-label={t('Close page details overlay')}
                     onClick={() => useWorkspace.getState().setContextOpen(false)}
                   />
                   <PagePanel />
@@ -283,26 +301,28 @@ export function Workspace() {
                   {state.view === 'database' ? (
                     page.kind === 'database' ? (
                       <LazyBoundary key={page.id} name="Database">
-                        <Suspense fallback={<p className="table-empty">Opening database…</p>}>
+                        <Suspense
+                          fallback={<p className="table-empty">{t('Opening database…')}</p>}
+                        >
                           <DatabaseView key={page.id} id={page.id} />
                         </Suspense>
                       </LazyBoundary>
                     ) : (
                       <div className="empty-state">
                         <Database />
-                        <h1>Give your ideas some structure.</h1>
-                        <p>Create a database to organize records and properties.</p>
+                        <h1>{t('Give your ideas some structure.')}</h1>
+                        <p>{t('Create a database to organize records and properties.')}</p>
                         <button
                           className="button primary"
                           onClick={() => state.openDialog('new-page')}
                         >
-                          Create database
+                          {t('Create database')}
                         </button>
                       </div>
                     )
                   ) : (
                     <LazyBoundary key={page.id} name="Editor">
-                      <Suspense fallback={<p className="editor-prompt">Opening editor…</p>}>
+                      <Suspense fallback={<p className="editor-prompt">{t('Opening editor…')}</p>}>
                         <DocumentEditor key={page.id} page={page} />
                       </Suspense>
                     </LazyBoundary>
@@ -313,7 +333,7 @@ export function Workspace() {
                 <>
                   <button
                     className="details-scrim"
-                    aria-label="Close page details overlay"
+                    aria-label={t('Close page details overlay')}
                     onClick={() => useWorkspace.getState().setContextOpen(false)}
                   />
                   <PagePanel />
@@ -323,14 +343,14 @@ export function Workspace() {
           ) : (
             <div className="empty-state">
               <FileText />
-              <h1>A little space to think.</h1>
-              <p>Create a page and make it yours.</p>
+              <h1>{t('A little space to think.')}</h1>
+              <p>{t('Create a page and make it yours.')}</p>
               <button
                 className="button primary"
                 onClick={() => void state.createQuickPage().catch(state.setError)}
               >
                 <Plus />
-                New page
+                {t('New page')}
               </button>
             </div>
           )}
@@ -351,7 +371,7 @@ export function Workspace() {
       {state.dialog === 'page-menu' && page && (
         <PageActions
           page={page}
-          anchor={document.querySelector<HTMLElement>('.topbar [aria-label="Page actions"]')}
+          anchor={document.querySelector<HTMLElement>('.topbar [data-page-actions]')}
           close={() => state.openDialog(null)}
         />
       )}

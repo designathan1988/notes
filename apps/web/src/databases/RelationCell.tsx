@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useState } from 'react';
 import { Link2, X } from 'lucide-react';
 import type { Page, PageLookup } from '@note/contracts';
@@ -46,7 +47,7 @@ export function RelationCell({
           if (active) setTitle(page.title);
         })
         .catch(() => {
-          if (active) setTitle(kind === 'record' ? 'Unavailable record' : 'Unavailable page');
+          if (active) setTitle(kind === 'record' ? t('Unavailable record') : t('Unavailable page'));
         });
     return () => {
       active = false;
@@ -89,23 +90,23 @@ export function RelationCell({
         }}
       >
         <Link2 size={13} />
-        {value ? title || 'Loading…' : kind === 'record' ? 'Link a record' : 'Link a page'}
+        {value ? title || t('Loading…') : kind === 'record' ? t('Link a record') : t('Link a page')}
       </button>
       {open && (
         <Dialog
-          title={kind === 'record' ? 'Link a record' : 'Link a page'}
+          title={kind === 'record' ? t('Link a record') : t('Link a page')}
           onClose={() => {
             setOpen(false);
             end?.();
           }}
         >
           <label>
-            {kind === 'record' ? 'Find a record' : 'Find a page'}
+            {kind === 'record' ? t('Find a record') : t('Find a page')}
             <input
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder={kind === 'record' ? 'Search record names…' : 'Search page names…'}
+              placeholder={kind === 'record' ? t('Search record names…') : t('Search page names…')}
             />
           </label>
           <div className="link-results">
@@ -126,7 +127,8 @@ export function RelationCell({
                 key={page.id}
                 aria-label={page.title}
                 aria-description={
-                  page.parentTitle ?? (kind === 'record' ? 'Workspace record' : 'Workspace page')
+                  page.parentTitle ??
+                  (kind === 'record' ? t('Workspace record') : t('Workspace page'))
                 }
                 onClick={() => {
                   change(page.id);
@@ -139,7 +141,7 @@ export function RelationCell({
                   <strong>{page.title}</strong>
                   <small>
                     {page.parentTitle ??
-                      (kind === 'record' ? 'Workspace record' : 'Workspace page')}
+                      (kind === 'record' ? t('Workspace record') : t('Workspace page'))}
                   </small>
                 </span>
               </button>
@@ -147,7 +149,7 @@ export function RelationCell({
           </div>
           {!results.length && (
             <p className="muted-text">
-              {kind === 'record' ? 'No matching records.' : 'No matching pages.'}
+              {kind === 'record' ? t('No matching records.') : t('No matching pages.')}
             </p>
           )}
           {value && (
@@ -159,12 +161,12 @@ export function RelationCell({
               }}
             >
               <X size={13} />
-              Clear relation
+              {t('Clear relation')}
             </button>
           )}
           {error && (
             <p className="form-error" role="alert">
-              {error}
+              {t(error)}
             </p>
           )}
         </Dialog>

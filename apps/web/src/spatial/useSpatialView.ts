@@ -7,6 +7,8 @@ import {
 } from 'react';
 import {
   fitCamera,
+  cameraAfterResize,
+  viewportClass,
   pinchCamera,
   screenToWorld,
   validPoint,
@@ -18,9 +20,11 @@ import {
 
 interface Options {
   saved?: Camera;
+  responsive?: boolean;
+  savedForSize?(size: Size): Camera | undefined;
   fitPadding?: number;
   points: Point[];
-  commitCamera(camera: Camera): void;
+  commitCamera(camera: Camera, size: Size): void;
   commitItem(id: string, point: Point): void;
   itemPosition(id: string): Point | undefined;
   contentAt?(target: Element): HTMLElement | null;
@@ -55,6 +59,8 @@ export function useSpatialView(options: Options) {
   }, []);
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
   const [ownCamera, setOwnCamera] = useState<Camera | null>(options.saved ?? null);
+  const previousSize = useRef<Size | null>(null);
+  const viewportCameras = useRef<Partial<Record<'compact' | 'wide', Camera>>>({});
   const camera = ownCamera ?? fitCamera(options.points, size, options.fitPadding);
   const [draft, setDraft] = useState<{ id: string; point: Point } | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -67,6 +73,8 @@ export function useSpatialView(options: Options) {
     ignoreClick = useRef(false);
   const wheelTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const updateCamera = (next: Camera) => {
+    if (live.current.options.responsive)
+      viewportCameras.current[viewportClass(live.current.size)] = next;
     live.current.camera = next;
     setOwnCamera(next);
   };
@@ -79,6 +87,27 @@ export function useSpatialView(options: Options) {
     return { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
   };
   useEffect(() => {
+    if (!options.responsive || size.width <= 0 || size.height <= 0) return;
+    const preferred = viewportCameras.current[viewportClass(size)] ?? options.savedForSize?.(size);
+    if (!options.points.length && !preferred) return;
+    const previous = previousSize.current;
+    previousSize.current = size;
+    if (!previous) {
+      setOwnCamera(preferred ?? fitCamera(options.points, size, options.fitPadding));
+    } else if (viewportClass(previous) !== viewportClass(size)) {
+      setOwnCamera(
+        cameraAfterResize(
+          live.current.camera,
+          previous,
+          size,
+          options.points,
+          { [viewportClass(size)]: preferred },
+          options.fitPadding,
+        ),
+      );
+    }
+  }, [size, options]);
+  useEffect(() => {
     const element = ref.current;
     if (!element) return;
     const measure = () => setSize({ width: element.clientWidth, height: element.clientHeight });
@@ -88,9 +117,15 @@ export function useSpatialView(options: Options) {
     return () => observer.disconnect();
   }, [attached]);
   useEffect(() => {
-    if (ownCamera === null && options.points.length && size.width > 0 && size.height > 0)
+    if (
+      !options.responsive &&
+      ownCamera === null &&
+      options.points.length &&
+      size.width > 0 &&
+      size.height > 0
+    )
       setOwnCamera(fitCamera(options.points, size, options.fitPadding));
-  }, [ownCamera, options.points, size, options.fitPadding]);
+  }, [ownCamera, options.points, size, options.fitPadding, options.responsive]);
   const cancel = () => {
     if (gesture.current?.type === 'select') gesture.current.selection.cancel();
     if (gesture.current) {
@@ -138,9 +173,13 @@ export function useSpatialView(options: Options) {
         ),
       );
       if (wheelTimer.current) clearTimeout(wheelTimer.current);
+      // The viewport may cross a breakpoint before this write runs. Persist the
+      // wheel gesture's camera and owner, rather than the replacement fitted view.
+      const cameraToSave = live.current.camera,
+        commit = live.current.options.commitCamera;
       wheelTimer.current = setTimeout(() => {
         wheelTimer.current = null;
-        live.current.options.commitCamera(live.current.camera);
+        commit(cameraToSave, size);
       }, 180);
     };
     element.addEventListener('wheel', wheel, { passive: false });
@@ -252,7 +291,7 @@ export function useSpatialView(options: Options) {
       live.current.options.commitItem(active.id, draftRef.current.point);
     if (active?.type === 'select') active.selection.end(moved.current);
     if ((active?.type === 'pan' || active?.type === 'pinch') && moved.current)
-      live.current.options.commitCamera(live.current.camera);
+      live.current.options.commitCamera(live.current.camera, live.current.size);
     setItemDraft(null);
     setDragging(false);
     if (pointers.current.size) {
@@ -268,7 +307,7 @@ export function useSpatialView(options: Options) {
   }
   function changeCamera(next: Camera) {
     updateCamera(next);
-    live.current.options.commitCamera(next);
+    live.current.options.commitCamera(next, live.current.size);
   }
   function zoom(factor: number) {
     const { size, camera } = live.current;

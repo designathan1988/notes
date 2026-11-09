@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useState } from 'react';
 import { api, json } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
@@ -12,8 +13,8 @@ export function WorkspaceSetup() {
         Mosaic
       </div>
       <section>
-        <h1>Make room for your ideas.</h1>
-        <p>Start with a workspace. Invite your people when you’re ready.</p>
+        <h1>{t('Make room for your ideas.')}</h1>
+        <p>{t('Start with a workspace. Invite your people when you’re ready.')}</p>
         <form
           onSubmit={async (event) => {
             event.preventDefault();
@@ -29,22 +30,22 @@ export function WorkspaceSetup() {
           }}
         >
           <label>
-            Workspace name
+            {t('Workspace name')}
             <input
               name="name"
               required
               maxLength={300}
               autoFocus
-              placeholder="Your team or project"
+              placeholder={t('Your team or project')}
             />
           </label>
-          {error && <p className="form-error">{error}</p>}
+          {error && <p className="form-error">{t(error)}</p>}
           <button className="button primary" disabled={busy}>
-            Create workspace
+            {t('Create workspace')}
           </button>
         </form>
         <button className="text-button" onClick={() => void useWorkspace.getState().signOut()}>
-          Sign out
+          {t('Sign out')}
         </button>
       </section>
     </main>
@@ -73,15 +74,26 @@ export function InvitationAccept({ id }: { id: string }) {
         Mosaic
       </div>
       <section>
-        <h1>You’ve been invited.</h1>
+        <h1>{t('You’ve been invited.')}</h1>
         {invite && (
           <>
             <p>
-              Join <strong>{invite.workspaceName}</strong> as an {invite.role}.
+              {t('Join {{workspace}} as an {{role}}.', {
+                workspace: invite.workspaceName,
+                role: t(
+                  { owner: 'Owner', admin: 'Admin', editor: 'Editor', viewer: 'Viewer' }[
+                    invite.role
+                  ] ?? invite.role,
+                ).toLocaleLowerCase(),
+              })}
             </p>
             {invite.requiresVerification ? (
               <>
-                <p className="info-note">Verify {user?.email} before joining this workspace.</p>
+                <p className="info-note">
+                  {t('Verify {{email}} before joining this workspace.', {
+                    email: user?.email ?? '',
+                  })}
+                </p>
                 <button
                   className="button primary"
                   onClick={() =>
@@ -96,7 +108,7 @@ export function InvitationAccept({ id }: { id: string }) {
                       .catch((error) => setError(error.message))
                   }
                 >
-                  Verify email
+                  {t('Verify email')}
                 </button>
                 {sent && <LocalInbox />}
               </>
@@ -120,18 +132,18 @@ export function InvitationAccept({ id }: { id: string }) {
                   }
                 }}
               >
-                Accept invitation
+                {t('Accept invitation')}
               </button>
             )}
           </>
         )}
         {error && (
           <p className="form-error" role="alert">
-            {error}
+            {t(error)}
           </p>
         )}
         <button className="text-button" onClick={() => void useWorkspace.getState().signOut()}>
-          Use another account
+          {t('Use another account')}
         </button>
       </section>
     </main>
@@ -146,8 +158,8 @@ export function LocalInbox() {
   }, []);
   return (
     <div className="local-inbox">
-      <h3>Local development inbox</h3>
-      <p className="muted-text">These messages stay on this computer.</p>
+      <h3>{t('Local development inbox')}</h3>
+      <p className="muted-text">{t('These messages stay on this computer.')}</p>
       {messages.map((message, index) => (
         <a key={index} href={message.url}>
           {message.subject}

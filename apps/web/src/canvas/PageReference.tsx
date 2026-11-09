@@ -1,9 +1,11 @@
+import { t, useLocale } from '../i18n/index.js';
 import { useEffect } from 'react';
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import { FileText, ArrowUpRight, RefreshCw } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
 import { pageView } from '../workbench/route.js';
 export function CanvasPageReference({ node }: NodeViewProps) {
+  useLocale();
   const id = String(node.attrs.targetId),
     identity = useWorkspace((state) => state.user?.id),
     workspace = useWorkspace((state) => state.workspaceId);
@@ -17,17 +19,17 @@ export function CanvasPageReference({ node }: NodeViewProps) {
     title = ready
       ? reference.page.title
       : reference?.status === 'unavailable'
-        ? 'Unavailable page'
+        ? t('Unavailable page')
         : reference?.status === 'error'
-          ? 'Could not load page'
-          : 'Loading linked page…';
+          ? t('Could not load page')
+          : t('Loading linked page…');
   return (
     <NodeViewWrapper className="canvas-page-reference" contentEditable={false} data-spatial-control>
       <FileText />
       <strong>
         {node.attrs.label && node.attrs.label !== 'Linked page' ? node.attrs.label : title}
       </strong>
-      <small>Linked page</small>
+      <small>{t('Linked page')}</small>
       {ready && (
         <button
           onClick={(event) => {
@@ -37,13 +39,13 @@ export function CanvasPageReference({ node }: NodeViewProps) {
           }}
         >
           <ArrowUpRight />
-          Open page
+          {t('Open page')}
         </button>
       )}
       {reference?.status === 'error' && (
         <button onClick={() => void load(id)}>
           <RefreshCw />
-          Retry
+          {t('Retry')}
         </button>
       )}
     </NodeViewWrapper>

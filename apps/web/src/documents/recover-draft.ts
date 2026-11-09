@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import * as Y from 'yjs';
 import { documentJSON } from '@note/editor/schema';
 import { openRecovery } from './recovery.js';
@@ -30,7 +31,7 @@ export async function recoverLocalDraft(key: string, title: string) {
     if (!current()) throw new Error('The account or workspace changed. Reopen local recovery.');
     const page = await useWorkspace.getState().createPage(
       {
-        title: ('Recovered: ' + title).slice(0, 300),
+        title: t('Recovered: {{title}}', { title }).slice(0, 300),
         content,
         requestId,
         purpose: 'recovery',

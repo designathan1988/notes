@@ -1,3 +1,4 @@
+import { t, useLocale } from '../i18n/index.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { NodeViewContent, NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
@@ -24,6 +25,7 @@ import { ensureCopySourcesSaved } from '../documents/session.js';
 import { download } from '../settings/DataSettings.js';
 
 export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & { pageId: string }) {
+  useLocale();
   const page = useWorkspace((state) => state.pages.find((page) => page.id === pageId)),
     role = useWorkspace(
       (state) => state.workspaces.find((workspace) => workspace.id === state.workspaceId)?.role,
@@ -247,17 +249,19 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
         ) : (
           <span className="web-component-label">
             <Code2 size={15} />
-            Web component
+            {t('Web component')}
           </span>
         )}
-        <div className="web-mode-control" role="group" aria-label="Website view">
+        <div className="web-mode-control" role="group" aria-label={t('Website view')}>
           {(['code', 'split', 'preview'] as const).map((view) => (
             <button key={view} aria-pressed={mode === view} onClick={() => setMode(view)}>
-              {view[0].toUpperCase() + view.slice(1)}
+              {t(view[0].toUpperCase() + view.slice(1))}
             </button>
           ))}
         </div>
-        <span className="web-run-state">{runNode && node !== runNode ? 'Source changed' : ''}</span>
+        <span className="web-run-state">
+          {runNode && node !== runNode ? t('Source changed') : ''}
+        </span>
         <button
           className="button web-run"
           onClick={() => {
@@ -267,17 +271,17 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
           }}
         >
           <Play size={14} />
-          Run
+          {t('Run')}
         </button>
         <IconButton
-          label="Stop website"
+          label={t('Stop website')}
           disabled={!running}
           onClick={() => preview.current?.stop()}
         >
           <Square size={14} />
         </IconButton>
         <IconButton
-          label="Export website"
+          label={t('Export website')}
           onClick={() => {
             void (async () => {
               const state = useWorkspace.getState(),
@@ -308,14 +312,14 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
       >
         <section
           className="web-code-pane"
-          aria-label="Website source files"
+          aria-label={t('Website source files')}
           hidden={mode === 'preview'}
         >
           <div className="web-file-bar">
             <div
               className="web-file-tabs"
               role="tablist"
-              aria-label="Website files"
+              aria-label={t('Website files')}
               onKeyDown={(event) => {
                 if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
                 event.preventDefault();
@@ -351,7 +355,7 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
             {canEdit && (
               <>
                 <IconButton
-                  label="Add source file"
+                  label={t('Add source file')}
                   onClick={() => {
                     setError('');
                     setOperation({ kind: 'add', value: '' });
@@ -360,7 +364,7 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
                   <Plus size={15} />
                 </IconButton>
                 <IconButton
-                  label="Source file actions"
+                  label={t('Source file actions')}
                   onClick={(event) => setMenu(event.currentTarget)}
                 >
                   <MoreHorizontal size={16} />
@@ -378,9 +382,9 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
             >
               <input
                 ref={operationInput}
-                aria-label="File path"
+                aria-label={t('File path')}
                 value={operation.value}
-                placeholder="lib/helpers.js"
+                placeholder={'lib/helpers.js'}
                 onChange={(event) => setOperation({ ...operation, value: event.target.value })}
                 onKeyDown={(event) => {
                   if (event.key === 'Escape') {
@@ -390,19 +394,21 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
                 }}
               />
               <button className="button" type="submit">
-                {operation.kind === 'add' ? 'Add file' : 'Rename'}
+                {operation.kind === 'add' ? t('Add file') : t('Rename')}
               </button>
-              <IconButton label="Cancel file operation" onClick={() => setOperation(null)}>
+              <IconButton label={t('Cancel file operation')} onClick={() => setOperation(null)}>
                 <X size={14} />
               </IconButton>
             </form>
           )}
           <NodeViewContent className="web-source-files" />
           <footer>
-            <span>{selected?.path} · UTF-8 · shared source</span>
+            <span>
+              {selected?.path} {t(' · UTF-8 · shared source')}
+            </span>
             {canEdit && (
               <IconButton
-                label="Insert website media"
+                label={t('Insert website media')}
                 disabled={uploading > 0}
                 onClick={() => upload.current?.click()}
               >
@@ -425,7 +431,7 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
       </div>
       {error && (
         <p className="web-runtime-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
       {failed.map((failure, index) => (
@@ -454,7 +460,7 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
         }}
       />
       {menu && (
-        <Popover anchor={menu} label="Source file actions" close={() => setMenu(null)}>
+        <Popover anchor={menu} label={t('Source file actions')} close={() => setMenu(null)}>
           <div className="menu-list">
             <button
               onClick={() => {
@@ -462,7 +468,7 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
                 setOperation({ kind: 'rename', value: selected?.path ?? '' });
               }}
             >
-              Rename file
+              {t('Rename file')}
             </button>
             <button
               disabled={selected?.path === node.attrs.entry}
@@ -479,14 +485,14 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
                 setMenu(null);
               }}
             >
-              Use as entry file
+              {t('Use as entry file')}
             </button>
             <button
               className="danger"
               disabled={selected?.path === node.attrs.entry}
               onClick={deleteFile}
             >
-              Delete file
+              {t('Delete file')}
             </button>
           </div>
         </Popover>

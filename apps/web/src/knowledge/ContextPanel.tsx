@@ -1,3 +1,4 @@
+import { t, getLocale } from '../i18n/index.js';
 import { FileText, Link2, Network } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
 import { useEffect } from 'react';
@@ -40,29 +41,30 @@ export function ContextPanel() {
     <div className="details-content">
       <dl className="page-facts">
         <div>
-          <dt>Edited</dt>
+          <dt>{t('Edited')}</dt>
           <dd>
             {current &&
-              new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(
-                new Date(current.updatedAt),
-              )}
+              new Intl.DateTimeFormat(getLocale(), {
+                dateStyle: 'medium',
+                timeStyle: 'short',
+              }).format(new Date(current.updatedAt))}
           </dd>
         </div>
         <div>
-          <dt>Access</dt>
-          <dd>{current?.visibility === 'private' ? 'Private' : 'Workspace'}</dd>
+          <dt>{t('Access')}</dt>
+          <dd>{current?.visibility === 'private' ? t('Private') : t('Workspace')}</dd>
         </div>
       </dl>
       {current?.kind === 'canvas' && (
         <details className="context-section canvas-metadata">
-          <summary>Properties and tags</summary>
+          <summary>{t('Properties and tags')}</summary>
           <PageTags key={`tags-${current.id}`} page={current} readOnly={readOnly} />
           <PageProperties key={`properties-${current.id}`} page={current} readOnly={readOnly} />
         </details>
       )}
       <details className="context-section" open>
         <summary>
-          On this page <span>{outline.length}</span>
+          {t('On this page')} <span>{outline.length}</span>
         </summary>
         <nav className="context-outline">
           {outline.map((heading, index) => (
@@ -78,12 +80,14 @@ export function ContextPanel() {
               {heading.text}
             </button>
           ))}
-          {!outline.length && <p className="muted-text">Add headings to navigate this page.</p>}
+          {!outline.length && (
+            <p className="muted-text">{t('Add headings to navigate this page.')}</p>
+          )}
         </nav>
       </details>
       <details className="context-section" open>
         <summary>
-          Connections <span>{connected.length}</span>
+          {t('Connections')} <span>{connected.length}</span>
         </summary>
         <div className="connected-list">
           {connected.map((page) => (
@@ -93,11 +97,11 @@ export function ContextPanel() {
             </button>
           ))}
         </div>
-        {!connected.length && <p className="muted-text">No outgoing page links.</p>}
+        {!connected.length && <p className="muted-text">{t('No outgoing page links.')}</p>}
         <details className="context-graph-preview">
-          <summary>Graph preview</summary>
+          <summary>{t('Graph preview')}</summary>
           <div className="local-graph">
-            <svg viewBox="0 0 300 180" role="img" aria-label="Connected pages">
+            <svg viewBox="0 0 300 180" role="img" aria-label={t('Connected pages')}>
               {connected.slice(0, 3).map((page, index) => {
                 const [x, y] = [
                   [150, 25],
@@ -155,12 +159,12 @@ export function ContextPanel() {
           onClick={() => useWorkspace.getState().navigate(selectedId, 'graph')}
         >
           <Network size={13} />
-          Explore knowledge graph
+          {t('Explore knowledge graph')}
         </button>
       </details>
       <details className="context-section mentions-section" open>
         <summary>
-          Linked mentions <span>{mentions?.length ?? 0}</span>
+          {t('Linked mentions')} <span>{mentions?.length ?? 0}</span>
         </summary>
         {mentions?.length ? (
           mentions.map((mention) => (
@@ -177,7 +181,7 @@ export function ContextPanel() {
             </button>
           ))
         ) : (
-          <p className="muted-text">No linked mentions yet.</p>
+          <p className="muted-text">{t('No linked mentions yet.')}</p>
         )}
       </details>
       {current?.kind !== 'database' && (
@@ -191,7 +195,7 @@ export function ContextPanel() {
           }}
         >
           <Link2 />
-          Connect an idea
+          {t('Connect an idea')}
         </button>
       )}
     </div>

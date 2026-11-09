@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js';
+import { Select } from '../ui/Select.js';
 import {
   ChevronDown,
   ChevronRight,
@@ -83,7 +85,9 @@ function PageRow({
         {hasChildren ? (
           <button
             className="tree-toggle"
-            aria-label={`${expanded ? 'Collapse' : 'Expand'} ${page.title}`}
+            aria-label={t(expanded ? 'Collapse {{title}}' : 'Expand {{title}}', {
+              title: page.title,
+            })}
             onClick={() => useWorkspace.getState().toggleExpanded(page.id)}
           >
             {expanded ? <ChevronDown /> : <ChevronRight />}
@@ -111,7 +115,7 @@ function PageRow({
         <span className="tree-row-actions" data-tree-control>
           {page.kind === 'document' && !readOnly && (
             <button
-              aria-label={`Add subpage to ${page.title}`}
+              aria-label={t('Add subpage to {{title}}', { title: page.title })}
               onClick={() =>
                 void useWorkspace
                   .getState()
@@ -123,7 +127,7 @@ function PageRow({
             </button>
           )}
           <button
-            aria-label={`Actions for ${page.title}`}
+            aria-label={t('Actions for {{title}}', { title: page.title })}
             onClick={(event) => setMenu(event.currentTarget)}
           >
             <MoreHorizontal size={13} />
@@ -145,7 +149,7 @@ function PageRow({
               .catch(useWorkspace.getState().setError)
           }
         >
-          Load more pages
+          {t('Load more pages')}
         </button>
       )}
     </>
@@ -159,9 +163,7 @@ export function Sidebar() {
   const drawer = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!state.sidebarOpen) return;
-    drawer.current
-      ?.querySelector<HTMLButtonElement>('[aria-label="Close navigation drawer"]')
-      ?.focus();
+    drawer.current?.querySelector<HTMLButtonElement>('[data-close-navigation]')?.focus();
     const keys = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -190,7 +192,7 @@ export function Sidebar() {
     document.addEventListener('keydown', keys);
     return () => {
       document.removeEventListener('keydown', keys);
-      document.querySelector<HTMLButtonElement>('[aria-label="Open navigation"]')?.focus();
+      document.querySelector<HTMLButtonElement>('[data-open-navigation]')?.focus();
     };
   }, [state.sidebarOpen]);
   const workspace = state.workspaces.find((item) => item.id === state.workspaceId);
@@ -220,7 +222,7 @@ export function Sidebar() {
       <aside
         ref={drawer}
         className={`sidebar ${state.sidebarOpen ? 'open' : ''}`}
-        aria-label="Workspace navigation"
+        aria-label={t('Workspace navigation')}
         onPointerDown={drag.start}
         onClickCapture={drag.captureClick}
         data-drop-id={drag.target?.id ?? ''}
@@ -228,7 +230,8 @@ export function Sidebar() {
       >
         <button
           className="mobile-navigation-close icon-button"
-          aria-label="Close navigation drawer"
+          aria-label={t('Close navigation drawer')}
+          data-close-navigation
           onClick={() => useWorkspace.getState().setSidebarOpen(false)}
         >
           <X size={18} />
@@ -239,8 +242,8 @@ export function Sidebar() {
               <BrandMark size={24} />
               <span className="workspace-names">
                 <strong>Mosaic</strong>
-                <select
-                  aria-label="Workspace"
+                <Select
+                  aria-label={t('Workspace')}
                   value={state.workspaceId ?? ''}
                   onChange={(event) => void state.chooseWorkspace(event.target.value)}
                 >
@@ -249,12 +252,12 @@ export function Sidebar() {
                       {item.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               </span>
               <ChevronDown size={14} />
             </label>
             <IconButton
-              label="New page"
+              label={t('New page')}
               disabled={workspace?.role === 'viewer'}
               onClick={() => void state.createQuickPage().catch(state.setError)}
             >
@@ -263,10 +266,10 @@ export function Sidebar() {
           </div>
           <button className="search-trigger" onClick={() => state.openDialog('search')}>
             <Search size={15} />
-            <span>Search</span>
+            <span>{t('Search')}</span>
             <kbd>Ctrl K</kbd>
           </button>
-          <nav className="workspace-destinations" aria-label="Workspace tools">
+          <nav className="workspace-destinations" aria-label={t('Workspace tools')}>
             {destinations.map(({ view, label, Icon }) => {
               // Databases and Canvases are indexes: an open database or canvas page is
               // highlighted in the page tree, not as the index.
@@ -276,14 +279,14 @@ export function Sidebar() {
               return (
                 <button
                   key={view}
-                  aria-label={label}
+                  aria-label={t(label)}
                   aria-current={active ? 'page' : undefined}
                   onClick={() =>
                     state.navigate(['all', 'graph'].includes(view) ? state.selectedId : null, view)
                   }
                 >
                   <Icon size={16} />
-                  <span>{label}</span>
+                  <span>{t(label)}</span>
                 </button>
               );
             })}
@@ -291,7 +294,7 @@ export function Sidebar() {
           <div className="sidebar-scroll">
             {state.favorites.length > 0 && (
               <>
-                <div className="section-label favorites-label">Favorites</div>
+                <div className="section-label favorites-label">{t('Favorites')}</div>
                 <div className="favorites">
                   {state.pages
                     .filter((page) => state.favorites.includes(page.id) && !page.templateRootId)
@@ -319,16 +322,16 @@ export function Sidebar() {
               data-tree-root
               data-drag-over={drag.target?.id === null || undefined}
             >
-              <span>Pages</span>
+              <span>{t('Pages')}</span>
               <IconButton
-                label="Create page"
+                label={t('Create page')}
                 disabled={workspace?.role === 'viewer'}
                 onClick={() => void state.createQuickPage().catch(state.setError)}
               >
                 <Plus />
               </IconButton>
               <IconButton
-                label="New page options"
+                label={t('New page options')}
                 disabled={workspace?.role === 'viewer'}
                 onClick={() => state.openCreatePage()}
               >
@@ -337,7 +340,9 @@ export function Sidebar() {
             </div>
             {drag.label && (
               <div className="tree-drag-status" role="status">
-                Moving {drag.label}. Drop between pages to reorder, or on a page to nest.
+                {t('Moving {{title}}. Drop between pages to reorder, or on a page to nest.', {
+                  title: drag.label,
+                })}
               </div>
             )}
             <div className="page-tree">
@@ -352,13 +357,13 @@ export function Sidebar() {
                   className="tree-more"
                   onClick={() => void state.loadChildren(null, true).catch(state.setError)}
                 >
-                  Load more pages
+                  {t('Load more pages')}
                 </button>
               )}
             </div>
             {template && (
               <>
-                <div className="section-label">Editing template</div>
+                <div className="section-label">{t('Editing template')}</div>
                 <div className="page-tree">
                   <PageRow key={template.id} page={template} depth={0} drop={drag.target} />
                 </div>
@@ -368,7 +373,7 @@ export function Sidebar() {
           <footer className="sidebar-footer">
             <button
               className="account-trigger"
-              aria-label="Account menu"
+              aria-label={t('Account menu')}
               aria-haspopup="menu"
               aria-expanded={!!accountMenu}
               onClick={(event) => setAccountMenu(accountMenu ? null : event.currentTarget)}
@@ -376,11 +381,11 @@ export function Sidebar() {
               <span className="avatar">{state.user?.name[0]}</span>
               <span>{state.user?.name}</span>
               <ChevronDown size={13} />
-              {!state.online && <small>Offline</small>}
+              {!state.online && <small>{t('Offline')}</small>}
             </button>
             {accountMenu && (
-              <Popover anchor={accountMenu} label="Account" close={() => setAccountMenu(null)}>
-                <div className="theme-switch" role="group" aria-label="Theme">
+              <Popover anchor={accountMenu} label={t('Account')} close={() => setAccountMenu(null)}>
+                <div className="theme-switch" role="group" aria-label={t('Theme')}>
                   {(
                     [
                       ['light', 'Light', Sun],
@@ -395,7 +400,7 @@ export function Sidebar() {
                       onClick={() => applyTheme(value)}
                     >
                       <Icon size={14} />
-                      {label}
+                      {t(label)}
                     </button>
                   ))}
                 </div>
@@ -407,18 +412,18 @@ export function Sidebar() {
                     }}
                   >
                     <Palette />
-                    Appearance
+                    {t('Appearance')}
                   </button>
                   {utilities.map(({ label, Icon, run }) => (
                     <button
-                      key={label}
+                      key={t(label)}
                       onClick={() => {
                         setAccountMenu(null);
                         run();
                       }}
                     >
                       <Icon />
-                      {label}
+                      {t(label)}
                     </button>
                   ))}
                   <button
@@ -428,7 +433,7 @@ export function Sidebar() {
                     }}
                   >
                     <LogOut />
-                    Sign out
+                    {t('Sign out')}
                   </button>
                 </div>
               </Popover>

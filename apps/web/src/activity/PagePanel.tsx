@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useRef } from 'react';
 import { History, List, MessageSquare, X } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
@@ -31,7 +32,7 @@ export function PagePanel() {
     <aside
       ref={ref}
       className={`context-panel page-panel ${tab !== 'details' ? 'activity-panel' : ''}`}
-      aria-label="Page details"
+      aria-label={t('Page details')}
       onKeyDown={(event) => {
         if ((event.target as HTMLElement).closest('dialog')) return;
         if (event.key === 'Escape') {
@@ -59,29 +60,29 @@ export function PagePanel() {
       <header>
         <h2>
           {tab === 'discussion'
-            ? 'Comments'
+            ? t('Comments')
             : tab === 'history'
-              ? 'Version history'
-              : 'Page details'}
+              ? t('Version history')
+              : t('Page details')}
         </h2>
         <IconButton
-          label="Close page details"
+          label={t('Close page details')}
           onClick={() => useWorkspace.getState().setContextOpen(false)}
         >
           <X />
         </IconButton>
       </header>
-      <div className="page-panel-tabs" role="tablist" aria-label="Page tools">
+      <div className="page-panel-tabs" role="tablist" aria-label={t('Page tools')}>
         {tabs.map(({ id, label, Icon }) => (
           <button
             key={id}
             role="tab"
             aria-selected={id === tab}
-            aria-label={id === 'history' ? 'Version history' : label}
+            aria-label={id === 'history' ? t('Version history') : t(label)}
             onClick={() => useWorkspace.getState().openPagePanel(id as PagePanelTab)}
           >
             <Icon size={14} />
-            {label}
+            {t(label)}
           </button>
         ))}
       </div>

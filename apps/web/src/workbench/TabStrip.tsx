@@ -1,3 +1,4 @@
+import { t, formatNumber } from '../i18n/index.js';
 import { useEffect, useRef, useState } from 'react';
 import {
   FileText,
@@ -89,7 +90,7 @@ export function TabStrip() {
       className="workbench-tabs"
       ref={root}
       role="tablist"
-      aria-label="Open pages"
+      aria-label={t('Open pages')}
       aria-orientation={mobileAnchor ? 'vertical' : 'horizontal'}
       onKeyDown={(event) => {
         const forward = event.key === 'ArrowRight' || (mobileAnchor && event.key === 'ArrowDown');
@@ -111,18 +112,18 @@ export function TabStrip() {
         const page = state.pages.find((page) => page.id === tab.pageId),
           label =
             tab.view === 'home'
-              ? 'Home'
+              ? t('Home')
               : tab.view === 'templates'
-                ? 'Templates'
+                ? t('Templates')
                 : tab.view === 'all'
-                  ? 'All pages'
+                  ? t('All pages')
                   : tab.view === 'graph'
-                    ? 'Knowledge graph'
+                    ? t('Knowledge graph')
                     : tab.view === 'database' && !tab.pageId
-                      ? 'Databases'
+                      ? t('Databases')
                       : tab.view === 'canvas' && !tab.pageId
-                        ? 'Canvases'
-                        : (page?.title ?? 'Page');
+                        ? t('Canvases')
+                        : (page?.title ?? t('Page'));
         const Icon =
           tab.view === 'home'
             ? House
@@ -175,8 +176,8 @@ export function TabStrip() {
             </button>
             <button
               className="tab-close"
-              aria-label={`Close ${label}`}
-              title="Close tab"
+              aria-label={t('Close {{title}}', { title: label })}
+              title={t('Close tab')}
               onClick={() => state.closeTab(tab.id)}
             >
               <X size={13} />
@@ -184,7 +185,9 @@ export function TabStrip() {
             {mobileAnchor && (
               <button
                 className="tab-keep"
-                aria-label={`${tab.pinned ? 'Kept open' : 'Keep open'} ${label}`}
+                aria-label={t(tab.pinned ? 'Kept open {{title}}' : 'Keep open {{title}}', {
+                  title: label,
+                })}
                 disabled={tab.pinned}
                 onClick={() => state.pinTab(tab.id)}
               >
@@ -205,7 +208,7 @@ export function TabStrip() {
     <div className="workbench-strip">
       <div className="workbench-window-tools">
         <IconButton
-          label={state.sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+          label={state.sidebarCollapsed ? t('Show sidebar') : t('Hide sidebar')}
           onClick={state.toggleSidebar}
         >
           <PanelLeft size={16} />
@@ -214,27 +217,27 @@ export function TabStrip() {
       {!mobileAnchor && tabs}
       <button
         className="mobile-tab-trigger icon-button"
-        aria-label="Open tabs"
+        aria-label={t('Open tabs')}
         aria-expanded={!!mobileAnchor}
         aria-haspopup="dialog"
         onClick={(event) => setMobileAnchor(mobileAnchor ? null : event.currentTarget)}
       >
         <PanelsTopLeft />
-        <span className="mobile-tab-count">{state.tabs.length}</span>
+        <span className="mobile-tab-count">{formatNumber(state.tabs.length)}</span>
       </button>
       {mobileAnchor && (
         <Popover
           anchor={mobileAnchor}
-          label="Open pages"
+          label={t('Open pages')}
           role="dialog"
           close={() => setMobileAnchor(null)}
         >
           <div className="mobile-tabs-panel">
-            <h2>Open pages</h2>
+            <h2>{t('Open pages')}</h2>
             {tabs}
             <button className="mobile-new-tab" onClick={newTab}>
               <Plus size={17} />
-              New tab
+              {t('New tab')}
             </button>
             <button
               className="mobile-new-tab"
@@ -242,17 +245,17 @@ export function TabStrip() {
               onClick={() => state.reopenTab()}
             >
               <RotateCcw size={16} />
-              Reopen closed tab
+              {t('Reopen closed tab')}
             </button>
           </div>
         </Popover>
       )}
-      <IconButton label="New tab" onClick={newTab}>
+      <IconButton label={t('New tab')} onClick={newTab}>
         <Plus size={17} />
       </IconButton>
       <span className="workbench-spacer" />
       {menu && (
-        <Popover anchor={menu.anchor} label="Tab actions" close={() => setMenu(null)}>
+        <Popover anchor={menu.anchor} label={t('Tab actions')} close={() => setMenu(null)}>
           <div className="menu-list">
             <button
               onClick={() => {
@@ -261,7 +264,7 @@ export function TabStrip() {
               }}
             >
               <Pin />
-              Keep tab open
+              {t('Keep tab open')}
             </button>
             <button
               onClick={() => {
@@ -270,7 +273,7 @@ export function TabStrip() {
               }}
             >
               <X />
-              Close tab
+              {t('Close tab')}
             </button>
             <button
               disabled={!state.closedTabs.length}
@@ -280,7 +283,7 @@ export function TabStrip() {
               }}
             >
               <RotateCcw />
-              Reopen closed tab
+              {t('Reopen closed tab')}
             </button>
           </div>
         </Popover>

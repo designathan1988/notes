@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js';
+import { Select } from '../ui/Select.js';
 import { useEffect, useRef, useState } from 'react';
 import { Search as SearchIcon, ArrowUpLeft } from 'lucide-react';
 import { pageView } from '../workbench/route.js';
@@ -45,7 +47,7 @@ export function Search() {
   };
   return (
     <Dialog
-      title="Search your workspace"
+      title={t('Search your workspace')}
       wide
       onClose={() => useWorkspace.getState().openDialog(null)}
     >
@@ -53,8 +55,8 @@ export function Search() {
         <SearchIcon />
         <input
           autoFocus
-          aria-label="Search query"
-          placeholder="Find an idea, a page, a connection…"
+          aria-label={t('Search query')}
+          placeholder={t('Find an idea, a page, a connection…')}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={(event) => {
@@ -76,34 +78,40 @@ export function Search() {
       </div>
       <div className="search-filters">
         <input
-          aria-label="Tag filter"
-          placeholder="Filter by tag…"
+          aria-label={t('Tag filter')}
+          placeholder={t('Filter by tag…')}
           value={tag}
           maxLength={80}
           onChange={(event) => setTag(event.target.value)}
         />
-        <select
-          aria-label="Content type"
+        <Select
+          aria-label={t('Content type')}
           value={kind}
           onChange={(event) => setKind(event.target.value)}
         >
-          <option value="">All content</option>
-          <option value="document">Documents</option>
-          <option value="database">Databases</option>
-          <option value="record">Records</option>
-        </select>
+          <option value="">{t('All content')}</option>
+          <option value="document">{t('Documents')}</option>
+          <option value="database">{t('Databases')}</option>
+          <option value="canvas">{t('Canvases')}</option>
+          <option value="record">{t('Records')}</option>
+        </Select>
         <label>
-          Updated after
+          {t('Updated after')}
           <input
-            aria-label="Updated after"
+            aria-label={t('Updated after')}
             type="date"
             value={after}
             onChange={(event) => setAfter(event.target.value)}
           />
         </label>
       </div>
-      {showingRecent && <p className="block-menu-caption">Recently opened</p>}
-      <div className="search-results" ref={resultsRef} role="listbox" aria-label="Search results">
+      {showingRecent && <p className="block-menu-caption">{t('Recently opened')}</p>}
+      <div
+        className="search-results"
+        ref={resultsRef}
+        role="listbox"
+        aria-label={t('Search results')}
+      >
         {results.map((result, index) => (
           <button
             role="option"
@@ -115,23 +123,25 @@ export function Search() {
             <KindIcon kind={result.kind} />
             <span>
               <strong>{result.title}</strong>
-              <small>{result.snippet || result.parentTitle || 'Workspace page'}</small>
+              <small>{result.snippet || result.parentTitle || t('Workspace page')}</small>
             </span>
             <ArrowUpLeft />
           </button>
         ))}
         {!results.length && !loading && (
           <p className="table-empty">
-            {query ? 'No matching pages. Try a different phrase.' : 'Your ideas will appear here.'}
+            {query
+              ? t('No matching pages. Try a different phrase.')
+              : t('Your ideas will appear here.')}
           </p>
         )}
       </div>
       <footer className="search-footer">
         <span>
-          {loading ? 'Searching…' : `${results.length} results`}
-          {indexing ? ' · Indexing latest changes…' : ''}
+          {loading ? t('Searching…') : t('{{value0}} results', { value0: results.length })}
+          {indexing ? t(' · Indexing latest changes…') : ''}
         </span>
-        <span>↑ ↓ to navigate · Enter to open</span>
+        <span>{t('↑ ↓ to navigate · Enter to open')}</span>
       </footer>
     </Dialog>
   );

@@ -55,8 +55,10 @@ try {
     .click();
   await page.getByRole('table', { name: 'Database records' }).getByRole('row').nth(1).waitFor();
   await page.screenshot({ path: resolve(output, 'workspace-database.png') });
-  await page.getByRole('combobox', { name: 'Layout', exact: true }).selectOption('board');
-  await page.getByRole('combobox', { name: 'Group by', exact: true }).selectOption('status');
+  await page.getByRole('combobox', { name: 'Layout', exact: true }).click();
+  await page.getByRole('option', { name: 'Board', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Group by', exact: true }).click();
+  await page.getByRole('option', { name: 'Status', exact: true }).click();
   await page.locator('.board-record').first().waitFor();
   await page.screenshot({ path: resolve(output, 'workspace-board-desktop.png') });
   await page.setViewportSize({ width: 390, height: 844 });

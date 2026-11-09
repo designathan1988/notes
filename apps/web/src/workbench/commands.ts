@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import type { WorkspaceState } from '../state/store.js';
 import { tabKey } from './state.js';
 export interface AppCommand {
@@ -252,7 +253,8 @@ export function availableCommands(state: WorkspaceState, query = '') {
   return commands
     .filter((command) => !command.available || command.available(state))
     .map((command) => {
-      const haystack = `${command.title} ${command.keywords ?? ''}`.toLowerCase();
+      const haystack =
+        `${t(command.title)} ${command.title} ${t(command.keywords ?? '')} ${command.keywords ?? ''}`.toLowerCase();
       let score = 0;
       for (const word of words) {
         const index = haystack.indexOf(word);

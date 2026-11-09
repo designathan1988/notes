@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import {
   Copy,
   ExternalLink,
@@ -37,11 +38,11 @@ export function PageActions({
     void Promise.resolve(action()).catch(useWorkspace.getState().setError);
   };
   return (
-    <Popover label="Page actions" anchor={anchor} close={close}>
+    <Popover label={t('Page actions')} anchor={anchor} close={close}>
       <div className="menu-list">
         <button onClick={() => run(() => state.openDialog('invite'))}>
           <Users />
-          Share
+          {t('Invite to workspace')}
         </button>
         {['document', 'record'].includes(page.kind) && (
           <>
@@ -54,7 +55,7 @@ export function PageActions({
               }
             >
               <Search />
-              Find in page
+              {t('Find in page')}
             </button>
             {!readOnly && (
               <button
@@ -66,7 +67,7 @@ export function PageActions({
                 }
               >
                 <LayoutTemplate />
-                Insert template
+                {t('Insert template')}
               </button>
             )}
             <button
@@ -78,14 +79,14 @@ export function PageActions({
               }
             >
               <Maximize2 />
-              {state.focusMode ? 'Leave focus mode' : 'Enter focus mode'}
+              {state.focusMode ? t('Leave focus mode') : t('Enter focus mode')}
             </button>
             <hr />
           </>
         )}
         <button onClick={() => run(() => state.openTab(page.id))}>
           <ExternalLink />
-          Open in new tab
+          {t('Open in new tab')}
         </button>
         <button
           disabled={readOnly}
@@ -97,18 +98,18 @@ export function PageActions({
           }
         >
           <Type />
-          Rename
+          {t('Rename')}
         </button>
         <button onClick={() => run(() => state.toggleFavorite(page.id))}>
           <Star />
-          {state.favorites.includes(page.id) ? 'Remove favorite' : 'Add to favorites'}
+          {state.favorites.includes(page.id) ? t('Remove favorite') : t('Add to favorites')}
         </button>
         <button
           disabled={readOnly || page.kind === 'database'}
           onClick={() => run(() => state.createQuickPage(page.id))}
         >
           <Plus />
-          Add subpage
+          {t('Add subpage')}
         </button>
         <button
           disabled={readOnly || page.kind === 'record' || page.templateRootId === page.id}
@@ -119,7 +120,7 @@ export function PageActions({
           }}
         >
           <FolderInput />
-          Move page
+          {t('Move page')}
         </button>
         <button
           onClick={() =>
@@ -131,7 +132,7 @@ export function PageActions({
           }
         >
           <Copy />
-          Copy page link
+          {t('Copy page link')}
         </button>
         <button
           disabled={readOnly || !!state.copyBusy}
@@ -140,7 +141,7 @@ export function PageActions({
           }
         >
           <Files />
-          {page.templateRootId === page.id ? 'Duplicate template' : 'Duplicate page'}
+          {page.templateRootId === page.id ? t('Duplicate template') : t('Duplicate page')}
         </button>
         {!page.templateRootId && (
           <button
@@ -148,14 +149,14 @@ export function PageActions({
             onClick={() => run(() => state.openSaveTemplate(page.id))}
           >
             <LayoutTemplate />
-            Save as template
+            {t('Save as template')}
           </button>
         )}
         <button
           onClick={() => run(() => download(`/api/pages/${page.id}/markdown`, page.title + '.md'))}
         >
           <FileText />
-          Export text as Markdown
+          {t('Export text as Markdown')}
         </button>
         <hr />
         <button
@@ -167,7 +168,7 @@ export function PageActions({
           }
         >
           <PanelRight />
-          Page details
+          {t('Page details')}
         </button>
         <button
           onClick={() =>
@@ -178,7 +179,7 @@ export function PageActions({
           }
         >
           <MessageSquare />
-          Comments
+          {t('Comments')}
         </button>
         <button
           onClick={() =>
@@ -189,7 +190,7 @@ export function PageActions({
           }
         >
           <History />
-          Version history
+          {t('Version history')}
         </button>
         <hr />
         <button
@@ -198,7 +199,7 @@ export function PageActions({
           onClick={() => run(() => state.trashPage(page.id))}
         >
           <Trash2 />
-          Move to trash
+          {t('Move to trash')}
         </button>
       </div>
     </Popover>

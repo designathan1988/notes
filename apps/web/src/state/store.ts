@@ -17,6 +17,7 @@ async function settlePageWrites(ids: string[]) {
   await Promise.all(ids.flatMap((id) => (pageWrites.get(id) ? [pageWrites.get(id)!] : [])));
 }
 let navigationSequence = 0;
+let workspaceSequence = 0;
 import { isView, type View } from './views.js';
 export * from './views.js';
 export type Dialog = 'search' | 'new-page' | 'page-menu' | 'settings' | 'invite' | 'move' | null;
@@ -37,6 +38,7 @@ export interface WorkspaceState
   view: View;
   loading: boolean;
   error: string | null;
+  errorPageId: string | null;
   connectionError: boolean;
   dialog: Dialog;
   newPageParentId: string | null;
@@ -61,6 +63,7 @@ export interface WorkspaceState
   ): void;
   openDialog(dialog: Dialog): void;
   setError(error: unknown): void;
+  setPageError(pageId: string, error: unknown): void;
   createPage(
     input: {
       title: string;
@@ -106,6 +109,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   view: 'document',
   loading: true,
   error: null,
+  errorPageId: null,
   connectionError: false,
   dialog: null,
   newPageParentId: null,
@@ -131,7 +135,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     set({ online });
   },
   clearError() {
-    set({ error: null });
+    set({ error: null, errorPageId: null });
   },
   setSaveStatus(status) {
     set({ saveStatus: status });
@@ -171,6 +175,12 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   },
   async chooseWorkspace(workspaceId) {
     navigationSequence++;
+    const sequence = ++workspaceSequence,
+      identity = get().user?.id;
+    const current = () =>
+      sequence === workspaceSequence &&
+      get().workspaceId === workspaceId &&
+      get().user?.id === identity;
     get().clearActivity();
     set({
       workspaceId,
@@ -196,6 +206,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
         ),
         api<string[]>(`/workspaces/${workspaceId}/favorites`),
       ]);
+      if (!current()) return;
       set({
         pages: snapshot.pages,
         expanded: snapshot.expanded,
@@ -215,9 +226,9 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       // The authorized bootstrap can render now; tab reconciliation refreshes in the background.
       void get().reload();
     } catch (error) {
-      get().setError(error);
+      if (current()) get().setError(error);
     } finally {
-      set({ loading: false });
+      if (current()) set({ loading: false });
     }
   },
   async reload() {
@@ -262,9 +273,13 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
         const cursors = { ...get().navigationCursors };
         for (const [key, cursor] of Object.entries(snapshot.cursors))
           if (!cursors[key] || !cursor) cursors[key] = cursor;
+        const nextSelected = selected === null ? null : snapshot.selectedId;
         set({
           pages: snapshot.pages,
-          selectedId: selected === null ? null : snapshot.selectedId,
+          selectedId: nextSelected,
+          ...(get().errorPageId && get().errorPageId !== nextSelected
+            ? { error: null, errorPageId: null, connectionError: false }
+            : {}),
           expanded: [...new Set([...get().expanded, ...snapshot.expanded])].filter((id) =>
             snapshot.pages.some((page) => page.id === id),
           ),
@@ -296,7 +311,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
           });
       }
     } catch (error) {
-      if (!current()) return;
+      if (!current() || get().selectedId !== selected) return;
       if (error instanceof ApiError && [401, 403].includes(error.status)) {
         get().clearActivity();
         set({
@@ -327,6 +342,9 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       view,
       ...(options.preserveOverlays ? {} : { sidebarOpen: false, dialog: null, commandOpen: false }),
       ...(get().selectedId !== id ? { outline: [], linkedPageIds: [], editorRequest: null } : {}),
+      ...(get().errorPageId && get().errorPageId !== id
+        ? { error: null, errorPageId: null, connectionError: false }
+        : {}),
     });
     if (mode !== 'none')
       history[mode === 'replace' ? 'replaceState' : 'pushState'](
@@ -344,6 +362,15 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   setError(error) {
     set({
       error: error instanceof Error ? error.message : String(error),
+      errorPageId: null,
+      connectionError: error instanceof ApiError && error.readFailure,
+    });
+  },
+  setPageError(pageId, error) {
+    if (get().selectedId !== pageId) return;
+    set({
+      error: error instanceof Error ? error.message : String(error),
+      errorPageId: pageId,
       connectionError: error instanceof ApiError && error.readFailure,
     });
   },
@@ -397,6 +424,8 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   async trashPage(id) {
     const user = get().user?.id,
       workspace = get().workspaceId;
+    await settlePageWrites([id]);
+    if (user !== get().user?.id || workspace !== get().workspaceId) return;
     await api(`/pages/${id}`, { method: 'DELETE' });
     if (user !== get().user?.id || workspace !== get().workspaceId) return;
     await get().reload();

@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import type { RecordField } from '@note/contracts';
 import { PropertyManager as FieldEditor } from '../properties/PropertyManager.js';
 import { api, json } from '../state/api.js';
@@ -8,6 +9,8 @@ export function PropertyManager({
   fields,
   revision,
   initialAdd,
+  initialType,
+  onCreated,
   close,
   refresh,
 }: {
@@ -15,19 +18,27 @@ export function PropertyManager({
   fields: RecordField[];
   revision: number;
   initialAdd: boolean;
+  initialType?: RecordField['type'];
+  onCreated?(field: RecordField): void;
   close(): void;
   refresh(): Promise<void>;
 }) {
   return (
     <FieldEditor
-      label="Database properties"
+      label={t('Database properties')}
       fields={fields}
       revision={revision}
       initialAdd={initialAdd}
+      initialType={initialType}
       close={close}
-      commit={async (fields, revision) => {
-        await api(`/databases/${id}/fields`, { method: 'PUT', body: json({ fields, revision }) });
+      commit={async (next, revision) => {
+        await api(`/databases/${id}/fields`, {
+          method: 'PUT',
+          body: json({ fields: next, revision }),
+        });
         await refresh();
+        const created = next.find((field) => !fields.some((existing) => existing.id === field.id));
+        if (created) onCreated?.(created);
       }}
     />
   );

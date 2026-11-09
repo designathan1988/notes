@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useState } from 'react';
 import type { DatabaseViewConfig, SavedDatabaseView } from '@note/contracts';
 import { Dialog } from '../ui/Dialog.js';
@@ -53,7 +54,7 @@ export function ViewSettings({
     }
   };
   return (
-    <Dialog title={view ? 'Edit saved view' : 'Save this view'} onClose={close}>
+    <Dialog title={view ? t('Edit saved view') : t('Save this view')} onClose={close}>
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -61,7 +62,7 @@ export function ViewSettings({
         }}
       >
         <label>
-          View name
+          {t('View name')}
           <input
             autoFocus
             required
@@ -71,16 +72,16 @@ export function ViewSettings({
           />
         </label>
         <p className="muted-text">
-          Save the layout, grouping, date property, filter, sort and columns.
+          {t('Save the layout, grouping, date property, filter, sort and columns.')}
         </p>
         {error && (
           <p className="form-error" role="alert">
-            {error}
+            {t(error)}
           </p>
         )}
         <div className="form-actions">
           <button className="button primary" disabled={busy}>
-            Save view
+            {t('Save view')}
           </button>
           {view && (
             <button
@@ -89,7 +90,7 @@ export function ViewSettings({
               disabled={busy}
               onClick={() => void perform(true)}
             >
-              Delete view
+              {t('Delete view')}
             </button>
           )}
         </div>

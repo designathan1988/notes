@@ -1,3 +1,5 @@
+import { LanguagePicker } from '../i18n/LanguagePicker.js';
+import { t } from '../i18n/index.js';
 import { useState, type FormEvent } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import { BrandMark } from '../ui/BrandMark.js';
@@ -33,7 +35,7 @@ export function SignIn() {
   }
   return (
     <main className="auth-screen">
-      <section className="auth-hero" aria-label="About Mosaic">
+      <section className="auth-hero" aria-label={t('About Mosaic')}>
         <div className="auth-watermark" aria-hidden="true">
           <BrandMark size={620} />
         </div>
@@ -42,10 +44,11 @@ export function SignIn() {
           <span>Mosaic</span>
         </div>
         <div className="auth-pitch">
-          <h2>Documents, data and ideas in one connected workspace.</h2>
+          <h2>{t('Documents, data and ideas in one connected workspace.')}</h2>
           <p>
-            Write freely, organize records in real views, and see how every piece fits — with your
-            team, in real time.
+            {t(
+              'Write freely, organize records in real views, and see how every piece fits — with your team, in real time.',
+            )}
           </p>
           <div className="auth-preview" aria-hidden="true">
             <div className="auth-preview-nav">
@@ -83,30 +86,33 @@ export function SignIn() {
             </div>
           </div>
         </div>
-        <footer>Capture what matters. Connect what comes next.</footer>
+        <footer>{t('Capture what matters. Connect what comes next.')}</footer>
       </section>
       <div className="auth-form">
-        <h1>{signup ? 'Create your account' : 'Welcome back'}</h1>
-        <p>{signup ? 'Start a workspace in under a minute.' : 'Sign in to your workspace.'}</p>
+        <LanguagePicker />
+        <h1>{signup ? t('Create your account') : t('Welcome back')}</h1>
+        <p>
+          {signup ? t('Start a workspace in under a minute.') : t('Sign in to your workspace.')}
+        </p>
         <form onSubmit={submit}>
           {signup && (
             <label>
-              Your name
+              {t('Your name')}
               <input autoComplete="name" name="name" required maxLength={120} />
             </label>
           )}
           <label>
-            Email
+            {t('Email')}
             <input
               autoComplete="email"
               type="email"
               name="email"
-              placeholder="you@company.com"
+              placeholder={t('you@company.com')}
               required
             />
           </label>
           <label>
-            Password
+            {t('Password')}
             <input
               autoComplete={signup ? 'new-password' : 'current-password'}
               type="password"
@@ -117,27 +123,27 @@ export function SignIn() {
           </label>
           {error && (
             <p className="form-error" role="alert">
-              {error}
+              {t(error)}
             </p>
           )}
           <button className="button primary" disabled={busy}>
-            {busy ? <LoaderCircle className="spin" /> : signup ? 'Create account' : 'Sign in'}
+            {busy ? <LoaderCircle className="spin" /> : signup ? t('Create account') : t('Sign in')}
           </button>
         </form>
         {import.meta.env.DEV && (
           <>
-            <div className="auth-divider">or</div>
+            <div className="auth-divider">{t('or')}</div>
             <button
               className="button demo-button"
               disabled={busy}
               onClick={() => void authenticate('jonathan@note.test', 'Note-local-demo-2026')}
             >
-              Open demo workspace
+              {t('Open demo workspace')}
             </button>
           </>
         )}
         <p className="auth-switch">
-          {signup ? 'Already have an account?' : 'New to Mosaic?'}{' '}
+          {signup ? t('Already have an account?') : t('New to Mosaic?')}{' '}
           <button
             type="button"
             className="text-button"
@@ -146,7 +152,7 @@ export function SignIn() {
               setError('');
             }}
           >
-            {signup ? 'Sign in' : 'Create an account'}
+            {signup ? t('Sign in') : t('Create an account')}
           </button>
         </p>
       </div>

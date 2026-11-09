@@ -1,3 +1,4 @@
+import { selectOption } from './select.js';
 import { APP_ORIGIN } from './origin.js';
 import { test, expect } from '@playwright/test';
 test('database controls save typed values, relations, filtered views, sorting, favorites and trash restoration', async ({
@@ -26,7 +27,7 @@ test('database controls save typed values, relations, filtered views, sorting, f
   async function property(name: string, type: string) {
     await page.getByRole('button', { name: 'Add property', exact: true }).click();
     await dialog.getByLabel('Name', { exact: true }).fill(name);
-    await dialog.getByRole('combobox', { name: /^Type/ }).selectOption(type);
+    await selectOption(dialog.getByRole('combobox', { name: /^Type/ }), type);
     await dialog.getByRole('button', { name: 'Add property', exact: true }).click();
     await expect(dialog).toHaveCount(0);
     await expect(page.getByRole('columnheader', { name, exact: true })).toBeVisible();
@@ -55,7 +56,7 @@ test('database controls save typed values, relations, filtered views, sorting, f
   await expect(page.getByRole('button', { name: `Related for ${alpha}`, exact: true })).toHaveText(
     zeta,
   );
-  await page.getByRole('combobox', { name: 'Sort records', exact: true }).selectOption('title');
+  await selectOption(page.getByRole('combobox', { name: 'Sort records', exact: true }), 'title');
   await page.getByRole('button', { name: 'Sort ascending', exact: true }).click();
   await expect(
     page.getByRole('table').locator('tbody tr').first().getByRole('textbox').first(),
@@ -96,7 +97,7 @@ test('database controls save typed values, relations, filtered views, sorting, f
   await dialog
     .locator('.trash-row')
     .filter({ hasText: title })
-    .getByRole('button', { name: 'Restore', exact: true })
+    .getByRole('button', { name: `Restore ${title}`, exact: true })
     .click();
   await expect(dialog.locator('.trash-row').filter({ hasText: title })).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Close dialog', exact: true }).click();

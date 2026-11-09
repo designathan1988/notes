@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { t } from '../i18n/index.js';
 import type { DatabaseRecord, RecordField } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { Cell } from './Cell.js';
@@ -19,7 +20,7 @@ export function RecordProperty({
 }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
-  const label = `${field.name} for ${record.title}`;
+  const label = t('{{field}} for {{title}}', { field: field.name, title: record.title });
   const fields = useWorkspace((state) => state.tables[databaseId]?.fields);
   const templateRootId = useWorkspace((state) => state.tables[databaseId]?.templateRootId);
   if (field.type === 'formula')
@@ -54,7 +55,7 @@ export function RecordProperty({
         >
           {field.name}
         </button>
-        {error && <small role="alert">{error}</small>}
+        {error && <small role="alert">{t(error)}</small>}
       </span>
     );
   return (

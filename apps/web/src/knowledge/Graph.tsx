@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { ZoomIn, ZoomOut, Focus, Search, RotateCcw } from 'lucide-react';
 import type { GraphData } from '@note/contracts';
@@ -155,14 +156,14 @@ function GraphSurface({
         .placeGraphNode(id, { x: point.x + direction[0] * step, y: point.y + direction[1] * step });
   };
   return (
-    <section className="graph-screen" aria-label="Knowledge graph">
+    <section className="graph-screen" aria-label={t('Knowledge graph')}>
       <header className="graph-toolbar">
-        <h1>Knowledge graph</h1>
+        <h1>{t('Knowledge graph')}</h1>
         <label className="graph-search">
           <Search />
           <input
-            aria-label="Filter graph"
-            placeholder="Find a page…"
+            aria-label={t('Filter graph')}
+            placeholder={t('Find a page…')}
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
           />
@@ -175,7 +176,7 @@ function GraphSurface({
               checked={local}
               onChange={(event) => onLocal(event.target.checked)}
             />
-            Local graph
+            {t('Local graph')}
           </label>
           <label className="graph-mode">
             <input
@@ -183,7 +184,7 @@ function GraphSurface({
               checked={hideUnlinked}
               onChange={(event) => setHideUnlinked(event.target.checked)}
             />
-            Hide unlinked
+            {t('Hide unlinked')}
           </label>
         </div>
       </header>
@@ -201,8 +202,8 @@ function GraphSurface({
       >
         <svg
           viewBox={`0 0 ${Math.max(1, size.width)} ${Math.max(1, size.height)}`}
-          role="img"
-          aria-label="Workspace knowledge graph"
+          role="group"
+          aria-label={t('Workspace knowledge graph')}
           tabIndex={0}
           aria-describedby="graph-help"
           data-camera-x={camera.x}
@@ -293,7 +294,7 @@ function GraphSurface({
                   data-spatial-item={node.id}
                   role="link"
                   tabIndex={0}
-                  aria-label={`Open ${node.title}`}
+                  aria-label={t('Open {{value0}}', { value0: node.title })}
                   aria-describedby="graph-help"
                   className="graph-point"
                   data-kind={node.kind}
@@ -376,18 +377,18 @@ function GraphSurface({
         </svg>
         {(!data || (layout.pending && !Object.keys(positions).length)) && (
           <p className="graph-empty" role="status">
-            Loading graph…
+            {t('Loading graph…')}
           </p>
         )}
         {data && layout.error && (
           <div className="graph-empty" role="alert">
-            <p>Graph layout could not be loaded.</p>
+            <p>{t('Graph layout could not be loaded.')}</p>
             <button className="button" onClick={layout.retry}>
-              Retry graph layout
+              {t('Retry graph layout')}
             </button>
           </div>
         )}
-        {data && !nodes.length && <p className="graph-empty">No pages match this view.</p>}
+        {data && !nodes.length && <p className="graph-empty">{t('No pages match this view.')}</p>}
         {active && inspectorOpen && (
           <GraphInspector
             node={active}
@@ -408,19 +409,19 @@ function GraphSurface({
           />
         )}
         <div className="graph-controls" data-spatial-control>
-          <IconButton label="Zoom out" onClick={() => spatial.zoom(1 / 1.2)}>
+          <IconButton label={t('Zoom out')} onClick={() => spatial.zoom(1 / 1.2)}>
             <ZoomOut />
           </IconButton>
-          <output aria-label="Graph zoom">{Math.round(camera.zoom * 100)}%</output>
-          <IconButton label="Zoom in" onClick={() => spatial.zoom(1.2)}>
+          <output aria-label={t('Graph zoom')}>{Math.round(camera.zoom * 100)}%</output>
+          <IconButton label={t('Zoom in')} onClick={() => spatial.zoom(1.2)}>
             <ZoomIn />
           </IconButton>
-          <IconButton label="Reset graph view" onClick={() => spatial.fit()}>
+          <IconButton label={t('Reset graph view')} onClick={() => spatial.fit()}>
             <Focus />
           </IconButton>
           {Object.keys(placements).length > 0 && (
             <IconButton
-              label="Reset all graph positions"
+              label={t('Reset all graph positions')}
               onClick={() => {
                 useWorkspace.getState().resetGraphPositions();
                 spatial.fit(Object.values(base));
@@ -433,11 +434,13 @@ function GraphSurface({
       </div>
       <footer>
         <span>
-          {nodes.length} pages · {edges.length} connections
-          {data?.truncated ? ' · Limited view' : ''}
+          {nodes.length}
+          {t('pages ·')} {edges.length}
+          {t('connections')}
+          {data?.truncated ? t(' · Limited view') : ''}
         </span>
         <span id="graph-help">
-          Drag nodes or background · Scroll to zoom · Enter to open · Arrow keys to move
+          {t('Drag nodes or background · Scroll to zoom · Enter to open · Arrow keys to move')}
         </span>
       </footer>
     </section>

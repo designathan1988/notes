@@ -9,6 +9,18 @@ export interface Size {
 export interface Camera extends Point {
   zoom: number;
 }
+export const viewportClass = (size: Size) => (size.width < 640 ? 'compact' : 'wide');
+export function cameraAfterResize(
+  camera: Camera,
+  previous: Size,
+  next: Size,
+  points: Point[],
+  preferences: Partial<Record<'compact' | 'wide', Camera>>,
+  padding?: number,
+): Camera {
+  if (viewportClass(previous) === viewportClass(next)) return camera;
+  return preferences[viewportClass(next)] ?? fitCamera(points, next, padding);
+}
 export type Rect = Point & Size;
 
 /** Prefer visible space, then nearby space; never cover an existing item as a fallback. */

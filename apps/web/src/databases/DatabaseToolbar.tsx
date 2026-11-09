@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js';
+import { Select } from '../ui/Select.js';
 import {
   ArrowDown,
   ArrowDownUp,
@@ -43,7 +45,7 @@ export function DatabaseToolbar({
     <div className="table-toolbar">
       <div className="view-tabs">
         <button className={selected === 'all' ? 'active' : ''} onClick={() => selectView('all')}>
-          All records
+          {t('All records')}
         </button>
         {definition?.views.map((item) => (
           <button
@@ -57,13 +59,13 @@ export function DatabaseToolbar({
         {!readOnly && (
           <button onClick={() => view(false)}>
             <Plus />
-            New view
+            {t('New view')}
           </button>
         )}
       </div>
       <div className="table-actions">
-        <select
-          aria-label="Layout"
+        <Select
+          aria-label={t('Layout')}
           value={options.layout ?? 'table'}
           onChange={(event) =>
             change({
@@ -79,17 +81,17 @@ export function DatabaseToolbar({
         >
           {['table', 'board', 'list', 'calendar'].map((layout) => (
             <option value={layout} key={layout}>
-              {layout[0].toUpperCase() + layout.slice(1)}
+              {t(layout[0].toUpperCase() + layout.slice(1))}
             </option>
           ))}
-        </select>
+        </Select>
         {options.layout === 'board' && (
-          <select
-            aria-label="Group by"
+          <Select
+            aria-label={t('Group by')}
             value={options.groupBy ?? ''}
             onChange={(event) => change({ ...options, groupBy: event.target.value, offset: 0 })}
           >
-            <option value="">Group by…</option>
+            <option value="">{t('Group by…')}</option>
             {fields
               .filter((field) => ['select', 'checkbox'].includes(field.type))
               .map((field) => (
@@ -97,15 +99,15 @@ export function DatabaseToolbar({
                   {field.name}
                 </option>
               ))}
-          </select>
+          </Select>
         )}
         {options.layout === 'calendar' && (
-          <select
-            aria-label="Date property"
+          <Select
+            aria-label={t('Date property')}
             value={options.dateField ?? ''}
             onChange={(event) => change({ ...options, dateField: event.target.value, offset: 0 })}
           >
-            <option value="">Date property…</option>
+            <option value="">{t('Date property…')}</option>
             {fields
               .filter((field) => field.type === 'date')
               .map((field) => (
@@ -113,24 +115,24 @@ export function DatabaseToolbar({
                   {field.name}
                 </option>
               ))}
-          </select>
+          </Select>
         )}
-        <IconButton label="Visible columns" onClick={columns}>
+        <IconButton label={t('Visible columns')} onClick={columns}>
           <Columns3 />
         </IconButton>
         <button className="button" onClick={filter}>
           <Filter />
-          Filter
+          {t('Filter')}
         </button>
         <label className="sort-control">
           <ArrowDownUp />
-          <select
-            aria-label="Sort records"
+          <Select
+            aria-label={t('Sort records')}
             value={options.sort ?? ''}
             onChange={(event) => change({ ...options, sort: event.target.value, offset: 0 })}
           >
-            <option value="">Sort</option>
-            <option value="title">Name</option>
+            <option value="">{t('Sort')}</option>
+            <option value="title">{t('Name')}</option>
             {fields
               .filter((field) => field.type !== 'button')
               .map((field) => (
@@ -138,12 +140,12 @@ export function DatabaseToolbar({
                   {field.name}
                 </option>
               ))}
-            <option value="updated">Updated</option>
-          </select>
+            <option value="updated">{t('Updated')}</option>
+          </Select>
         </label>
         {options.sort && (
           <IconButton
-            label={options.direction === 'desc' ? 'Sort descending' : 'Sort ascending'}
+            label={options.direction === 'desc' ? t('Sort descending') : t('Sort ascending')}
             onClick={() =>
               change({
                 ...options,
@@ -157,23 +159,23 @@ export function DatabaseToolbar({
         )}
         {!readOnly && (
           <>
-            <IconButton label="Record templates" onClick={templates}>
+            <IconButton label={t('Record templates')} onClick={templates}>
               <LayoutTemplate />
             </IconButton>
-            <IconButton label="Add property" onClick={() => property(true)}>
+            <IconButton label={t('Add property')} onClick={() => property(true)}>
               <Settings2 />
             </IconButton>
-            <IconButton label="Manage properties" onClick={() => property(false)}>
+            <IconButton label={t('Manage properties')} onClick={() => property(false)}>
               <SlidersHorizontal />
             </IconButton>
             {selected !== 'all' && (
               <button className="button" onClick={() => view(true)}>
-                Edit view
+                {t('Edit view')}
               </button>
             )}
             <button className="button primary" onClick={create}>
               <Plus />
-              New record
+              {t('New record')}
             </button>
           </>
         )}

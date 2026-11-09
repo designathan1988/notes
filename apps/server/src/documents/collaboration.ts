@@ -170,6 +170,9 @@ export async function collaborationRoutes(
       readOnly: (await access.requireWorkspace(request.actor, page.workspaceId)) === 'viewer',
     };
   });
+  app.get<{ Params: { id: string } }>('/api/pages/:id/document/acknowledgement', (request) =>
+    documents.acknowledgement(request.actor, request.params.id),
+  );
   const publish = async (ack: DurableAcknowledgement) => {
     // Restore commits a new generation. Old writers must retain their recovery copy,
     // rather than merge unsent text into deleted structures from a prior generation.

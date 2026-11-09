@@ -1,3 +1,4 @@
+import { selectValue } from './select.js';
 import { APP_ORIGIN } from './origin.js';
 import { test, expect } from '@playwright/test';
 
@@ -56,7 +57,7 @@ test('creates pages through the UI, edits table structure, embeds an editable da
   const dialog = page.getByRole('dialog');
   const title = `Interface workflow ${Date.now()}`;
   await expect(dialog.getByLabel('Title', { exact: true })).toBeFocused();
-  await expect(dialog.getByRole('combobox', { name: /Location/ })).toHaveValue('');
+  await expect(selectValue(dialog.getByRole('combobox', { name: /Location/ }))).toHaveValue('');
   await dialog.getByLabel('Title', { exact: true }).fill(title);
   await dialog.getByRole('button', { name: 'Create page', exact: true }).click();
   await expect(page.getByLabel('Page title', { exact: true })).toHaveValue(title);

@@ -1,3 +1,4 @@
+import { t, subscribeLocale } from '../i18n/index.js';
 import type { Editor } from '@tiptap/core';
 import type { Node } from '@tiptap/pm/model';
 import type { EditorView, NodeView } from '@tiptap/pm/view';
@@ -6,6 +7,7 @@ import type { SourceView } from './SourceView.js';
 /** Plain source is readable immediately; CodeMirror loads only when a file is opened for editing. */
 export class LazySourceView implements NodeView {
   readonly dom: HTMLElement;
+  private readonly unsubscribeLocale: () => void;
   private delegate: SourceView | null = null;
   private loading = false;
   private destroyed = false;
@@ -25,6 +27,10 @@ export class LazySourceView implements NodeView {
     plain.textContent = node.textContent;
     this.dom.append(plain);
     this.dom.addEventListener('note-source-reveal', this.load);
+    this.unsubscribeLocale = subscribeLocale(() => {
+      const retry = this.dom.querySelector<HTMLButtonElement>('[data-source-retry]');
+      if (retry) retry.textContent = t('Retry source editor');
+    });
   }
   private identify() {
     this.dom.dataset.sourceFile = this.node.attrs.id ?? this.node.attrs.path;
@@ -52,7 +58,8 @@ export class LazySourceView implements NodeView {
         this.loading = false;
         this.dom.removeAttribute('aria-busy');
         const retry = document.createElement('button');
-        retry.textContent = 'Retry source editor';
+        retry.dataset.sourceRetry = '';
+        retry.textContent = t('Retry source editor');
         retry.onclick = () => {
           retry.remove();
           this.load();
@@ -80,6 +87,7 @@ export class LazySourceView implements NodeView {
   }
   destroy() {
     this.destroyed = true;
+    this.unsubscribeLocale();
     this.dom.removeEventListener('note-source-reveal', this.load);
     this.delegate?.destroy();
   }

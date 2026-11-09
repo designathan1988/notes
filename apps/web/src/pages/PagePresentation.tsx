@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useRef, useState } from 'react';
 import { Image, Smile, Tag, X, MoreHorizontal, SlidersHorizontal } from 'lucide-react';
 import type { Page, PageUpdate } from '@note/contracts';
@@ -93,7 +94,7 @@ export function PagePresentation({
           {cover.type === 'image' && (
             <img
               src={`/api/attachments/${cover.attachmentId}/content`}
-              alt="Page cover"
+              alt={t('Page cover')}
               draggable={false}
               style={{ objectPosition: `50% ${position?.value ?? cover.positionY}%` }}
             />
@@ -102,10 +103,10 @@ export function PagePresentation({
             <div className="page-cover-actions">
               {position && cover.type === 'image' ? (
                 <>
-                  <span>Drag image to reposition</span>
+                  <span>{t('Drag image to reposition')}</span>
                   <input
                     type="range"
-                    aria-label="Cover vertical position"
+                    aria-label={t('Cover vertical position')}
                     min={0}
                     max={100}
                     value={position.value}
@@ -122,10 +123,10 @@ export function PagePresentation({
                       )
                     }
                   >
-                    Save cover position
+                    {t('Save cover position')}
                   </button>
                   <button disabled={busy} onClick={() => setPosition(null)}>
-                    Cancel
+                    {t('Cancel')}
                   </button>
                 </>
               ) : (
@@ -137,7 +138,7 @@ export function PagePresentation({
                       setMenu('cover');
                     }}
                   >
-                    Change cover
+                    {t('Change cover')}
                   </button>
                   {cover.type === 'image' && (
                     <button
@@ -146,7 +147,7 @@ export function PagePresentation({
                         setPosition({ value: cover.positionY, revision: page.revision })
                       }
                     >
-                      Reposition cover
+                      {t('Reposition cover')}
                     </button>
                   )}
                 </>
@@ -159,8 +160,8 @@ export function PagePresentation({
         <div className="page-presentation-tools">
           <button
             className="page-customize-trigger icon-button"
-            aria-label="Customize page"
-            title="Customize page"
+            aria-label={t('Customize page')}
+            title={t('Customize page')}
             aria-haspopup="menu"
             disabled={busy}
             onClick={(event) => {
@@ -178,10 +179,10 @@ export function PagePresentation({
           anchor={anchor}
           label={
             menu === 'appearance'
-              ? 'Customize page'
+              ? t('Customize page')
               : menu === 'icon'
-                ? 'Choose page icon'
-                : 'Choose page cover'
+                ? t('Choose page icon')
+                : t('Choose page cover')
           }
           close={() => !busy && setMenu(null)}
         >
@@ -194,7 +195,7 @@ export function PagePresentation({
                 }}
               >
                 <SlidersHorizontal />
-                Fonts and style
+                {t('Fonts and style')}
               </button>
               {showDescription && (
                 <button
@@ -204,16 +205,16 @@ export function PagePresentation({
                   }}
                 >
                   <Tag />
-                  {page.description ? 'Edit description' : 'Add description'}
+                  {page.description ? t('Edit description') : t('Add description')}
                 </button>
               )}
               <button onClick={() => setMenu('icon')}>
                 <Smile />
-                {page.icon ? 'Change icon' : 'Add icon'}
+                {page.icon ? t('Change icon') : t('Add icon')}
               </button>
               <button onClick={() => setMenu('cover')}>
                 <Image />
-                {cover ? 'Change cover' : 'Add cover'}
+                {cover ? t('Change cover') : t('Add cover')}
               </button>
               {showProperties && (
                 <button
@@ -223,14 +224,14 @@ export function PagePresentation({
                   }}
                 >
                   <SlidersHorizontal />
-                  Page properties
+                  {t('Page properties')}
                 </button>
               )}
             </div>
           ) : (
             <div className="presentation-picker">
               <p className="block-menu-caption">
-                {menu === 'icon' ? 'Make it recognizable' : 'Give this page a cover'}
+                {menu === 'icon' ? t('Make it recognizable') : t('Give this page a cover')}
               </p>
               {menu === 'icon' ? (
                 <>
@@ -238,7 +239,7 @@ export function PagePresentation({
                     {icons.map(([icon, name]) => (
                       <button
                         key={name}
-                        aria-label={name}
+                        aria-label={t(name)}
                         disabled={busy}
                         onClick={() => void save({ icon })}
                       >
@@ -247,11 +248,11 @@ export function PagePresentation({
                     ))}
                   </div>
                   <label className="page-custom-icon">
-                    Your icon
+                    {t('Your icon')}
                     <input
-                      aria-label="Custom page icon"
+                      aria-label={t('Custom page icon')}
                       maxLength={40}
-                      placeholder="Any emoji or character"
+                      placeholder={t('Any emoji or character')}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter') {
                           event.preventDefault();
@@ -262,7 +263,7 @@ export function PagePresentation({
                   </label>
                   {page.icon && (
                     <button disabled={busy} onClick={() => void save({ icon: null })}>
-                      Remove icon
+                      {t('Remove icon')}
                     </button>
                   )}
                 </>
@@ -272,7 +273,7 @@ export function PagePresentation({
                     {colors.map(([color, name]) => (
                       <button
                         key={name}
-                        aria-label={name}
+                        aria-label={t(name)}
                         disabled={busy}
                         style={{ backgroundColor: color }}
                         onClick={() => void save({ cover: { type: 'color', color } })}
@@ -280,9 +281,9 @@ export function PagePresentation({
                     ))}
                   </div>
                   <label className="cover-upload">
-                    Upload image
+                    {t('Upload image')}
                     <input
-                      aria-label="Upload cover image"
+                      aria-label={t('Upload cover image')}
                       type="file"
                       accept="image/png,image/jpeg,image/gif,image/webp"
                       disabled={busy}
@@ -310,7 +311,7 @@ export function PagePresentation({
                   </label>
                   {cover && (
                     <button disabled={busy} onClick={() => void save({ cover: null })}>
-                      Remove cover
+                      {t('Remove cover')}
                     </button>
                   )}
                 </>
@@ -321,7 +322,7 @@ export function PagePresentation({
       )}
       {error && (
         <p className="activity-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
     </>
@@ -351,7 +352,7 @@ export function PageTags({ page, readOnly }: { page: Page; readOnly: boolean }) 
       {(page.tags ?? []).map((tag) => (
         <span className="page-tag" key={tag}>
           <button
-            aria-label={`Search tag ${tag}`}
+            aria-label={t('Search tag {{value0}}', { value0: tag })}
             onClick={() => useWorkspace.getState().openTagSearch(tag)}
           >
             <Tag size={11} />
@@ -360,7 +361,7 @@ export function PageTags({ page, readOnly }: { page: Page; readOnly: boolean }) 
           {!readOnly && (
             <button
               disabled={busy}
-              aria-label={`Remove tag ${tag}`}
+              aria-label={t('Remove tag {{value0}}', { value0: tag })}
               onClick={() =>
                 void save(
                   page.tags!.filter((value) => value !== tag),
@@ -377,8 +378,8 @@ export function PageTags({ page, readOnly }: { page: Page; readOnly: boolean }) 
         (editing !== null ? (
           <input
             autoFocus
-            aria-label="New tag"
-            placeholder="Tag name · Enter to save"
+            aria-label={t('New tag')}
+            placeholder={t('Tag name · Enter to save')}
             value={draft}
             maxLength={80}
             disabled={busy}
@@ -401,10 +402,10 @@ export function PageTags({ page, readOnly }: { page: Page; readOnly: boolean }) 
             onClick={() => setEditing(page.revision)}
           >
             <Tag size={12} />
-            Add tag
+            {t('Add tag')}
           </button>
         ))}
-      {error && <small role="alert">{error}</small>}
+      {error && <small role="alert">{t(error)}</small>}
     </div>
   );
 }

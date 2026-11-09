@@ -1,3 +1,4 @@
+import { t, formatNumber } from '../i18n/index.js';
 import { useEffect, useRef, useState } from 'react';
 import { Extension } from '@tiptap/core';
 import type { Editor } from '@tiptap/react';
@@ -88,7 +89,7 @@ export function FindInPage({ editor, close }: { editor: Editor; close(): void })
     <div
       className="document-find"
       role="search"
-      aria-label="Find in current page"
+      aria-label={t('Find in current page')}
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
           event.preventDefault();
@@ -105,64 +106,74 @@ export function FindInPage({ editor, close }: { editor: Editor; close(): void })
       <div className="find-row">
         <input
           ref={input}
-          aria-label="Find text"
-          placeholder="Find in page…"
+          aria-label={t('Find text')}
+          placeholder={t('Find in page…')}
           value={find.query}
           onChange={(event) => change({ query: event.target.value, active: 0 })}
         />
         <button
-          aria-label="Match case"
+          aria-label={t('Match case')}
           aria-pressed={find.caseSensitive}
           onClick={() => change({ caseSensitive: !find.caseSensitive, active: 0 })}
         >
-          Aa
+          {t('Aa')}
         </button>
-        <span role="status" aria-label="Find results">
+        <span role="status" aria-label={t('Find results')}>
           {find.matches.length
-            ? `${find.active + 1} of ${find.matches.length}${find.matches.length >= matchLimit ? '+' : ''}`
-            : '0 results'}
+            ? t('{{value1}} of {{length}}{{value3}}', {
+                value1: formatNumber(find.active + 1),
+                length: formatNumber(find.matches.length),
+                value3: find.matches.length >= matchLimit ? '+' : '',
+              })
+            : t('0 results')}
         </span>
         <button
-          aria-label="Previous match"
+          aria-label={t('Previous match')}
           disabled={!find.matches.length}
           onClick={() => step(-1)}
         >
           <ChevronUp size={16} />
         </button>
-        <button aria-label="Next match" disabled={!find.matches.length} onClick={() => step(1)}>
+        <button
+          aria-label={t('Next match')}
+          disabled={!find.matches.length}
+          onClick={() => step(1)}
+        >
           <ChevronDown size={16} />
         </button>
-        <button aria-label="Close find" onClick={close}>
+        <button aria-label={t('Close find')} onClick={close}>
           <X size={16} />
         </button>
       </div>
       {editor.isEditable && (
         <div className="find-row">
           <input
-            aria-label="Replace with"
-            placeholder="Replace with…"
+            aria-label={t('Replace with')}
+            placeholder={t('Replace with…')}
             value={replacement}
             onChange={(event) => setReplacement(event.target.value)}
           />
           <button
-            aria-label="Replace match"
+            aria-label={t('Replace match')}
             disabled={!find.matches.length}
             onClick={() => replace(false)}
           >
-            Replace
+            {t('Replace')}
           </button>
           <button
-            aria-label="Replace all matches"
+            aria-label={t('Replace all matches')}
             disabled={!find.matches.length || find.matches.length >= matchLimit}
             onClick={() => replace(true)}
           >
-            All
+            {t('All')}
           </button>
         </div>
       )}
       {find.matches.length >= matchLimit && (
         <small>
-          Showing the first {matchLimit.toLocaleString()} matches. Narrow the search to replace all.
+          {t('Showing the first {{count}} matches. Narrow the search to replace all.', {
+            count: formatNumber(matchLimit),
+          })}
         </small>
       )}
     </div>

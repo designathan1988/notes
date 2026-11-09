@@ -1,3 +1,4 @@
+import { t, useLocale } from '../i18n/index.js';
 import { NodeViewContent, NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import {
   MousePointer2,
@@ -19,6 +20,7 @@ import { canvasConnection } from '@note/editor/canvas-geometry';
 import { CanvasSelection } from './CanvasSelection.js';
 import { CanvasConnections, canvasElementColor as elementColor } from './CanvasConnections.js';
 export function CanvasRootView() {
+  useLocale();
   const c = useCanvas(),
     { camera, size } = c.view;
   return (
@@ -35,7 +37,7 @@ export function CanvasRootView() {
       <div
         className="canvas-toolbar"
         role="toolbar"
-        aria-label="Canvas tools"
+        aria-label={t('Canvas tools')}
         contentEditable={false}
       >
         <PageHeader page={c.page} compact />
@@ -49,35 +51,35 @@ export function CanvasRootView() {
           ).map(([tool, Icon, label]) => (
             <button
               key={tool}
-              aria-label={label}
+              aria-label={t(label)}
               aria-pressed={c.tool === tool}
               disabled={c.readOnly && tool === 'connect'}
               onClick={() => c.setTool(tool)}
             >
               <Icon />
-              <span>{label}</span>
+              <span>{t(label)}</span>
             </button>
           ))}
         </div>
-        <button aria-label="Add note" disabled={c.readOnly} onClick={() => c.addNote()}>
+        <button aria-label={t('Add note')} disabled={c.readOnly} onClick={() => c.addNote()}>
           <Plus />
-          <span>Note</span>
+          <span>{t('Note')}</span>
         </button>
-        <button aria-label="Link page" disabled={c.readOnly} onClick={c.link}>
+        <button aria-label={t('Link page')} disabled={c.readOnly} onClick={c.link}>
           <Link />
-          <span>Link page</span>
+          <span>{t('Link page')}</span>
         </button>
-        <button aria-label="Add media" disabled={c.readOnly} onClick={c.media}>
+        <button aria-label={t('Add media')} disabled={c.readOnly} onClick={c.media}>
           <Image />
-          <span>Media</span>
+          <span>{t('Media')}</span>
         </button>
         <button
-          aria-label="Group selection"
+          aria-label={t('Group selection')}
           disabled={c.readOnly || !c.selected.length}
           onClick={c.group}
         >
           <Group />
-          <span>Group</span>
+          <span>{t('Group')}</span>
         </button>
       </div>
       <div
@@ -146,7 +148,7 @@ export function CanvasRootView() {
           className="canvas-keyboard-target"
           data-canvas-focus
           tabIndex={0}
-          aria-label="Canvas stage"
+          aria-label={t('Canvas stage')}
           role="application"
           aria-owns={`canvas-world-${c.page.id}`}
           contentEditable={false}
@@ -191,34 +193,35 @@ export function CanvasRootView() {
         </div>
         {!c.items.length && (
           <div className="canvas-empty" contentEditable={false} data-spatial-control>
-            <h2>Make room for your ideas.</h2>
-            <p>Add a note, connect a page, or paste something here.</p>
+            <h2>{t('Make room for your ideas.')}</h2>
+            <p>{t('Add a note, connect a page, or paste something here.')}</p>
             <button className="button" disabled={c.readOnly} onClick={() => c.addNote()}>
-              Add your first note
+              {t('Add your first note')}
             </button>
           </div>
         )}
         <CanvasSelection />
         <div className="canvas-zoom" contentEditable={false} data-spatial-control>
-          <IconButton label="Zoom out canvas" onClick={() => c.view.zoom(1 / 1.2)}>
+          <IconButton label={t('Zoom out canvas')} onClick={() => c.view.zoom(1 / 1.2)}>
             <ZoomOut />
           </IconButton>
-          <output aria-label="Canvas zoom">{Math.round(camera.zoom * 100)}%</output>
-          <IconButton label="Zoom in canvas" onClick={() => c.view.zoom(1.2)}>
+          <output aria-label={t('Canvas zoom')}>{Math.round(camera.zoom * 100)}%</output>
+          <IconButton label={t('Zoom in canvas')} onClick={() => c.view.zoom(1.2)}>
             <ZoomIn />
           </IconButton>
-          <IconButton label="Fit canvas" onClick={() => c.view.fit()}>
+          <IconButton label={t('Fit canvas')} onClick={() => c.view.fit()}>
             <Focus />
           </IconButton>
         </div>
         <p className="canvas-help" contentEditable={false}>
-          Double-click to add a note · Space to pan
+          {t('Double-click to add a note · Space to pan')}
         </p>
       </div>
     </NodeViewWrapper>
   );
 }
 export function CanvasCardView({ node }: NodeViewProps) {
+  useLocale();
   const c = useCanvas(),
     id = String(node.attrs.id),
     box = c.box(id) ?? {
@@ -249,7 +252,7 @@ export function CanvasCardView({ node }: NodeViewProps) {
         className="canvas-move"
         role="button"
         tabIndex={c.readOnly ? -1 : 0}
-        aria-label="Move note"
+        aria-label={t('Move note')}
         aria-disabled={c.readOnly}
         contentEditable={false}
         data-spatial-item={!c.readOnly && c.tool === 'select' && !c.space ? id : undefined}
@@ -266,7 +269,7 @@ export function CanvasCardView({ node }: NodeViewProps) {
         data-canvas-rich
         data-spatial-control
         role="textbox"
-        aria-label="Note content"
+        aria-label={t('Note content')}
         contentEditable={c.readOnly ? false : undefined}
         aria-readonly={c.readOnly}
         aria-multiline="true"
@@ -281,8 +284,8 @@ export function CanvasCardView({ node }: NodeViewProps) {
           className="canvas-resize"
           role="button"
           tabIndex={0}
-          aria-label="Resize note"
-          title="Drag to resize. Arrow keys resize; Shift uses larger steps."
+          aria-label={t('Resize note')}
+          title={t('Drag to resize. Arrow keys resize; Shift uses larger steps.')}
           contentEditable={false}
           data-spatial-control
           onPointerDown={(event) => c.gesture(id, event, true)}
@@ -292,6 +295,7 @@ export function CanvasCardView({ node }: NodeViewProps) {
   );
 }
 export function CanvasGroupView({ node }: NodeViewProps) {
+  useLocale();
   const c = useCanvas(),
     id = String(node.attrs.id),
     box = c.box(id);
@@ -317,7 +321,7 @@ export function CanvasGroupView({ node }: NodeViewProps) {
         <span
           role="button"
           tabIndex={c.readOnly ? -1 : 0}
-          aria-label="Move group"
+          aria-label={t('Move group')}
           aria-disabled={c.readOnly}
           contentEditable={false}
           className="canvas-group-move"
@@ -334,7 +338,7 @@ export function CanvasGroupView({ node }: NodeViewProps) {
           tabIndex={c.readOnly ? 0 : undefined}
           data-spatial-control
           role="textbox"
-          aria-label="Group name"
+          aria-label={t('Group name')}
           contentEditable={c.readOnly ? false : undefined}
           aria-readonly={c.readOnly}
         />
@@ -344,8 +348,8 @@ export function CanvasGroupView({ node }: NodeViewProps) {
           className="canvas-resize"
           role="button"
           tabIndex={0}
-          aria-label="Resize group"
-          title="Drag to resize. Arrow keys resize; Shift uses larger steps."
+          aria-label={t('Resize group')}
+          title={t('Drag to resize. Arrow keys resize; Shift uses larger steps.')}
           contentEditable={false}
           data-spatial-control
           onPointerDown={(event) => c.gesture(id, event, true)}
@@ -355,6 +359,7 @@ export function CanvasGroupView({ node }: NodeViewProps) {
   );
 }
 export function CanvasEdgeView({ node }: NodeViewProps) {
+  useLocale();
   const c = useCanvas(),
     a = c.box(node.attrs.fromNode),
     b = c.box(node.attrs.toNode);
@@ -376,7 +381,7 @@ export function CanvasEdgeView({ node }: NodeViewProps) {
         tabIndex={c.readOnly ? 0 : undefined}
         data-spatial-control
         role="textbox"
-        aria-label="Connection label"
+        aria-label={t('Connection label')}
         contentEditable={c.readOnly ? false : undefined}
         aria-readonly={c.readOnly}
         onPointerDown={() => c.select(node.attrs.id)}

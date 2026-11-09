@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import type { Editor } from '@tiptap/react';
 import { FileText } from 'lucide-react';
 import { documentTemplates } from '@note/editor/templates';
@@ -14,8 +15,8 @@ export function Templates({
   close(): void;
 }) {
   return (
-    <Popover anchor={anchor} label="Document templates" close={close}>
-      <div className="popover-caption">Start from a template</div>
+    <Popover anchor={anchor} label={t('Document templates')} close={close}>
+      <div className="popover-caption">{t('Start from a template')}</div>
       {documentTemplates.map((template) => (
         <button
           key={template.id}
@@ -39,12 +40,14 @@ export function Templates({
         >
           <FileText size={18} />
           <span>
-            <strong>{template.title}</strong>
-            <small>{template.description}</small>
+            <strong>{t(template.title)}</strong>
+            <small>{t(template.description)}</small>
           </span>
         </button>
       ))}
-      <p className="template-hint">Adds editable blocks to this page. Existing content is kept.</p>
+      <p className="template-hint">
+        {t('Adds editable blocks to this page. Existing content is kept.')}
+      </p>
     </Popover>
   );
 }

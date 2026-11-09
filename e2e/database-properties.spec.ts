@@ -1,3 +1,4 @@
+import { selectOption, selectValue } from './select.js';
 import { APP_ORIGIN } from './origin.js';
 import { expect, test } from '@playwright/test';
 
@@ -29,7 +30,7 @@ test('creates records inline and configures typed properties, formulas and actio
       .click();
     const form = page.getByRole('dialog', { name: 'Add a property', exact: true });
     await form.getByRole('textbox', { name: 'Name', exact: true }).fill(name);
-    await form.getByRole('combobox', { name: 'Type', exact: true }).selectOption(type);
+    await selectOption(form.getByRole('combobox', { name: 'Type', exact: true }), type);
     return form;
   };
   let form = await add('Estimate', 'number');
@@ -50,9 +51,17 @@ test('creates records inline and configures typed properties, formulas and actio
   form = await add('Approved', 'checkbox');
   await form.getByRole('button', { name: 'Add property', exact: true }).click();
   form = await add('Approve', 'button');
-  await form
-    .getByRole('combobox', { name: 'Action property', exact: true })
-    .selectOption({ label: 'Approved' });
+  const actionProperty = form.getByRole('combobox', { name: 'Action property', exact: true });
+  await form.getByRole('button', { name: 'Add property', exact: true }).click();
+  await expect(actionProperty).toBeFocused();
+  await expect(actionProperty).toHaveAttribute('aria-invalid', 'true');
+  await expect(actionProperty).toHaveAttribute('aria-describedby', /-error$/);
+  await expect(form.getByRole('alert')).toContainText(/select/i);
+  await selectOption(form.getByRole('combobox', { name: 'Action property', exact: true }), {
+    label: 'Approved',
+  });
+  await expect(actionProperty).not.toHaveAttribute('aria-invalid');
+  await expect(form.getByRole('alert')).toHaveCount(0);
   await form.getByRole('button', { name: 'Add property', exact: true }).click();
   await page
     .locator('.table-actions')
@@ -64,9 +73,10 @@ test('creates records inline and configures typed properties, formulas and actio
   await panel.getByRole('spinbutton', { name: 'Estimate for Brief', exact: true }).fill('5');
   await page.keyboard.press('Enter');
   await expect(panel.getByLabel('Cost for Brief', { exact: true })).toHaveText('50');
-  await panel
-    .getByRole('combobox', { name: 'Category for Brief', exact: true })
-    .selectOption('Two');
+  await selectOption(
+    panel.getByRole('combobox', { name: 'Category for Brief', exact: true }),
+    'Two',
+  );
   await panel.getByRole('button', { name: 'Approve for Brief', exact: true }).click();
   await expect(
     panel.getByRole('checkbox', { name: 'Approved for Brief', exact: true }),
@@ -96,9 +106,9 @@ test('creates records inline and configures typed properties, formulas and actio
     '5',
   );
   await expect(page.getByLabel('Cost for Brief', { exact: true })).toHaveText('50');
-  await expect(page.getByRole('combobox', { name: 'Category for Brief', exact: true })).toHaveValue(
-    'Two',
-  );
+  await expect(
+    selectValue(page.getByRole('combobox', { name: 'Category for Brief', exact: true })),
+  ).toHaveValue('Two');
   await context.request.delete(`/api/pages/${database.id}`, { headers: { 'x-note-request': '1' } });
   await context.close();
 });

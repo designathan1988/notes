@@ -1,3 +1,4 @@
+import { selectValue, selectOption } from './select.js';
 import { APP_ORIGIN } from './origin.js';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 async function useDefinition(page: Page, name: string) {
@@ -561,7 +562,7 @@ test('database templates edit their owned record relations and instantiate a sep
   try {
     await page.goto(`/#${source.id}/database`);
     await expect(
-      page.getByRole('combobox', { name: 'Phase for First project', exact: true }),
+      selectValue(page.getByRole('combobox', { name: 'Phase for First project', exact: true })),
     ).toHaveValue('Draft');
     await page.getByRole('button', { name: 'Page actions', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Save as template', exact: true }).click();
@@ -600,7 +601,7 @@ test('database templates edit their owned record relations and instantiate a sep
     const instanceId = page.url().split('#')[1].split('/')[0];
     roots.push(instanceId);
     const phase = page.getByRole('combobox', { name: 'Phase for First project', exact: true });
-    await phase.selectOption('Ready');
+    await selectOption(phase, 'Ready');
     await expect
       .poll(async () => {
         const result = await (await context.request.get(`/api/databases/${instanceId}`)).json();

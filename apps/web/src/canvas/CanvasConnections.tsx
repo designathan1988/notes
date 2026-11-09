@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import type { PointerEvent } from 'react';
 import { canvasConnection, type CanvasBox } from '@note/editor/canvas-geometry';
 import type { CanvasItem } from '@note/editor/canvas-commands';
@@ -25,7 +26,7 @@ export function CanvasConnections({
   draft?: { source: string; point: Point } | null;
 }) {
   return (
-    <svg className="canvas-connections" aria-label="Canvas connections">
+    <svg className="canvas-connections" aria-label={t('Canvas connections')}>
       {items
         .filter((item) => item.node.type.name === 'canvasEdge')
         .map((item) => {

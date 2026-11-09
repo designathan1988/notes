@@ -1,3 +1,4 @@
+import { useLocale } from '../i18n/index.js';
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react';
 import { editorExtensions, databaseView } from '@note/editor/schema';
 import { toggleBlock } from '@note/editor/structure';
@@ -6,6 +7,7 @@ import { interactiveNodeView } from './nodeViewEvents.js';
 import { DatabaseView } from '../databases/DatabaseView.js';
 import { webEditorExtensions } from '../web/extensions.js';
 function EmbeddedDatabase({ node }: NodeViewProps) {
+  useLocale();
   return (
     <NodeViewWrapper className="embedded-database">
       <DatabaseView

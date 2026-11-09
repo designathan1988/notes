@@ -27,7 +27,7 @@ import {
   type CanvasItem,
 } from '@note/editor/canvas-commands';
 import { useSpatialView } from '../spatial/useSpatialView.js';
-import { freeRect, fitCamera, type Point } from '../spatial/geometry.js';
+import { freeRect, fitCamera, viewportClass, type Point } from '../spatial/geometry.js';
 import { useWorkspace } from '../state/store.js';
 import { isolatedDocumentEdit } from '../documents/history.js';
 import { flushSync } from 'react-dom';
@@ -99,7 +99,7 @@ export function CanvasProvider({
   const items = useMemo(() => canvasItems(doc), [doc]),
     byId = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]),
     frames = useMemo(() => canvasBoxes(items), [items]);
-  const saved = useWorkspace((state) => state.canvasCameras[page.id]);
+  const cameras = useWorkspace((state) => state.canvasCameras);
   const [selected, setSelected] = useState<string[]>([]),
     [tool, setTool] = useState<Context['tool']>('select');
   const [inspector, setInspector] = useState(false),
@@ -142,7 +142,10 @@ export function CanvasProvider({
       ?.focus({ preventScroll: true });
   }
   const view = useSpatialView({
-    saved: saved ?? (!items.length ? { x: 0, y: 0, zoom: 1 } : undefined),
+    responsive: true,
+    savedForSize: (size) =>
+      cameras[`${page.id}-${viewportClass(size)}`] ??
+      (viewportClass(size) === 'wide' ? cameras[page.id] : undefined),
     points: [...frames.values()].flatMap((frame) => [
       { x: frame.x, y: frame.y },
       { x: frame.x + frame.width, y: frame.y + frame.height },
@@ -167,7 +170,8 @@ export function CanvasProvider({
       }
       return root;
     },
-    commitCamera: (camera) => useWorkspace.getState().setCanvasCamera(page.id, camera),
+    commitCamera: (camera, size) =>
+      useWorkspace.getState().setCanvasCamera(`${page.id}-${viewportClass(size)}`, camera),
     commitItem: (id, point) => {
       const item = canvasItems(editor.state.doc).find((item) => item.id === id);
       if (item)
@@ -388,7 +392,8 @@ export function CanvasProvider({
   }
   function key(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
-    if (target?.closest('input,textarea,select,.cm-editor,[data-web-workspace]')) return false;
+    if (target?.closest('input,textarea,select,[role="combobox"],.cm-editor,[data-web-workspace]'))
+      return false;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
       if (target === editor.view.dom || target?.closest('[data-canvas-rich]')) {
         const { doc } = editor.state,
@@ -630,14 +635,6 @@ export function CanvasProvider({
       window.removeEventListener('blur', blur);
     };
   }, []);
-  // The first measured camera is remembered once; panning afterwards saves through its own path.
-  const rememberCamera = useEffectEvent(() => {
-    if (useWorkspace.getState().workspaceId === page.workspaceId)
-      useWorkspace.getState().setCanvasCamera(page.id, view.camera);
-  });
-  useEffect(() => {
-    if (!saved && view.size.width > 0 && view.size.height > 0) rememberCamera();
-  }, [saved, view.size.width, view.size.height, page.id]);
   // Losing edit rights stops whatever gesture is in progress.
   const stopGestures = useEffectEvent(() => {
     cleanup.current?.();

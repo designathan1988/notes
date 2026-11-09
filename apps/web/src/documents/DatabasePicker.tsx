@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { Database, Plus } from 'lucide-react';
@@ -44,14 +45,14 @@ export function DatabasePicker({
     close();
   };
   return (
-    <Dialog title="Insert a database view" onClose={close}>
+    <Dialog title={t('Insert a database view')} onClose={close}>
       <label>
-        Find a database
+        {t('Find a database')}
         <input
           autoFocus
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search databases…"
+          placeholder={t('Search databases…')}
         />
       </label>
       <div className="picker-results">
@@ -68,12 +69,14 @@ export function DatabasePicker({
         onClick={async () => {
           setBusy(true);
           try {
-            const page = await useWorkspace
-              .getState()
-              .createPage(
-                { title: query.trim() || 'Untitled database', kind: 'database', parentId: pageId },
-                { navigate: false },
-              );
+            const page = await useWorkspace.getState().createPage(
+              {
+                title: query.trim() || t('Untitled database'),
+                kind: 'database',
+                parentId: pageId,
+              },
+              { navigate: false },
+            );
             insert(page.id);
           } catch (error) {
             setError((error as Error).message);
@@ -83,11 +86,11 @@ export function DatabasePicker({
         }}
       >
         <Plus size={15} />
-        Create a new database
+        {t('Create a new database')}
       </button>
       {error && (
         <p role="alert" className="form-error">
-          {error}
+          {t(error)}
         </p>
       )}
     </Dialog>

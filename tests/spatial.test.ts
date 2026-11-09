@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import {
   fitCamera,
+  cameraAfterResize,
   screenToWorld,
   worldToScreen,
   zoomAt,
@@ -187,4 +188,21 @@ test('fit includes all 180 permitted disconnected graph nodes on a narrow viewpo
     expect(screen.y).toBeGreaterThanOrEqual(15);
     expect(screen.y).toBeLessThanOrEqual(585);
   }
+});
+
+test('canvas refits across viewport classes and restores manual choices for the target class', () => {
+  const points = [
+    { x: 0, y: 0 },
+    { x: 1800, y: 900 },
+  ];
+  const desktop = { width: 1400, height: 800 };
+  const mobile = { width: 390, height: 700 };
+  const manual = { x: 800, y: 100, zoom: 0.8 };
+  const compact = cameraAfterResize(manual, desktop, mobile, points, {});
+  expect(compact).toEqual(fitCamera(points, mobile));
+  expect(compact.zoom).toBeLessThan(manual.zoom);
+  expect(cameraAfterResize(compact, mobile, desktop, points, { wide: manual })).toEqual(manual);
+  expect(cameraAfterResize(manual, desktop, { width: 1200, height: 700 }, points, {})).toEqual(
+    manual,
+  );
 });

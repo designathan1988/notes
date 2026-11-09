@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import type { Page } from '@note/contracts';
 import type { WorkspaceState } from '../state/store.js';
 import { GLOBAL_VIEWS, isView, type View } from '../state/views.js';
@@ -422,7 +423,7 @@ export function workbenchSlice(
       if (get().user?.id !== user || get().workspaceId !== workspace) return;
       const page = await get().createPage(
         {
-          title: 'Untitled site',
+          title: t('Untitled site'),
           parentId: parentId ?? undefined,
           kind: 'document',
           content: newWebContent(),
@@ -440,10 +441,10 @@ export function workbenchSlice(
         {
           title:
             kind === 'database'
-              ? 'Untitled database'
+              ? t('Untitled database')
               : kind === 'canvas'
-                ? 'Untitled canvas'
-                : 'Untitled',
+                ? t('Untitled canvas')
+                : t('Untitled'),
           parentId: parentId ?? undefined,
           kind,
         },

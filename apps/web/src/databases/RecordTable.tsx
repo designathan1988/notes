@@ -1,3 +1,4 @@
+import { t, getLocale } from '../i18n/index.js';
 import { useMemo } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import { FileText, PanelRightOpen } from 'lucide-react';
@@ -23,22 +24,23 @@ export function RecordTable({
   inspect(id: string): void;
   refresh(): Promise<void>;
 }) {
+  const locale = getLocale();
   const columns = useMemo<ColumnDef<DatabaseRecord>[]>(
     () => [
       {
         id: 'title',
-        header: 'Name',
+        header: t('Name'),
         cell: ({ row }) => (
           <div className="record-name">
             <IconButton
-              label={`Open ${row.original.title}`}
+              label={t('Open {{value0}}', { value0: row.original.title })}
               onClick={() => useWorkspace.getState().navigate(row.original.pageId)}
             >
               <FileText />
             </IconButton>
             <Cell
               initial={row.original.title}
-              label={`Name for ${row.original.title}`}
+              label={t('Name for {{value0}}', { value0: row.original.title })}
               readOnly={readOnly}
               save={async (value) => {
                 await useWorkspace
@@ -48,7 +50,7 @@ export function RecordTable({
               }}
             />
             <IconButton
-              label={`Inspect ${row.original.title}`}
+              label={t('Inspect {{value0}}', { value0: row.original.title })}
               onClick={() => inspect(row.original.pageId)}
             >
               <PanelRightOpen />
@@ -73,10 +75,10 @@ export function RecordTable({
         ? [
             {
               id: 'updated',
-              header: 'Updated',
+              header: t('Updated'),
               cell: ({ row }: { row: { original: DatabaseRecord } }) => (
                 <span className="table-date">
-                  {new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(
+                  {new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(
                     new Date(row.original.updatedAt),
                   )}
                 </span>
@@ -85,12 +87,12 @@ export function RecordTable({
           ]
         : []),
     ],
-    [id, fields, compact, readOnly, inspect, refresh],
+    [id, fields, compact, readOnly, inspect, refresh, locale],
   );
   const table = useReactTable({ data: records, columns, getCoreRowModel: getCoreRowModel() });
   return (
     <div className="table-scroll">
-      <table aria-label={compact ? 'Related notes' : 'Database records'}>
+      <table aria-label={compact ? t('Related notes') : t('Database records')}>
         <thead>
           {table.getHeaderGroups().map((group) => (
             <tr key={group.id}>

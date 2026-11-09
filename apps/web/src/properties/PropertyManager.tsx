@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js';
+import { Select } from '../ui/Select.js';
 import { useState } from 'react';
 import type { RecordField } from '@note/contracts';
 import { Dialog } from '../ui/Dialog.js';
@@ -22,6 +24,7 @@ export function PropertyManager({
   fields,
   revision,
   initialAdd,
+  initialType = 'text',
   close,
   commit,
 }: {
@@ -29,10 +32,11 @@ export function PropertyManager({
   fields: RecordField[];
   revision: number;
   initialAdd: boolean;
+  initialType?: RecordField['type'];
   close(): void;
   commit(fields: RecordField[], expectedRevision: number): Promise<void>;
 }) {
-  const blank = (): RecordField => ({ id: crypto.randomUUID(), name: '', type: 'text' });
+  const blank = (): RecordField => ({ id: crypto.randomUUID(), name: '', type: initialType });
   const [draft, setDraft] = useState<RecordField | null>(initialAdd ? blank() : null),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
@@ -58,7 +62,7 @@ export function PropertyManager({
     }
   };
   return (
-    <Dialog title={initialAdd ? 'Add a property' : label} onClose={close}>
+    <Dialog title={initialAdd ? t('Add a property') : label} onClose={close}>
       {!draft ? (
         <div className="property-manager-list">
           {fields.map((field) => (
@@ -79,7 +83,7 @@ export function PropertyManager({
                 <strong>{field.name}</strong>
                 <small>
                   {field.type}
-                  {field.archived ? ' · Archived' : ''}
+                  {field.archived ? t(' · Archived') : ''}
                 </small>
               </button>
               <button
@@ -93,7 +97,7 @@ export function PropertyManager({
                   )
                 }
               >
-                {field.archived ? 'Restore' : 'Archive'}
+                {field.archived ? t('Restore') : t('Archive')}
               </button>
             </div>
           ))}
@@ -105,9 +109,9 @@ export function PropertyManager({
               setDraftRevision(revision);
             }}
           >
-            Add property
+            {t('Add property')}
           </button>
-          <p className="muted-text">Archiving hides a property and preserves its values.</p>
+          <p className="muted-text">{t('Archiving hides a property and preserves its values.')}</p>
         </div>
       ) : (
         <form
@@ -144,7 +148,7 @@ export function PropertyManager({
         >
           <fieldset className="property-editor-fields" disabled={busy}>
             <label>
-              Name
+              {t('Name')}
               <input
                 autoFocus
                 name="name"
@@ -155,8 +159,8 @@ export function PropertyManager({
               />
             </label>
             <label>
-              Type
-              <select
+              {t('Type')}
+              <Select
                 name="type"
                 value={draft.type}
                 onChange={(event) =>
@@ -173,18 +177,18 @@ export function PropertyManager({
               >
                 {FIELD_TYPE_LABELS.map(([type, label]) => (
                   <option key={type} value={type}>
-                    {label}
+                    {t(label)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             {['select', 'multi-select'].includes(draft.type) && (
               <label>
-                Select options
+                {t('Select options')}
                 <input
                   key={draft.id + draft.type}
                   name="options"
-                  placeholder="First option, Second option"
+                  placeholder={t('First option, Second option')}
                   defaultValue={draft.options?.join(', ') ?? ''}
                 />
               </label>
@@ -192,9 +196,9 @@ export function PropertyManager({
             {draft.type === 'formula' && (
               <>
                 <label>
-                  Formula
+                  {t('Formula')}
                   <textarea
-                    aria-label="Formula"
+                    aria-label={t('Formula')}
                     required
                     value={draft.formula ?? ''}
                     onChange={(event) => setDraft({ ...draft, formula: event.target.value })}
@@ -224,17 +228,18 @@ export function PropertyManager({
                     ))}
                 </div>
                 <p className="muted-text">
-                  Use + − * / %, parentheses, round, abs, min and max. Empty values and invalid
-                  arithmetic display as —.
+                  {t(
+                    'Use + − * / %, parentheses, round, abs, min and max. Empty values and invalid arithmetic display as —.',
+                  )}
                 </p>
               </>
             )}
             {draft.type === 'button' && (
               <>
                 <label>
-                  Update property
-                  <select
-                    aria-label="Action property"
+                  {t('Update property')}
+                  <Select
+                    aria-label={t('Action property')}
                     value={draft.action?.fieldId ?? ''}
                     required
                     onChange={(event) => {
@@ -249,7 +254,7 @@ export function PropertyManager({
                       });
                     }}
                   >
-                    <option value="">Choose a property</option>
+                    <option value="">{t('Choose a property')}</option>
                     {fields
                       .filter(
                         (field) =>
@@ -263,27 +268,27 @@ export function PropertyManager({
                           {field.name}
                         </option>
                       ))}
-                  </select>
+                  </Select>
                 </label>
                 {draft.action && (
                   <label>
-                    Action value
+                    {t('Action value')}
                     {(() => {
                       const target = fields.find((field) => field.id === draft.action?.fieldId);
                       const change = (value: unknown) =>
                         setDraft({ ...draft, action: { ...draft.action!, value } });
                       return target?.type === 'checkbox' ? (
-                        <select
-                          aria-label="Action value"
+                        <Select
+                          aria-label={t('Action value')}
                           value={String(draft.action.value)}
                           onChange={(event) => change(event.target.value === 'true')}
                         >
-                          <option value="true">Checked</option>
-                          <option value="false">Unchecked</option>
-                        </select>
+                          <option value="true">{t('Checked')}</option>
+                          <option value="false">{t('Unchecked')}</option>
+                        </Select>
                       ) : target?.type === 'select' ? (
-                        <select
-                          aria-label="Action value"
+                        <Select
+                          aria-label={t('Action value')}
                           value={String(draft.action.value)}
                           onChange={(event) => change(event.target.value)}
                         >
@@ -291,10 +296,10 @@ export function PropertyManager({
                           {target.options?.map((value) => (
                             <option key={value}>{value}</option>
                           ))}
-                        </select>
+                        </Select>
                       ) : (
                         <input
-                          aria-label="Action value"
+                          aria-label={t('Action value')}
                           type={
                             target?.type === 'number'
                               ? 'number'
@@ -316,18 +321,19 @@ export function PropertyManager({
                   </label>
                 )}
                 <p className="muted-text">
-                  This button updates one property on this item. Actions use the current permissions
-                  and revision.
+                  {t(
+                    'This button updates one property on this item. Actions use the current permissions and revision.',
+                  )}
                 </p>
               </>
             )}
             <div className="form-actions">
               <button className="button primary" disabled={busy}>
-                {existing ? 'Save property' : 'Add property'}
+                {existing ? t('Save property') : t('Add property')}
               </button>
               {!initialAdd && (
                 <button className="button" type="button" onClick={() => setDraft(null)}>
-                  Back
+                  {t('Back')}
                 </button>
               )}
             </div>
@@ -336,7 +342,7 @@ export function PropertyManager({
       )}
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
     </Dialog>

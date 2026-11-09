@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { t, useLocale } from './i18n/index.js';
 import { useWorkspace } from './state/store.js';
 import { isView } from './state/views.js';
 import { BrandMark } from './ui/BrandMark.js';
@@ -8,6 +9,7 @@ import { WorkspaceSetup, InvitationAccept } from './identity/Onboarding.js';
 import { shortcutCommand } from './workbench/commands.js';
 import { AppearanceProjection } from './appearance/projection.js';
 export default function App() {
+  useLocale();
   const loading = useWorkspace((state) => state.loading);
   const user = useWorkspace((state) => state.user);
   const connectionError = useWorkspace((state) => state.connectionError);
@@ -48,7 +50,7 @@ export default function App() {
           <BrandMark size={28} />
           Mosaic
         </span>
-        <p>Opening your workspace…</p>
+        <p>{t('Opening your workspace…')}</p>
       </main>
     );
   if (!user && connectionError)
@@ -58,12 +60,12 @@ export default function App() {
           <BrandMark size={28} />
           Mosaic
         </span>
-        <p>We couldn’t reach your workspace.</p>
+        <p>{t('We couldn’t reach your workspace.')}</p>
         <button
           className="button primary"
           onClick={() => void useWorkspace.getState().initialize()}
         >
-          Retry connection
+          {t('Retry connection')}
         </button>
       </main>
     );

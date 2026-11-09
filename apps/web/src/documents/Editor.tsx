@@ -1,3 +1,5 @@
+import { t, useLocale, formatNumber } from '../i18n/index.js';
+import { Select } from '../ui/Select.js';
 import {
   lazy,
   Suspense,
@@ -80,20 +82,20 @@ export function DocumentEditor({ page, embedded = false }: { page: Page; embedde
   if (failure)
     return (
       <div className="editor-error" role="alert">
-        <p>{failure}</p>
+        <p>{t(failure)}</p>
         <button className="button" onClick={() => setAttempt((value) => value + 1)}>
-          Retry document
+          {t('Retry document')}
         </button>
       </div>
     );
   return session && page.kind === 'canvas' ? (
-    <Suspense fallback={<p className="editor-prompt">Opening canvas…</p>}>
+    <Suspense fallback={<p className="editor-prompt">{t('Opening canvas…')}</p>}>
       <CanvasEditor session={session} />
     </Suspense>
   ) : session ? (
     <ReadyDocument session={session} embedded={embedded} />
   ) : (
-    <p className="editor-prompt">Opening document…</p>
+    <p className="editor-prompt">{t('Opening document…')}</p>
   );
 }
 function ReadyDocument({ session, embedded }: { session: DocumentSession; embedded: boolean }) {
@@ -113,10 +115,11 @@ function ReadyDocument({ session, embedded }: { session: DocumentSession; embedd
   return ready ? (
     <ConnectedEditor session={session} embedded={embedded} />
   ) : (
-    <p className="editor-prompt">Opening document…</p>
+    <p className="editor-prompt">{t('Opening document…')}</p>
   );
 }
 function ConnectedEditor({ session, embedded }: { session: DocumentSession; embedded: boolean }) {
+  const locale = useLocale();
   const mapping = session.mapping;
   const status = useSyncExternalStore(session.subscribeStatus, session.getStatus);
   const [commands, setCommands] = useState(false);
@@ -146,8 +149,8 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
         Placeholder.configure({
           placeholder: ({ node }) =>
             node.type.name === 'toggleTitle'
-              ? 'Toggle heading'
-              : 'Write something, or type / for commands…',
+              ? t('Toggle heading')
+              : t('Write something, or type / for commands…'),
         }),
       ],
       editable: !session.readOnly,
@@ -167,7 +170,7 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
       editorProps: {
         attributes: {
           class: 'note-editor',
-          'aria-label': 'Page content',
+          'aria-label': t('Page content'),
           role: 'textbox',
           'aria-multiline': 'true',
           spellcheck: 'false',
@@ -236,6 +239,21 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
     },
     [session],
   );
+  useEffect(() => {
+    if (!editor) return;
+    editor.setOptions({
+      editorProps: {
+        ...editor.options.editorProps,
+        attributes: {
+          class: 'note-editor',
+          'aria-label': t('Page content'),
+          role: 'textbox',
+          'aria-multiline': 'true',
+          spellcheck: 'false',
+        },
+      },
+    });
+  }, [editor, locale]);
   const statistics = useDocumentProjection(editor, session.page.id);
   useEffect(() => {
     if (!editor || request?.pageId !== session.page.id) return;
@@ -277,8 +295,8 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
     <div className="editor-wrap">
       <div className="document-utilities">
         {embedded && (
-          <span role="status" aria-label="Record document status">
-            {
+          <span data-document-status role="status" aria-label={t('Record document status')}>
+            {t(
               {
                 connecting: 'Connecting…',
                 saving: 'Saving…',
@@ -286,34 +304,43 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
                 local: 'Saved on this device',
                 error: 'Save failed',
                 'read-only': 'Read only',
-              }[status]
-            }
+              }[status],
+            )}
           </span>
         )}
         <span
           role="status"
-          aria-label="Document statistics"
-          title={`${statistics.characters.toLocaleString()} characters · ${statistics.minutes} min read`}
+          data-document-statistics
+          aria-label={t('Document statistics')}
+          title={t('{{value1}} characters · {{minutes}} min read', {
+            value1: formatNumber(statistics.characters),
+            minutes: statistics.minutes,
+          })}
         >
-          {statistics.words.toLocaleString()} {statistics.words === 1 ? 'word' : 'words'}
-          <span className="statistics-reading"> · {statistics.minutes} min read</span>
+          {t(statistics.words === 1 ? '{{count}} word' : '{{count}} words', {
+            count: formatNumber(statistics.words),
+          })}
+          <span className="statistics-reading">
+            {' '}
+            · {t('{{count}} min read', { count: formatNumber(statistics.minutes) })}
+          </span>
         </span>
-        <IconButton label="Find in page" onClick={() => setFindOpen(true)}>
+        <IconButton label={t('Find in page')} onClick={() => setFindOpen(true)}>
           <Search />
         </IconButton>
         {!session.readOnly && (
           <button
             ref={templateAnchor}
             className="icon-button"
-            aria-label="Insert template"
-            title="Insert template"
+            aria-label={t('Insert template')}
+            title={t('Insert template')}
             onClick={() => setTemplatesOpen((value) => !value)}
           >
             <LayoutTemplate />
           </button>
         )}
         <IconButton
-          label={focusMode ? 'Leave focus mode' : 'Enter focus mode'}
+          label={focusMode ? t('Leave focus mode') : t('Enter focus mode')}
           onClick={() => useWorkspace.getState().toggleFocusMode()}
         >
           {focusMode ? <Minimize2 /> : <Maximize2 />}
@@ -349,7 +376,12 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
       )}
       {uploading > 0 && (
         <p className="upload-status" role="status">
-          Uploading {uploading} {uploading === 1 ? 'file' : 'files'}… Keep this tab open.
+          {t(
+            uploading === 1
+              ? 'Uploading {{count}} file… Keep this tab open.'
+              : 'Uploading {{count}} files… Keep this tab open.',
+            { count: formatNumber(uploading) },
+          )}
         </p>
       )}
       {failed.map((failure, index) => (
@@ -369,7 +401,7 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
         type="file"
         multiple
         hidden
-        aria-label="Choose attachments"
+        aria-label={t('Choose attachments')}
         onChange={(event) => {
           for (const file of [...(event.target.files ?? [])])
             void upload(file)
@@ -379,60 +411,64 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
         }}
       />
       {!session.readOnly && (
-        <div className="document-tools" role="toolbar" aria-label="Document formatting">
-          <IconButton label="Block actions" onClick={() => setBlockActions(true)}>
+        <div className="document-tools" role="toolbar" aria-label={t('Document formatting')}>
+          <IconButton
+            data-block-actions
+            label={t('Block actions')}
+            onClick={() => setBlockActions(true)}
+          >
             <GripVertical />
           </IconButton>
-          <IconButton label="Insert block" onClick={() => setCommands(true)}>
+          <IconButton label={t('Insert block')} onClick={() => setCommands(true)}>
             <Plus />
           </IconButton>
           <span className="tool-divider" />
           <IconButton
-            label="Bold"
+            label={t('Bold')}
             aria-pressed={formatting?.bold}
             onClick={() => editor.chain().focus().toggleBold().run()}
           >
             <Bold />
           </IconButton>
           <IconButton
-            label="Italic"
+            label={t('Italic')}
             aria-pressed={formatting?.italic}
             onClick={() => editor.chain().focus().toggleItalic().run()}
           >
             <Italic />
           </IconButton>
-          <IconButton label="Insert link" onClick={() => setLinkOpen(true)}>
+          <IconButton label={t('Insert link')} onClick={() => setLinkOpen(true)}>
             <Link />
           </IconButton>
-          <IconButton label="Add attachment" onClick={() => fileInput.current?.click()}>
+          <IconButton label={t('Add attachment')} onClick={() => fileInput.current?.click()}>
             <Paperclip />
           </IconButton>
           <TableTools editor={editor} />
           <IconButton
-            label="Undo"
+            label={t('Undo')}
             disabled={!formatting?.undo}
             onClick={() => editor.chain().focus().undo().run()}
           >
             <Undo2 />
           </IconButton>
           <IconButton
-            label="Redo"
+            label={t('Redo')}
             disabled={!formatting?.redo}
             onClick={() => editor.chain().focus().redo().run()}
           >
             <Redo2 />
           </IconButton>
           <span className="desktop-tool">
-            <select
-              aria-label="Paste mode"
+            <Select
+              aria-label={t('Paste mode')}
               value={pasteMode}
               onChange={(event) => setPasteMode(event.target.value)}
             >
-              <option value="auto">Auto paste</option>
-              <option value="text">Plain text</option>
-              <option value="markdown">Markdown</option>
-              <option value="code">Code</option>
-            </select>
+              <option value="auto">{t('Auto paste')}</option>
+              <option value="text">{t('Plain text')}</option>
+              <option value="markdown">{t('Markdown')}</option>
+              <option value="code">{t('Code')}</option>
+            </Select>
           </span>
         </div>
       )}
@@ -445,7 +481,7 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
         />
       )}
       {embedOpen && (
-        <Dialog title="Embed a video" onClose={() => setEmbedOpen(false)}>
+        <Dialog title={t('Embed a video')} onClose={() => setEmbedOpen(false)}>
           <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -460,21 +496,21 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
                 .focus()
                 .insertContent({
                   type: 'embed',
-                  attrs: { url, title: String(data.get('title') || 'Embedded video') },
+                  attrs: { url, title: String(data.get('title') || t('Embedded video')) },
                 })
                 .run();
               setEmbedOpen(false);
             }}
           >
             <label>
-              Video URL
-              <input type="url" name="url" required placeholder="https://…" />
+              {t('Video URL')}
+              <input type="url" name="url" required placeholder={'https://…'} />
             </label>
             <label>
-              Title
-              <input name="title" placeholder="Embedded video" />
+              {t('Title')}
+              <input name="title" placeholder={t('Embedded video')} />
             </label>
-            <button className="button primary">Insert video</button>
+            <button className="button primary">{t('Insert video')}</button>
           </form>
         </Dialog>
       )}

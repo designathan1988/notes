@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import {
   forwardRef,
   useEffect,
@@ -145,10 +146,10 @@ export const Preview = forwardRef<
     };
   }, [ticket]);
   return (
-    <section className="web-preview" aria-label="Website preview" hidden={!visible}>
+    <section className="web-preview" aria-label={t('Website preview')} hidden={!visible}>
       <div className="web-viewport-tools">
-        <span>Preview</span>
-        <div role="group" aria-label="Preview width">
+        <span>{t('Preview')}</span>
+        <div role="group" aria-label={t('Preview width')}>
           {[
             [0, 'Full'],
             [390, '390'],
@@ -159,7 +160,7 @@ export const Preview = forwardRef<
               aria-pressed={width === value}
               onClick={() => setWidth(Number(value))}
             >
-              {label}
+              {typeof label === 'string' ? t(label) : label}
             </button>
           ))}
         </div>
@@ -168,7 +169,7 @@ export const Preview = forwardRef<
         {ticket ? (
           <iframe
             ref={frame}
-            title="Rendered website"
+            title={t('Rendered website')}
             src={ticket.url}
             sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups"
             allow="fullscreen; clipboard-write"
@@ -177,24 +178,26 @@ export const Preview = forwardRef<
           />
         ) : (
           <div className="web-preview-empty">
-            <p>{starting ? 'Preparing the saved website…' : 'Run the website to preview it.'}</p>
+            <p>
+              {starting ? t('Preparing the saved website…') : t('Run the website to preview it.')}
+            </p>
             <button className="button" disabled={starting} onClick={() => void run()}>
-              Run website
+              {t('Run website')}
             </button>
           </div>
         )}
       </div>
       {error && (
         <p className="web-runtime-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
       <details className="web-console">
-        <summary>Console ({messages.length} errors)</summary>
+        <summary>{t('Console ({{count}} errors)', { count: messages.length })}</summary>
         {messages.length ? (
           messages.map((message, index) => <pre key={index}>{message}</pre>)
         ) : (
-          <p>No runtime errors.</p>
+          <p>{t('No runtime errors.')}</p>
         )}
       </details>
     </section>

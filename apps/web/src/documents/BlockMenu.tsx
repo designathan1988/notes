@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
@@ -208,7 +209,7 @@ export function BlockMenu({
       ref={ref}
       style={{ left, top, width }}
       role="menu"
-      aria-label={mode === 'insert' ? 'Add a block' : 'Block actions'}
+      aria-label={mode === 'insert' ? t('Add a block') : t('Block actions')}
       onKeyDown={(event) => {
         if (event.key === 'Enter' && event.target instanceof HTMLInputElement) {
           event.preventDefault();
@@ -239,36 +240,38 @@ export function BlockMenu({
         <Search size={15} />
         <input
           autoFocus
-          aria-label="Find block type"
-          placeholder={mode === 'insert' ? 'Search blocks…' : 'Turn into…'}
+          aria-label={t('Find block type')}
+          placeholder={mode === 'insert' ? t('Search blocks…') : t('Turn into…')}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
-        <kbd>Esc</kbd>
+        <kbd>{'Esc'}</kbd>
       </div>
       {mode === 'actions' && !query && selected && (
         <div className="block-action-list">
           <button
             role="menuitem"
-            aria-label="Move up"
+            aria-label={t('Move up')}
             onClick={() => run(() => apply(moveBlocks(editor.state, -1)))}
             disabled={!moveBlocks(editor.state, -1)}
           >
             <ArrowUp />
-            Move up<kbd aria-hidden="true">Ctrl ⇧ ↑</kbd>
+            {t('Move up')}
+            <kbd aria-hidden="true">{'Ctrl ⇧ ↑'}</kbd>
           </button>
           <button
             role="menuitem"
-            aria-label="Move down"
+            aria-label={t('Move down')}
             onClick={() => run(() => apply(moveBlocks(editor.state, 1)))}
             disabled={!moveBlocks(editor.state, 1)}
           >
             <ArrowDown />
-            Move down<kbd aria-hidden="true">Ctrl ⇧ ↓</kbd>
+            {t('Move down')}
+            <kbd aria-hidden="true">{'Ctrl ⇧ ↓'}</kbd>
           </button>
           <button role="menuitem" onClick={() => run(() => apply(duplicateBlocks(editor.state)))}>
             <Copy />
-            Duplicate
+            {t('Duplicate')}
           </button>
           <button
             role="menuitem"
@@ -276,20 +279,24 @@ export function BlockMenu({
             onClick={() => run(() => apply(removeBlocks(editor.state)))}
           >
             <Trash2 />
-            Delete
+            {t('Delete')}
           </button>
         </div>
       )}
       <div className="block-menu-caption">
-        {mode === 'insert' ? 'Basic blocks' : count > 1 ? `Turn ${count} blocks into` : 'Turn into'}
+        {mode === 'insert'
+          ? t('Basic blocks')
+          : count > 1
+            ? t('Turn {{count}} blocks into', { count: count })
+            : t('Turn into')}
       </div>
       <div className="block-type-list">
         {choices
-          .filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
+          .filter((item) => t(item.label).toLocaleLowerCase().includes(query.toLowerCase()))
           .map(({ type, label, description, Icon, ...rest }) => (
             <button
               role="menuitem"
-              aria-label={label}
+              aria-label={t(label)}
               key={label}
               disabled={
                 mode === 'actions' &&
@@ -323,8 +330,8 @@ export function BlockMenu({
                 <Icon />
               </span>
               <span>
-                <strong>{label}</strong>
-                <small>{description}</small>
+                <strong>{t(label)}</strong>
+                <small>{t(description)}</small>
               </span>
             </button>
           ))}
@@ -357,13 +364,13 @@ export function BlockMenu({
             { label: 'Video embed', Icon: Video, action: embed },
             { label: 'Page connection', Icon: Link, action: link },
           ]
-            .filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
+            .filter((item) => t(item.label).toLocaleLowerCase().includes(query.toLowerCase()))
             .map(({ label, Icon, action }) => (
-              <button key={label} role="menuitem" aria-label={label} onClick={() => run(action)}>
+              <button key={label} role="menuitem" aria-label={t(label)} onClick={() => run(action)}>
                 <span className="block-type-icon">
                   <Icon />
                 </span>
-                <strong>{label}</strong>
+                <strong>{t(label)}</strong>
               </button>
             ))}
       </div>

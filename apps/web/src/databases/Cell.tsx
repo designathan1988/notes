@@ -1,7 +1,9 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { RecordField } from '@note/contracts';
 import { RelationCell } from './RelationCell.js';
 import { toneOf } from '../ui/tone.js';
+import { Select } from '../ui/Select.js';
 export function Cell({
   initial,
   field,
@@ -66,7 +68,7 @@ export function Cell({
       baseline.current = { value: next, field };
       setError('');
     } catch (error) {
-      setError('Not saved: ' + (error as Error).message);
+      setError((error as Error).message);
     } finally {
       submitting.current = false;
       setPending(false);
@@ -76,12 +78,12 @@ export function Cell({
     <>
       {pending && (
         <small className="cell-saving" role="status">
-          Saving…
+          {t('Saving…')}
         </small>
       )}
       {error && (
         <span className="cell-error" role="alert">
-          {error}
+          {t('Not saved: {{message}}', { message: t(error) })}
         </span>
       )}
     </>
@@ -119,7 +121,15 @@ export function Cell({
         className={field?.type === 'select' ? 'status-label' : ''}
         data-tone={field?.type === 'select' ? toneOf(initial) : undefined}
       >
-        {Array.isArray(initial) ? initial.join(', ') : String(initial ?? '')}
+        {field?.type === 'multi-select' && Array.isArray(initial)
+          ? initial.map((item) => (
+              <span key={String(item)} className="select-chip" data-tone={toneOf(item)}>
+                {String(item)}
+              </span>
+            ))
+          : Array.isArray(initial)
+            ? initial.join(', ')
+            : String(initial ?? '')}
       </span>
     );
   if (field?.type === 'checkbox')
@@ -144,33 +154,50 @@ export function Cell({
     );
   return (
     <div className="cell-control" aria-busy={pending}>
-      {field?.type === 'select' ? (
-        <select
+      {field?.type === 'select' || field?.type === 'multi-select' ? (
+        <Select
           aria-label={label}
-          className="status-label"
-          data-tone={value ? toneOf(value) : undefined}
+          className={field.type === 'select' ? 'status-label' : undefined}
+          data-tone={field.type === 'select' && value ? toneOf(value) : undefined}
           data-empty={value ? undefined : ''}
-          disabled={pending}
-          value={String(value)}
+          disabled={pending && field.type !== 'multi-select'}
+          busy={pending && field.type === 'multi-select'}
+          multiple={field.type === 'multi-select'}
+          value={
+            field.type === 'multi-select'
+              ? Array.isArray(value)
+                ? value.map(String)
+                : []
+              : String(value)
+          }
           onFocus={begin}
           onBlur={() => {
             focused.current = false;
           }}
           onChange={(event) => {
-            setValue(event.target.value);
-            void commit(event.target.value);
+            const next =
+              field.type === 'multi-select'
+                ? Array.from(event.target.selectedOptions, (option) => option.value)
+                : event.target.value;
+            setValue(next);
+            void commit(next);
           }}
         >
-          <option value="">Empty</option>
-          {field.options?.map((option) => (
+          {field.type === 'select' && <option value="">{t('Empty')}</option>}
+          {[
+            ...new Set([
+              ...(field.options ?? []),
+              ...(field.type === 'multi-select' && Array.isArray(value) ? value.map(String) : []),
+            ]),
+          ].map((option) => (
             <option key={option}>{option}</option>
           ))}
-        </select>
+        </Select>
       ) : (
         <input
           aria-label={label}
           type={field?.type === 'number' ? 'number' : field?.type === 'date' ? 'date' : 'text'}
-          placeholder="Empty"
+          placeholder={t('Empty')}
           data-empty={value === '' || value == null ? '' : undefined}
           disabled={pending}
           value={Array.isArray(value) ? value.join(', ') : String(value)}

@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useState } from 'react';
 import { useEditorState, type Editor } from '@tiptap/react';
 import { Table2 } from 'lucide-react';
@@ -21,11 +22,11 @@ export function TableTools({ editor }: { editor: Editor }) {
   ] as const;
   return (
     <>
-      <IconButton label="Table actions" onClick={(event) => setAnchor(event.currentTarget)}>
+      <IconButton label={t('Table actions')} onClick={(event) => setAnchor(event.currentTarget)}>
         <Table2 />
       </IconButton>
       {anchor && (
-        <Popover anchor={anchor} label="Table actions" close={() => setAnchor(null)}>
+        <Popover anchor={anchor} label={t('Table actions')} close={() => setAnchor(null)}>
           <div className="menu-list">
             {actions.map(([label, command]) => (
               <button
@@ -37,7 +38,7 @@ export function TableTools({ editor }: { editor: Editor }) {
                   setAnchor(null);
                 }}
               >
-                {label}
+                {t(label)}
               </button>
             ))}
           </div>

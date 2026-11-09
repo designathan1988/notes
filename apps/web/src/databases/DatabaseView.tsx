@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { ArrowUpRight, ChevronLeft, ChevronRight, Database, Plus, X } from 'lucide-react';
 import { compileFormulas } from '@note/data/formulas';
@@ -30,7 +31,7 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
   const restored = useRef(false);
   const [filterOpen, setFilterOpen] = useState(false),
     [columnsOpen, setColumnsOpen] = useState(false),
-    [property, setProperty] = useState<'add' | 'manage' | null>(null),
+    [property, setProperty] = useState<'add' | 'manage' | 'date' | null>(null),
     [viewEditing, setViewEditing] = useState<'new' | 'edit' | null>(null);
   const [newRecord, setNewRecord] = useState<Record<string, unknown> | null>(null),
     [recordName, setRecordName] = useState(''),
@@ -127,7 +128,7 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
       {compact ? (
         <div className="embedded-table-title">
           <Database size={15} />
-          <strong>{definition?.title ?? 'Database view'}</strong>
+          <strong>{definition?.title ?? t('Database view')}</strong>
         </div>
       ) : (
         <DatabaseToolbar
@@ -151,10 +152,10 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
       )}
       {filterOpen && (
         <label className="table-filter">
-          Filter records
+          {t('Filter records')}
           <input
             autoFocus
-            placeholder="Search names and properties…"
+            placeholder={t('Search names and properties…')}
             value={options.filter ?? ''}
             onChange={(event) => setOptions({ ...options, filter: event.target.value, offset: 0 })}
           />
@@ -182,24 +183,24 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
           <Plus size={16} />
           <input
             autoFocus
-            aria-label="New record name"
+            aria-label={t('New record name')}
             required
             maxLength={300}
-            placeholder="Name this record…"
+            placeholder={t('Name this record…')}
             value={recordName}
             onChange={(event) => setRecordName(event.target.value)}
           />
           <button className="inline-record-submit" disabled={busy || !recordName.trim()}>
-            Add <kbd aria-hidden="true">Enter</kbd>
+            {t('Add')} <kbd aria-hidden="true">{t('Enter')}</kbd>
           </button>
-          <IconButton label="Cancel new record" onClick={() => setNewRecord(null)}>
+          <IconButton label={t('Cancel new record')} onClick={() => setNewRecord(null)}>
             <X />
           </IconButton>
         </form>
       )}
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
       {loadError && (
@@ -213,7 +214,7 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
                 .catch((error) => setLoadError(error.message))
             }
           >
-            Retry records
+            {t('Retry records')}
           </button>
         </p>
       )}
@@ -256,6 +257,7 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
           id={id}
           records={records}
           dateField={options.dateField}
+          addDateProperty={() => setProperty('date')}
           month={month}
           changeMonth={(offset) => {
             setMonth((value) => new Date(value.getFullYear(), value.getMonth() + offset, 1, 12));
@@ -273,11 +275,11 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
         />
       )}
       {query && !records.length && options.layout !== 'calendar' && (
-        <div className="table-empty">No records match this view.</div>
+        <div className="table-empty">{t('No records match this view.')}</div>
       )}
       {!query && !loadError && (
         <div className="table-empty" role="status">
-          Loading records…
+          {t('Loading records…')}
         </div>
       )}
       {!compact ? (
@@ -286,19 +288,22 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
             {!readOnly && (
               <button onClick={() => create()}>
                 <Plus />
-                New record
+                {t('New record')}
               </button>
             )}
             <span>
-              {query?.total ?? 0} {(query?.total ?? 0) === 1 ? 'record' : 'records'}
+              {query?.total ?? 0} {(query?.total ?? 0) === 1 ? t('record') : t('records')}
               {(query?.total ?? 0) > 50
-                ? ` · Showing ${(options.offset ?? 0) + 1}–${Math.min((options.offset ?? 0) + 50, query?.total ?? 0)}`
+                ? t(' · Showing {{value0}}–{{value1}}', {
+                    value0: (options.offset ?? 0) + 1,
+                    value1: Math.min((options.offset ?? 0) + 50, query?.total ?? 0),
+                  })
                 : ''}
             </span>
             {(query?.total ?? 0) > 50 && (
               <div>
                 <IconButton
-                  label="Previous records"
+                  label={t('Previous records')}
                   disabled={!options.offset}
                   onClick={() =>
                     setOptions({ ...options, offset: Math.max(0, (options.offset ?? 0) - 50) })
@@ -307,7 +312,7 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
                   <ChevronLeft />
                 </IconButton>
                 <IconButton
-                  label="Next records"
+                  label={t('Next records')}
                   disabled={(options.offset ?? 0) + 50 >= (query?.total ?? 0)}
                   onClick={() => setOptions({ ...options, offset: (options.offset ?? 0) + 50 })}
                 >
@@ -317,9 +322,9 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
             )}
           </div>
           <p className="table-hint">
-            Changes appear in every connected view.
+            {t('Changes appear in every connected view.')}
             {options.layout === 'board' && (query?.total ?? 0) > 50
-              ? ' Group counts reflect the current page of records.'
+              ? t(' Group counts reflect the current page of records.')
               : ''}
           </p>
         </>
@@ -328,7 +333,7 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
           {!readOnly && (
             <button className="text-button" onClick={() => create()}>
               <Plus size={13} />
-              New record
+              {t('New record')}
             </button>
           )}
           <button
@@ -336,16 +341,16 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
             onClick={() => useWorkspace.getState().navigate(id, 'database')}
           >
             <ArrowUpRight />
-            Open database
+            {t('Open database')}
           </button>
         </div>
       )}
       {columnsOpen && (
-        <Dialog title="Visible columns" onClose={() => setColumnsOpen(false)}>
+        <Dialog title={t('Visible columns')} onClose={() => setColumnsOpen(false)}>
           <div className="column-list">
             <label className="checkbox-label">
               <input type="checkbox" checked disabled />
-              Name
+              {t('Name')}
             </label>
             {activeFields.map((field) => (
               <label className="checkbox-label" key={field.id}>
@@ -366,9 +371,9 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
               </label>
             ))}
           </div>
-          <p className="muted-text">Save a view to keep this column selection.</p>
+          <p className="muted-text">{t('Save a view to keep this column selection.')}</p>
           <button className="button" onClick={() => setColumnsOpen(false)}>
-            Done
+            {t('Done')}
           </button>
         </Dialog>
       )}
@@ -377,7 +382,12 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
           id={id}
           fields={fields}
           revision={definition.fieldsRevision}
-          initialAdd={property === 'add'}
+          initialAdd={property === 'add' || property === 'date'}
+          initialType={property === 'date' ? 'date' : undefined}
+          onCreated={(field) => {
+            if (property === 'date' && field.type === 'date')
+              setOptions((current) => ({ ...current, dateField: field.id, offset: 0 }));
+          }}
           close={() => setProperty(null)}
           refresh={refresh}
         />

@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js';
+import { Select } from '../ui/Select.js';
 import { useState } from 'react';
 import { Dialog } from '../ui/Dialog.js';
 import { useWorkspace } from '../state/store.js';
@@ -21,7 +23,10 @@ export function MovePage() {
       }
   }
   return (
-    <Dialog title={`Move ${page.title}`} onClose={() => state.openDialog(null)}>
+    <Dialog
+      title={t('Move {{title}}', { title: page.title })}
+      onClose={() => state.openDialog(null)}
+    >
       <form
         onSubmit={async (event) => {
           event.preventDefault();
@@ -45,12 +50,12 @@ export function MovePage() {
         }}
       >
         <label>
-          Destination
-          <select
+          {t('Destination')}
+          <Select
             name="parent"
             defaultValue={(state.pendingMove ? state.pendingMove.parentId : page.parentId) ?? ''}
           >
-            {!page.templateRootId && <option value="">Workspace root</option>}
+            {!page.templateRootId && <option value="">{t('Workspace root')}</option>}
             {state.pages
               .filter(
                 (item) =>
@@ -63,19 +68,19 @@ export function MovePage() {
                   {item.title}
                 </option>
               ))}
-          </select>
+          </Select>
         </label>
         <label className="checkbox-label">
-          <input name="confirmed" type="checkbox" />I understand that moving between roots may
-          change who can access this page.
+          <input name="confirmed" type="checkbox" />
+          {t('I understand that moving between roots may change who can access this page.')}
         </label>
         {error && (
           <p className="form-error" role="alert">
-            {error}
+            {t(error)}
           </p>
         )}
         <button className="button primary" disabled={busy}>
-          Move page
+          {t('Move page')}
         </button>
       </form>
     </Dialog>

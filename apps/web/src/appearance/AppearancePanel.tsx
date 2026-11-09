@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useRef, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
@@ -95,7 +96,7 @@ export function AppearancePanel() {
     <aside
       className="appearance-panel"
       ref={ref}
-      aria-label="Appearance"
+      aria-label={t('Appearance')}
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
           event.stopPropagation();
@@ -119,7 +120,7 @@ export function AppearancePanel() {
       }}
     >
       <header>
-        <h2>Appearance</h2>
+        <h2>{t('Appearance')}</h2>
         <button
           className="text-button"
           disabled={!!readOnly}
@@ -127,36 +128,36 @@ export function AppearancePanel() {
             pageScope && page ? state.changePageAppearance(page.id, {}) : state.resetAppearance()
           }
         >
-          Reset
+          {t('Reset')}
         </button>
-        <IconButton label="Close appearance" onClick={close}>
+        <IconButton label={t('Close appearance')} onClick={close}>
           <X />
         </IconButton>
       </header>
       <div className="appearance-scroll">
-        <div className="appearance-scopes" role="group" aria-label="Appearance scope">
+        <div className="appearance-scopes" role="group" aria-label={t('Appearance scope')}>
           <button
             aria-pressed={!pageScope}
             onClick={() => useWorkspace.getState().openAppearance('app')}
           >
-            App
+            {t('App')}
           </button>
           <button
             aria-pressed={pageScope}
             disabled={!page}
             onClick={() => useWorkspace.getState().openAppearance('page')}
           >
-            This page
+            {t('This page')}
           </button>
         </div>
         <p className="appearance-hint">
           {pageScope
-            ? 'Style this page. Changes are shared with its collaborators.'
-            : 'Your personal appearance across pages and devices.'}
+            ? t('Style this page. Changes are shared with its collaborators.')
+            : t('Your personal appearance across pages and devices.')}
         </p>
         <fieldset disabled={!!readOnly || (!pageScope && state.appearanceStatus === 'loading')}>
           <section>
-            <h3>Typography</h3>
+            <h3>{t('Typography')}</h3>
             <datalist id="appearance-fonts">
               {[
                 ...new Set([
@@ -171,12 +172,14 @@ export function AppearancePanel() {
               .filter(([key]) => !pageScope || key !== 'interfaceFont')
               .map(([key, label]) => (
                 <label className="appearance-row" key={key}>
-                  <span>{label}</span>
+                  <span>{t(label)}</span>
                   <input
-                    aria-label={`${label} font`}
+                    aria-label={t('{{role}} font', { role: t(label) })}
                     list="appearance-fonts"
                     placeholder={
-                      inherited[key] ? `${fontName(inherited[key])} (default)` : 'Inherit default'
+                      inherited[key]
+                        ? t('{{value}} (default)', { value: fontName(inherited[key]) })
+                        : t('Inherit default')
                     }
                     value={appearance[key] ?? ''}
                     onChange={(event) => change(key, event.target.value || null)}
@@ -188,18 +191,18 @@ export function AppearancePanel() {
               onClick={() => setAddingFont(!addingFont)}
             >
               <Plus size={15} />
-              Add font…
+              {t('Add font…')}
             </button>
             {addingFont && (
               <div className="appearance-font-source">
                 <input
-                  aria-label="Custom font family"
-                  placeholder="Font family"
+                  aria-label={t('Custom font family')}
+                  placeholder={t('Font family')}
                   value={family}
                   onChange={(event) => setFamily(event.target.value)}
                 />
                 <input
-                  aria-label="Font source URL"
+                  aria-label={t('Font source URL')}
                   placeholder="https://…/font.woff2"
                   type="url"
                   value={url}
@@ -225,16 +228,16 @@ export function AppearancePanel() {
                     }
                   }}
                 >
-                  Add font
+                  {t('Add font')}
                 </button>
-                {fontError && <p role="alert">{fontError}</p>}
+                {fontError && <p role="alert">{t(fontError)}</p>}
               </div>
             )}
             {(appearance.fonts ?? []).map((font) => (
               <div className="appearance-font-entry" key={font.family}>
                 <span title={font.url}>{font.family}</span>
                 <IconButton
-                  label={`Remove font ${font.family}`}
+                  label={t('Remove font {{family}}', { family: font.family })}
                   onClick={() =>
                     change(
                       'fonts',
@@ -250,14 +253,14 @@ export function AppearancePanel() {
           <section>
             {!pageScope && (
               <label className="appearance-row">
-                <span>Interface size</span>
+                <span>{t('Interface size')}</span>
                 <input
                   type="number"
                   min="11"
                   max="24"
-                  aria-label="Interface size"
+                  aria-label={t('Interface size')}
                   value={appearance.interfaceSize ?? ''}
-                  placeholder="Default"
+                  placeholder={t('Default')}
                   onChange={(event) =>
                     change('interfaceSize', event.target.value ? Number(event.target.value) : null)
                   }
@@ -265,29 +268,29 @@ export function AppearancePanel() {
               </label>
             )}
             <label className="appearance-row">
-              <span>Body size</span>
+              <span>{t('Body size')}</span>
               <input
                 type="number"
                 min="10"
                 max="40"
-                aria-label="Body size"
+                aria-label={t('Body size')}
                 value={appearance.bodySize ?? ''}
-                placeholder="Default"
+                placeholder={t('Default')}
                 onChange={(event) =>
                   change('bodySize', event.target.value ? Number(event.target.value) : null)
                 }
               />
             </label>
             <label className="appearance-row">
-              <span>Line height</span>
+              <span>{t('Line height')}</span>
               <input
                 type="number"
                 min="1"
                 max="2.5"
                 step="0.05"
-                aria-label="Line height"
+                aria-label={t('Line height')}
                 value={appearance.lineHeight ?? ''}
-                placeholder="Default"
+                placeholder={t('Default')}
                 onChange={(event) =>
                   change('lineHeight', event.target.value ? Number(event.target.value) : null)
                 }
@@ -295,13 +298,13 @@ export function AppearancePanel() {
             </label>
             {!pageScope && (
               <label className="appearance-row">
-                <span>Density</span>
+                <span>{t('Density')}</span>
                 <input
                   type="range"
                   min="0.75"
                   max="1.5"
                   step="0.05"
-                  aria-label="Interface density"
+                  aria-label={t('Interface density')}
                   value={appearance.density ?? 1}
                   onChange={(event) => change('density', Number(event.target.value))}
                 />
@@ -309,21 +312,23 @@ export function AppearancePanel() {
             )}
           </section>
           <section>
-            <h3>Colors</h3>
+            <h3>{t('Colors')}</h3>
             {colorRoles
               .filter(([key]) => !pageScope || !['navigation', 'surface'].includes(key))
               .map(([key, label]) => (
                 <label className="appearance-row" key={key}>
-                  <span>{label}</span>
+                  <span>{t(label)}</span>
                   <span className="appearance-color">
                     <span
                       className="color-preview"
                       style={{ background: appearance[key] ?? inherited[key] }}
                     />
                     <input
-                      aria-label={`${label} color`}
+                      aria-label={t('{{role}} color', { role: t(label) })}
                       placeholder={
-                        inherited[key] ? `${fontName(inherited[key])} (default)` : 'Inherit default'
+                        inherited[key]
+                          ? t('{{value}} (default)', { value: fontName(inherited[key]) })
+                          : t('Inherit default')
                       }
                       value={appearance[key] ?? ''}
                       onChange={(event) => change(key, event.target.value || null)}
@@ -333,9 +338,9 @@ export function AppearancePanel() {
               ))}
           </section>
           <details className="appearance-css">
-            <summary>Custom CSS</summary>
+            <summary>{t('Custom CSS')}</summary>
             <textarea
-              aria-label={pageScope ? 'Page custom CSS' : 'App custom CSS'}
+              aria-label={pageScope ? t('Page custom CSS') : t('App custom CSS')}
               spellCheck={false}
               value={appearance.customCss ?? ''}
               placeholder={pageScope ? '.page-title { … }' : '.workbench-tab { … }'}
@@ -343,8 +348,8 @@ export function AppearancePanel() {
             />
             <small>
               {pageScope
-                ? 'Selectors apply inside this page.'
-                : 'Reset appearance anytime with Ctrl Alt Shift Backspace.'}
+                ? t('Selectors apply inside this page.')
+                : t('Reset appearance anytime with Ctrl Alt Shift Backspace.')}
             </small>
           </details>
         </fieldset>
@@ -352,7 +357,7 @@ export function AppearancePanel() {
       <footer aria-live="polite">
         {status === 'error' ? (
           <>
-            <span>{error}</span>
+            <span>{t(error ?? '')}</span>
             <button
               className="text-button"
               onClick={() =>
@@ -361,17 +366,17 @@ export function AppearancePanel() {
                   : state.appearanceOwner && state.loadAppearance(state.appearanceOwner)
               }
             >
-              Retry
+              {t('Retry')}
             </button>
           </>
         ) : status === 'saving' ? (
-          'Saving changes…'
+          t('Saving changes…')
         ) : status === 'loading' ? (
-          'Loading appearance…'
+          t('Loading appearance…')
         ) : (
-          'Changes save automatically.'
+          t('Changes save automatically.')
         )}
-        {readOnly && <span>Read only</span>}
+        {readOnly && <span>{t('Read only')}</span>}
       </footer>
     </aside>
   );

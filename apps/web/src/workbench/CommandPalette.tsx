@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Search, Plus, Compass, Settings2, FileText } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
@@ -35,18 +36,22 @@ export function CommandPalette() {
     );
   };
   return (
-    <Dialog title="Command palette" onClose={() => useWorkspace.getState().hideCommands()} wide>
+    <Dialog
+      title={t('Command palette')}
+      onClose={() => useWorkspace.getState().hideCommands()}
+      wide
+    >
       <div className="command-input">
         <Search size={19} />
         <input
           autoFocus
           role="combobox"
-          aria-label="Search commands"
+          aria-label={t('Search commands')}
           aria-expanded="true"
           aria-controls={id}
           aria-activedescendant={results[active] ? `${id}-${active}` : undefined}
           value={query}
-          placeholder="What would you like to do?"
+          placeholder={t('What would you like to do?')}
           onChange={(event) => {
             setQuery(event.target.value);
             setActive(0);
@@ -66,9 +71,9 @@ export function CommandPalette() {
             }
           }}
         />
-        <kbd>Esc</kbd>
+        <kbd>{t('Esc')}</kbd>
       </div>
-      <div className="command-results" ref={list} id={id} role="listbox" aria-label="Commands">
+      <div className="command-results" ref={list} id={id} role="listbox" aria-label={t('Commands')}>
         {results.map((command, index) => (
           <button
             key={command.id}
@@ -81,17 +86,17 @@ export function CommandPalette() {
           >
             <GroupIcon group={command.group} />
             <span>
-              <strong>{command.title}</strong>
-              <small>{command.group}</small>
+              <strong>{t(command.title)}</strong>
+              <small>{t(command.group)}</small>
             </span>
             {command.shortcut && <kbd>{command.shortcut.label}</kbd>}
           </button>
         ))}
-        {!results.length && <p className="table-empty">No matching commands.</p>}
+        {!results.length && <p className="table-empty">{t('No matching commands.')}</p>}
       </div>
       <footer className="search-footer">
-        <span>↑ ↓ to navigate · Enter to run</span>
-        <span>Ctrl K to find a page</span>
+        <span>{t('↑ ↓ to navigate · Enter to run')}</span>
+        <span>{t('Ctrl K to find a page')}</span>
       </footer>
     </Dialog>
   );

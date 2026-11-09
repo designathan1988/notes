@@ -1,3 +1,4 @@
+import { t, subscribeLocale } from '../i18n/index.js';
 import type { Editor } from '@tiptap/core';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { TextSelection } from '@tiptap/pm/state';
@@ -32,7 +33,13 @@ import {
   closeBrackets,
   closeBracketsKeymap,
 } from '@codemirror/autocomplete';
-import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
+import {
+  searchKeymap,
+  highlightSelectionMatches,
+  searchPanelOpen,
+  closeSearchPanel,
+  openSearchPanel,
+} from '@codemirror/search';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { javascript } from '@codemirror/lang-javascript';
@@ -44,6 +51,31 @@ const highlighting = HighlightStyle.define([
   { tag: [tags.comment], class: 'source-comment' },
   { tag: [tags.number, tags.attributeName, tags.propertyName], class: 'source-property' },
 ]);
+function sourcePhrases() {
+  return Object.fromEntries(
+    [
+      'Find',
+      'Replace',
+      'next',
+      'previous',
+      'all',
+      'match case',
+      'regexp',
+      'by word',
+      'replace',
+      'replace all',
+      'close',
+      'Go to line',
+      'go',
+      'Completions',
+      'Control character',
+      'current match',
+      'on line',
+      'replaced match on line $',
+      'replaced $ matches',
+    ].map((phrase) => [phrase, t(phrase)]),
+  );
+}
 function language(path: string) {
   if (/\.html?$/i.test(path)) return html();
   if (/\.css$/i.test(path)) return css();
@@ -55,9 +87,11 @@ function language(path: string) {
 export class SourceView implements NodeView {
   readonly dom: HTMLElement;
   private readonly cm: EditorView;
+  private readonly unsubscribeLocale: () => void;
   private readonly access = new Compartment();
   private readonly syntax = new Compartment();
   private readonly attributes = new Compartment();
+  private readonly localePhrases = new Compartment();
   private reflecting = false;
   private forwarding = false;
   private destroyed = false;
@@ -90,6 +124,7 @@ export class SourceView implements NodeView {
         highlightSelectionMatches(),
         this.syntax.of(language(node.attrs.path)),
         this.attributes.of(this.contentAttributes()),
+        this.localePhrases.of(EditorState.phrases.of(sourcePhrases())),
         this.access.of([
           EditorState.readOnly.of(!this.editable),
           EditorView.editable.of(this.editable),
@@ -173,6 +208,18 @@ export class SourceView implements NodeView {
       ],
     });
     this.editor.on('update', this.syncAccess);
+    this.unsubscribeLocale = subscribeLocale(() => {
+      if (this.destroyed) return;
+      const searchOpen = searchPanelOpen(this.cm.state);
+      if (searchOpen) closeSearchPanel(this.cm);
+      this.cm.dispatch({
+        effects: [
+          this.attributes.reconfigure(this.contentAttributes()),
+          this.localePhrases.reconfigure(EditorState.phrases.of(sourcePhrases())),
+        ],
+      });
+      if (searchOpen) openSearchPanel(this.cm);
+    });
   }
   private rememberSelection(anchor: number, head: number) {
     const position = this.getPos(),
@@ -193,7 +240,7 @@ export class SourceView implements NodeView {
   }
   private contentAttributes() {
     return EditorView.contentAttributes.of({
-      'aria-label': `${this.node.attrs.path} source`,
+      'aria-label': t('{{path}} source', { path: this.node.attrs.path }),
       role: 'textbox',
       'aria-multiline': 'true',
       'aria-readonly': String(!this.editable),
@@ -307,6 +354,7 @@ export class SourceView implements NodeView {
   }
   destroy() {
     this.destroyed = true;
+    this.unsubscribeLocale();
     this.editor.off('update', this.syncAccess);
     this.cm.destroy();
   }

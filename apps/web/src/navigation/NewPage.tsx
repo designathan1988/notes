@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js';
+import { Select } from '../ui/Select.js';
 import { useState, type FormEvent } from 'react';
 import { Plus } from 'lucide-react';
 import { Dialog } from '../ui/Dialog.js';
@@ -23,7 +25,7 @@ export function NewPage() {
     }
   }
   return (
-    <Dialog title="Create a page" onClose={() => state.openDialog(null)}>
+    <Dialog title={t('Create a page')} onClose={() => state.openDialog(null)}>
       <button
         className="button new-website-action"
         disabled={busy}
@@ -35,25 +37,25 @@ export function NewPage() {
           });
         }}
       >
-        New web page
+        {t('New web page')}
       </button>
       <form onSubmit={submit}>
         <label>
-          Title
-          <input name="title" autoFocus required maxLength={300} placeholder="Untitled" />
+          {t('Title')}
+          <input name="title" autoFocus required maxLength={300} placeholder={t('Untitled')} />
         </label>
         <label>
-          Page type
-          <select name="kind" defaultValue={state.newPageKind}>
-            <option value="document">Document</option>
-            <option value="database">Database</option>
-            <option value="canvas">Canvas</option>
-          </select>
+          {t('Page type')}
+          <Select name="kind" defaultValue={state.newPageKind}>
+            <option value="document">{t('Document')}</option>
+            <option value="database">{t('Database')}</option>
+            <option value="canvas">{t('Canvas')}</option>
+          </Select>
         </label>
         <label>
-          Location
-          <select name="parent" defaultValue={state.newPageParentId ?? ''}>
-            <option value="">Workspace root</option>
+          {t('Location')}
+          <Select name="parent" defaultValue={state.newPageParentId ?? ''}>
+            <option value="">{t('Workspace root')}</option>
             {state.pages
               .filter((p) => p.kind !== 'database')
               .map((p) => (
@@ -61,24 +63,24 @@ export function NewPage() {
                   {p.title}
                 </option>
               ))}
-          </select>
+          </Select>
         </label>
         <label>
-          Root visibility
-          <select name="visibility">
-            <option value="workspace">Everyone in this workspace</option>
-            <option value="private">Private to me</option>
-          </select>
-          <small>Subpages inherit their root page’s access.</small>
+          {t('Root visibility')}
+          <Select name="visibility">
+            <option value="workspace">{t('Everyone in this workspace')}</option>
+            <option value="private">{t('Private to me')}</option>
+          </Select>
+          <small>{t('Subpages inherit their root page’s access.')}</small>
         </label>
         {error && (
           <p className="form-error" role="alert">
-            {error}
+            {t(error)}
           </p>
         )}
         <button className="button primary" disabled={busy}>
           <Plus />
-          Create page
+          {t('Create page')}
         </button>
       </form>
     </Dialog>

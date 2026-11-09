@@ -1,3 +1,4 @@
+import { t, useLocale } from '../i18n/index.js';
 import { useEffect, useState } from 'react';
 import { Download, FilePlus2, HardDrive } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
@@ -14,8 +15,9 @@ const loadRecoveryExport = () =>
 if (typeof window !== 'undefined')
   window.setTimeout(() => void loadRecoveryExport().catch(() => undefined), 0);
 
-type Draft = { key: string; title: string; excerpt: string };
+type Draft = { key: string; title: string; excerpt: string | null };
 export function LocalRecovery() {
+  const locale = useLocale();
   const identity = useWorkspace((state) => state.user?.id),
     workspace = useWorkspace((state) => state.workspaceId),
     version = useWorkspace((state) => state.knowledgeVersion);
@@ -42,9 +44,8 @@ export function LocalRecovery() {
           for (const key of keys.slice(0, limit)) {
             const [, pageId] = key.slice(identity.length + 1).split(':');
             const title =
-              useWorkspace.getState().pages.find((page) => page.id === pageId)?.title ??
-              'Local draft';
-            let excerpt = 'A recovery copy is retained on this device.';
+              useWorkspace.getState().pages.find((page) => page.id === pageId)?.title ?? '';
+            let excerpt: string | null = null;
             try {
               excerpt = await (await loadRecoveryExport()).localDraftExcerpt(storage, key);
             } catch {
@@ -71,13 +72,14 @@ export function LocalRecovery() {
     return () => {
       active = false;
     };
-  }, [identity, workspace, version, limit]);
+  }, [identity, workspace, version, limit, locale]);
   return (
-    <div className="local-recovery" role="region" aria-label="Local recovery">
-      <h3>Local recovery</h3>
+    <div className="local-recovery" role="region" aria-label={t('Local recovery')}>
+      <h3>{t('Local recovery')}</h3>
       <p className="muted-text">
-        Recover retained text and blocks as a private page, or download a separate backup. Media
-        references keep their original access permissions.
+        {t(
+          'Recover retained text and blocks as a private page, or download a separate backup. Media references keep their original access permissions.',
+        )}
       </p>
       <button
         className="button"
@@ -92,11 +94,11 @@ export function LocalRecovery() {
         }}
       >
         <Download />
-        Download local drafts
+        {t('Download local drafts')}
       </button>
       {error && (
         <p className="activity-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
       {!!total && (
@@ -105,8 +107,8 @@ export function LocalRecovery() {
             <div className="local-draft" key={draft.key}>
               <HardDrive size={17} />
               <div>
-                <strong>{draft.title}</strong>
-                <p>{draft.excerpt}</p>
+                <strong>{draft.title || t('Local draft')}</strong>
+                <p>{draft.excerpt ?? t('A recovery copy is retained on this device.')}</p>
                 <button
                   className="button"
                   disabled={busy || !canWrite || !online}
@@ -114,13 +116,15 @@ export function LocalRecovery() {
                     setBusy(true);
                     setError('');
                     void import('./recover-draft.js')
-                      .then((module) => module.recoverLocalDraft(draft.key, draft.title))
+                      .then((module) =>
+                        module.recoverLocalDraft(draft.key, draft.title || t('Local draft')),
+                      )
                       .catch((failure) => setError(failure.message))
                       .finally(() => setBusy(false));
                   }}
                 >
                   <FilePlus2 size={14} />
-                  Recover as private page
+                  {t('Recover as private page')}
                 </button>
               </div>
             </div>
@@ -131,26 +135,26 @@ export function LocalRecovery() {
               disabled={busy}
               onClick={() => setLimit((value) => value + 20)}
             >
-              More local drafts
+              {t('More local drafts')}
             </button>
           )}
           {!online && (
             <p className="muted-text">
-              Reconnect to recover a private page. Downloads work offline.
+              {t('Reconnect to recover a private page. Downloads work offline.')}
             </p>
           )}
           {!canWrite && (
             <p className="muted-text">
-              Choose a workspace with editing access to recover a private page.
+              {t('Choose a workspace with editing access to recover a private page.')}
             </p>
           )}
         </div>
       )}
       {checking && !total && !error && (
-        <p className="local-recovery-empty">Checking local recovery…</p>
+        <p className="local-recovery-empty">{t('Checking local recovery…')}</p>
       )}
       {!checking && !total && !error && (
-        <p className="local-recovery-empty">No unsynchronized drafts on this device.</p>
+        <p className="local-recovery-empty">{t('No unsynchronized drafts on this device.')}</p>
       )}
     </div>
   );

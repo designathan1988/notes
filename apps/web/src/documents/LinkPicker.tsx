@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useState } from 'react';
 import type { Editor as TiptapEditor } from '@tiptap/react';
 import { Link } from 'lucide-react';
@@ -26,17 +27,17 @@ export function LinkPicker({
     return () => clearTimeout(timer);
   }, [query, search, version]);
   return (
-    <Dialog title="Connect an idea" onClose={close}>
+    <Dialog title={t('Connect an idea')} onClose={close}>
       <label>
-        Find a page or enter a URL
+        {t('Find a page or enter a URL')}
         <input
           autoFocus
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search pages or https://…"
+          placeholder={t('Search pages or https://…')}
         />
       </label>
-      {loading && <p className="muted-text">Searching pages…</p>}
+      {loading && <p className="muted-text">{t('Searching pages…')}</p>}
       <div className="link-results">
         {pages
           .filter((page) => page.title.toLowerCase().includes(query.toLowerCase()))
@@ -90,7 +91,7 @@ export function LinkPicker({
               close();
             }}
           >
-            Link to {query}
+            {t('Link to {{url}}', { url: query })}
           </button>
         )}
       </div>

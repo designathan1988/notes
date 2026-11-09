@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { EditorContent, useEditor } from '@tiptap/react';
 import type { JSONContent } from '@tiptap/core';
 import { editorExtensions } from '@note/editor/schema';
@@ -9,7 +10,7 @@ const CanvasPreview = lazy(() => import('../canvas/CanvasPreview.js'));
 /** Isolated read-only rendering: no provider, recovery session or application projections. */
 export default function VersionPreview({ content }: { content: JSONContent }) {
   return isCanvas(content) ? (
-    <Suspense fallback={<p className="muted-text">Opening saved canvas…</p>}>
+    <Suspense fallback={<p className="muted-text">{t('Opening saved canvas…')}</p>}>
       <CanvasPreview content={content} />
     </Suspense>
   ) : (
@@ -23,7 +24,9 @@ function DocumentPreview({ content }: { content: JSONContent }) {
       extensions: [...editorExtensions(), BlockSurface],
       content,
       editable: false,
-      editorProps: { attributes: { class: 'note-editor', 'aria-label': 'Saved document content' } },
+      editorProps: {
+        attributes: { class: 'note-editor', 'aria-label': t('Saved document content') },
+      },
       onCreate: ({ editor }) => {
         editor.view.dom.querySelectorAll('input').forEach((input) => {
           input.disabled = true;

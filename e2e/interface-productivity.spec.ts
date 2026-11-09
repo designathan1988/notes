@@ -1,3 +1,4 @@
+import { selectOption } from './select.js';
 import { APP_ORIGIN } from './origin.js';
 import { expect, test, type BrowserContext } from '@playwright/test';
 
@@ -65,6 +66,23 @@ test('mobile reading prioritizes content while editing, customization and workin
     const target = await tabs.boundingBox();
     expect(target!.width).toBeGreaterThanOrEqual(44);
     expect(target!.height).toBeGreaterThanOrEqual(44);
+    // Header controls must have separate hit areas, even with a page title and save state.
+    const headerItems = [
+      page.getByRole('button', { name: 'Open navigation', exact: true }),
+      page.locator('.topbar > .breadcrumb'),
+      tabs,
+      page.getByRole('button', { name: 'Page actions', exact: true }),
+    ];
+    const boxes = await Promise.all(headerItems.map((item) => item.boundingBox()));
+    for (let index = 1; index < boxes.length; index++) {
+      expect(boxes[index - 1]).not.toBeNull();
+      expect(boxes[index]).not.toBeNull();
+      expect(boxes[index - 1]!.x + boxes[index - 1]!.width).toBeLessThanOrEqual(
+        boxes[index]!.x + 1,
+      );
+    }
+    await expect(page.locator('.mobile-save-label')).toHaveText('Saved');
+    await expect(page.locator('.save-status')).toBeHidden();
     await tabs.click();
     await expect(page.getByRole('tablist', { name: 'Open pages', exact: true })).toBeVisible();
     await expect(page.getByRole('tab', { name: source.title, exact: true })).toHaveAttribute(
@@ -162,9 +180,10 @@ test('the page explorer filters and sorts real pages with compact readable locat
       await page.setViewportSize({ width, height: 844 });
       const catalog = page.getByRole('region', { name: 'All pages', exact: true });
       await catalog.getByRole('textbox', { name: 'Search pages', exact: true }).fill(suffix);
-      await catalog
-        .getByRole('combobox', { name: 'Sort pages', exact: true })
-        .selectOption('title:asc');
+      await selectOption(
+        catalog.getByRole('combobox', { name: 'Sort pages', exact: true }),
+        'title:asc',
+      );
       const rows = catalog.locator('.page-index-list > button');
       await expect(rows).toHaveCount(2);
       await expect(rows.first()).toContainText('Alpha');
@@ -179,9 +198,10 @@ test('the page explorer filters and sorts real pages with compact readable locat
           location = await rows.first().locator('.explorer-location').boundingBox();
         expect(Math.abs(name!.x - location!.x)).toBeLessThan(2);
       }
-      await catalog
-        .getByRole('combobox', { name: 'Sort pages', exact: true })
-        .selectOption('title:desc');
+      await selectOption(
+        catalog.getByRole('combobox', { name: 'Sort pages', exact: true }),
+        'title:desc',
+      );
       await expect(rows.first()).toContainText('Zulu');
     }
     await page.getByRole('button', { name: `${children[0].title} document`, exact: true }).click();

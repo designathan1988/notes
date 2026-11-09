@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import type { Editor, JSONContent } from '@tiptap/core';
 import { marked } from 'marked';
 import { api, json } from '../state/api.js';
@@ -169,7 +170,7 @@ export async function captureClipboard(
     if (element.tagName === 'IMG' && element.getAttribute('src')?.startsWith('data:image/')) {
       try {
         const blob = await (await fetch(element.getAttribute('src')!)).blob();
-        const file = await upload(new File([blob], 'Pasted image', { type: blob.type }));
+        const file = await upload(new File([blob], t('Pasted image'), { type: blob.type }));
         const figure = parsed.createElement('figure');
         figure.dataset.attachment = file.id;
         figure.dataset.mediaType = file.mediaType;
@@ -229,7 +230,7 @@ export async function captureClipboard(
       { type: input.html ? 'text/html' : 'text/markdown' },
     );
     const file = await upload(original);
-    put(fileNode(file, 'Original pasted content — preserved as a file'));
+    put(fileNode(file, t('Original pasted content — preserved as a file')));
     notify(
       'Some elements could not be converted. The available original was preserved as a downloadable file.',
     );

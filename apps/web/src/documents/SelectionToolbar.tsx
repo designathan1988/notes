@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEditorState, type Editor } from '@tiptap/react';
@@ -108,7 +109,7 @@ export function SelectionToolbar({
       ref={surface}
       className="selection-toolbar"
       role="toolbar"
-      aria-label="Selection formatting"
+      aria-label={t('Selection formatting')}
       style={position}
       onMouseDown={(event) => event.preventDefault()}
     >
@@ -116,8 +117,8 @@ export function SelectionToolbar({
         <button
           key={mark}
           type="button"
-          aria-label={label}
-          title={label}
+          aria-label={t(label)}
+          title={t(label)}
           aria-pressed={active[mark]}
           onClick={() => editor.chain().focus().toggleMark(mark).run()}
         >
@@ -126,8 +127,8 @@ export function SelectionToolbar({
       ))}
       <button
         type="button"
-        aria-label="Link selected text"
-        title="Link selected text"
+        aria-label={t('Link selected text')}
+        title={t('Link selected text')}
         aria-pressed={active.link}
         onClick={link}
       >
@@ -135,8 +136,8 @@ export function SelectionToolbar({
       </button>
       <button
         type="button"
-        aria-label="Comment on selection"
-        title="Comment on selection"
+        aria-label={t('Comment on selection')}
+        title={t('Comment on selection')}
         onClick={() => {
           const { from, to } = editor.state.selection;
           const quote = editor.state.doc.textBetween(from, to, ' ').slice(0, 1000);

@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js';
+import { Select } from '../ui/Select.js';
 import { useState } from 'react';
 import { useWorkspace } from '../state/store.js';
 import { Dialog } from '../ui/Dialog.js';
@@ -11,7 +13,10 @@ export function TemplateDialog() {
     [error, setError] = useState('');
   if (!request || !page) return null;
   return (
-    <Dialog title="Save as template" onClose={() => useWorkspace.getState().closeTemplateDialog()}>
+    <Dialog
+      title={t('Save as template')}
+      onClose={() => useWorkspace.getState().closeTemplateDialog()}
+    >
       <form
         onSubmit={async (event) => {
           event.preventDefault();
@@ -29,11 +34,12 @@ export function TemplateDialog() {
         }}
       >
         <p className="muted-text">
-          Save a reusable copy of this page, its media and its subpages. Linked pages and databases
-          stay connected.
+          {t(
+            'Save a reusable copy of this page, its media and its subpages. Linked pages and databases stay connected.',
+          )}
         </p>
         <label>
-          Template name
+          {t('Template name')}
           <input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
@@ -42,18 +48,18 @@ export function TemplateDialog() {
           />
         </label>
         <label>
-          Visibility
-          <select
+          {t('Visibility')}
+          <Select
             value={visibility}
             onChange={(event) => setVisibility(event.target.value as 'private' | 'workspace')}
           >
-            <option value="private">Private — only you</option>
-            <option value="workspace">Workspace — everyone here</option>
-          </select>
+            <option value="private">{t('Private — only you')}</option>
+            <option value="workspace">{t('Workspace — everyone here')}</option>
+          </Select>
         </label>
         {error && (
           <p className="form-error" role="alert">
-            {error}
+            {t(error)}
           </p>
         )}
         <div className="dialog-actions">
@@ -62,10 +68,10 @@ export function TemplateDialog() {
             className="button"
             onClick={() => useWorkspace.getState().closeTemplateDialog()}
           >
-            Cancel
+            {t('Cancel')}
           </button>
           <button className="button primary" disabled={busy || !title.trim()}>
-            {busy ? 'Saving…' : 'Save template'}
+            {busy ? t('Saving…') : t('Save template')}
           </button>
         </div>
       </form>

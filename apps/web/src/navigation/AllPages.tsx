@@ -1,3 +1,5 @@
+import { t, formatDate } from '../i18n/index.js';
+import { Select } from '../ui/Select.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, Plus, Search } from 'lucide-react';
 import type { Page } from '@note/contracts';
@@ -14,14 +16,8 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
     const timer = setTimeout(() => setQuery(input), 200);
     return () => clearTimeout(timer);
   }, [input]);
-  const title = kind === 'canvas' ? 'Canvases' : kind === 'database' ? 'Databases' : 'All pages';
-  // Each index speaks about what it lists.
-  const noun =
-    kind === 'canvas'
-      ? { one: 'a canvas', many: 'canvases' }
-      : kind === 'database'
-        ? { one: 'a database', many: 'databases' }
-        : { one: 'a page', many: 'pages' };
+  const title =
+    kind === 'canvas' ? t('Canvases') : kind === 'database' ? t('Databases') : t('All pages');
   const workspace = useWorkspace((state) => state.workspaceId);
   const identity = useWorkspace((state) => state.user?.id);
   const version = useWorkspace((state) => state.knowledgeVersion);
@@ -96,10 +92,10 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
   const busy = !visible || result.busy;
   const error = visible ? result.error : '';
   return (
-    <section className="all-pages" aria-label={title}>
+    <section className="all-pages" aria-label={t(title)}>
       <div className="page-index-heading">
         <div>
-          <h1>{title}</h1>
+          <h1>{t(title)}</h1>
         </div>
         <button
           disabled={readOnly}
@@ -112,92 +108,135 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
           }
         >
           <Plus size={15} />
-          {kind === 'canvas' ? 'New canvas' : kind === 'database' ? 'New database' : 'New page'}
+          {kind === 'canvas'
+            ? t('New canvas')
+            : kind === 'database'
+              ? t('New database')
+              : t('New page')}
         </button>
       </div>
       <div className="explorer-toolbar">
         <label className="explorer-search">
           <Search size={15} />
           <input
-            aria-label="Search pages"
-            placeholder={`Find ${noun.one}…`}
+            aria-label={t('Search pages')}
+            placeholder={t(
+              kind === 'canvas'
+                ? 'Find a canvas…'
+                : kind === 'database'
+                  ? 'Find a database…'
+                  : 'Find a page…',
+            )}
             value={input}
             onChange={(event) => setInput(event.target.value)}
           />
         </label>
         {!kind && (
-          <select
-            aria-label="Page type"
+          <Select
+            aria-label={t('Page type')}
             value={type}
             onChange={(event) => setType(event.target.value)}
           >
-            <option value="">All types</option>
-            <option value="document">Documents</option>
-            <option value="database">Databases</option>
-            <option value="canvas">Canvases</option>
-            <option value="record">Records</option>
-          </select>
+            <option value="">{t('All types')}</option>
+            <option value="document">{t('Documents')}</option>
+            <option value="database">{t('Databases')}</option>
+            <option value="canvas">{t('Canvases')}</option>
+            <option value="record">{t('Records')}</option>
+          </Select>
         )}
-        <select
-          aria-label="Sort pages"
+        <Select
+          aria-label={t('Sort pages')}
           value={sort}
           onChange={(event) => setSort(event.target.value)}
         >
-          <option value="updated:desc">Last edited</option>
-          <option value="updated:asc">Oldest edited</option>
-          <option value="title:asc">Name A–Z</option>
-          <option value="title:desc">Name Z–A</option>
-        </select>
+          <option value="updated:desc">{t('Last edited')}</option>
+          <option value="updated:asc">{t('Oldest edited')}</option>
+          <option value="title:asc">{t('Name A–Z')}</option>
+          <option value="title:desc">{t('Name Z–A')}</option>
+        </Select>
       </div>
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
       <div className="page-index-list">
         <div className="explorer-columns" aria-hidden="true">
-          <span>Name</span>
-          <span>Location</span>
-          {!kind && <span>Type</span>}
-          <span>Edited</span>
+          <span>{t('Name')}</span>
+          <span>{t('Location')}</span>
+          {!kind && <span>{t('Type')}</span>}
+          <span>{t('Edited')}</span>
         </div>
         {pages.map((page) => (
           <button
             key={page.id}
-            aria-label={`${page.title} ${page.kind}`}
+            aria-label={t('{{title}} {{kind}}', {
+              title: page.title,
+              kind: t(
+                { document: 'document', canvas: 'canvas', database: 'database', record: 'record' }[
+                  page.kind
+                ],
+              ),
+            })}
             data-kind={page.kind}
             onClick={() => useWorkspace.getState().navigate(page.id, pageView(page.kind))}
           >
             <PageGlyph page={page} size={16} />
             <span className="explorer-name">{page.title}</span>
-            <small className="explorer-location">{page.parentTitle ?? 'Workspace'}</small>
+            <small className="explorer-location">{page.parentTitle ?? t('Workspace')}</small>
             <small className="explorer-kind" hidden={!!kind}>
               {page.kind === 'document'
-                ? 'Document'
+                ? t('Document')
                 : page.kind === 'canvas'
-                  ? 'Canvas'
+                  ? t('Canvas')
                   : page.kind === 'database'
-                    ? 'Database'
-                    : 'Record'}
+                    ? t('Database')
+                    : t('Record')}
             </small>
             <time dateTime={page.updatedAt}>
-              {new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(
-                new Date(page.updatedAt),
-              )}
+              {formatDate(page.updatedAt, { month: 'short', day: 'numeric' })}
             </time>
             <ArrowUpRight className="explorer-open" size={14} />
           </button>
         ))}
       </div>
       {!busy && !pages.length && !error && (
-        <p className="explorer-empty">
-          {query || type ? `No ${noun.many} match these filters.` : `No ${noun.many} yet.`}
-        </p>
+        <div className="explorer-empty">
+          <p>
+            {query || type
+              ? t(
+                  kind === 'canvas'
+                    ? 'No canvases match these filters.'
+                    : kind === 'database'
+                      ? 'No databases match these filters.'
+                      : 'No pages match these filters.',
+                )
+              : t(
+                  kind === 'canvas'
+                    ? 'No canvases yet.'
+                    : kind === 'database'
+                      ? 'No databases yet.'
+                      : 'No pages yet.',
+                )}
+          </p>
+          {(query || type) && (
+            <button
+              className="button"
+              onClick={() => {
+                setInput('');
+                setQuery('');
+                setType('');
+              }}
+            >
+              {t('Clear filters')}
+            </button>
+          )}
+        </div>
       )}
-      {busy && <p className="muted-text">Loading pages…</p>}
+      {busy && <p className="muted-text">{t('Loading pages…')}</p>}
       {more && (
         <button className="button" disabled={busy} onClick={() => void load(pages.length)}>
-          Load more pages
+          {t('Load more pages')}
         </button>
       )}
     </section>

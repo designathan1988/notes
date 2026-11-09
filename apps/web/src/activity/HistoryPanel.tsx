@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Clock3, History, RotateCcw, BookmarkPlus } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
@@ -52,28 +53,29 @@ export function HistoryPanel({ pageId, canWrite }: { pageId: string; canWrite: b
   return (
     <div className="history-panel" ref={root}>
       <p className="activity-intro">
-        Browse earlier versions of this page’s content. Restoring saves the current document as a
-        separate version first.
+        {t(
+          'Your current changes save continuously. Automatic history checkpoints are created at most once every 10 minutes as you edit, so the latest checkpoint may be older than your saved page. Save a named version to capture this moment. Restoring saves the current document as a separate version first.',
+        )}
       </p>
       {error && (
         <p className="activity-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
       {preview ? (
-        <div role="region" aria-label="Version preview" className="version-preview">
+        <div role="region" aria-label={t('Version preview')} className="version-preview">
           <button
             className="activity-back"
             onClick={() => useWorkspace.getState().closeVersionPreview()}
           >
             <ArrowLeft size={14} />
-            All versions
+            {t('All versions')}
           </button>
-          <strong>{preview.entry.label || 'Automatic version'}</strong>
+          <strong>{preview.entry.label || t('Automatic version')}</strong>
           <small>
             {activityTime(preview.entry.createdAt)} · {preview.entry.authorName}
           </small>
-          <Suspense fallback={<p className="muted-text">Opening saved version…</p>}>
+          <Suspense fallback={<p className="muted-text">{t('Opening saved version…')}</p>}>
             <VersionPreview key={preview.entry.id} content={preview.content} />
           </Suspense>
           {canWrite && (
@@ -83,11 +85,11 @@ export function HistoryPanel({ pageId, canWrite }: { pageId: string; canWrite: b
               onClick={() => setConfirm(preview)}
             >
               <RotateCcw size={14} />
-              Restore this version
+              {t('Restore this version')}
             </button>
           )}
           {canWrite && saveStatus !== 'saved' && (
-            <small>Wait for this document to finish saving before restoring.</small>
+            <small>{t('Wait for this document to finish saving before restoring.')}</small>
           )}
           <button
             className="text-button"
@@ -96,7 +98,7 @@ export function HistoryPanel({ pageId, canWrite }: { pageId: string; canWrite: b
               void run(() => useWorkspace.getState().previewVersion(pageId, preview.entry.id))
             }
           >
-            Refresh comparison
+            {t('Refresh comparison')}
           </button>
         </div>
       ) : (
@@ -112,27 +114,27 @@ export function HistoryPanel({ pageId, canWrite }: { pageId: string; canWrite: b
                 );
               }}
             >
-              <label htmlFor="version-name">Save a named version</label>
+              <label htmlFor="version-name">{t('Save a named version')}</label>
               <div>
                 <input
                   id="version-name"
-                  aria-label="Version name"
-                  placeholder="e.g. Ready for review"
+                  aria-label={t('Version name')}
+                  placeholder={t('e.g. Ready for review')}
                   value={name}
                   maxLength={120}
                   onChange={(event) => setName(event.target.value)}
                 />
                 <button
                   className="icon-button"
-                  aria-label="Save version"
-                  title="Save version"
+                  aria-label={t('Save version')}
+                  title={t('Save version')}
                   disabled={busy || !name.trim() || saveStatus !== 'saved'}
                 >
                   <BookmarkPlus size={17} />
                 </button>
               </div>
               {saveStatus !== 'saved' && (
-                <small>Available when this document is saved online.</small>
+                <small>{t('Available when this document is saved online.')}</small>
               )}
             </form>
           )}
@@ -156,26 +158,29 @@ export function HistoryPanel({ pageId, canWrite }: { pageId: string; canWrite: b
                   )}
                 </span>
                 <span>
-                  <strong>{entry.label || 'Automatic version'}</strong>
+                  <strong>{entry.label || t('Automatic version')}</strong>
                   <time dateTime={entry.createdAt}>{activityTime(entry.createdAt)}</time>
                   <small>
                     {entry.authorName}
-                    {entry.version > 0 ? ` · Version ${entry.version}` : ' · Earlier checkpoint'}
+                    {entry.version > 0
+                      ? t(' · Version {{value0}}', { value0: entry.version })
+                      : t(' · Earlier checkpoint')}
                   </small>
                 </span>
               </button>
             ))}
           </div>
           {!data ? (
-            <p className="muted-text">Loading history…</p>
+            <p className="muted-text">{t('Loading history…')}</p>
           ) : (
             !data.entries.length && (
               <div className="activity-empty">
                 <History size={24} />
-                <strong>Your page history starts here</strong>
+                <strong>{t('Your page history starts here')}</strong>
                 <p>
-                  Versions are saved periodically as you edit. Name a version to mark an important
-                  moment.
+                  {t(
+                    'Automatic checkpoints are created at most once every 10 minutes as you edit. Your current saved page can be newer. Name a version to capture it now.',
+                  )}
                 </p>
               </div>
             )
@@ -189,15 +194,17 @@ export function HistoryPanel({ pageId, canWrite }: { pageId: string; canWrite: b
                   void run(() => useWorkspace.getState().loadHistory(pageId, 'previous'))
                 }
               >
-                Newer versions
+                {t('Newer versions')}
               </button>
-              <small>Page {Math.floor(data.offset / ACTIVITY_PAGE_SIZE) + 1}</small>
+              <small>
+                {t('Page')} {Math.floor(data.offset / ACTIVITY_PAGE_SIZE) + 1}
+              </small>
               <button
                 className="text-button"
                 disabled={busy || !data.hasMore}
                 onClick={() => void run(() => useWorkspace.getState().loadHistory(pageId, 'next'))}
               >
-                Older versions
+                {t('Older versions')}
               </button>
             </div>
           )}
@@ -205,27 +212,29 @@ export function HistoryPanel({ pageId, canWrite }: { pageId: string; canWrite: b
       )}
       {confirm && (
         <Dialog
-          title="Restore saved version"
+          title={t('Restore saved version')}
           onClose={() => {
             if (!busy) setConfirm(null);
           }}
         >
           <p>
-            Restore “{confirm.entry.label || 'Automatic version'}”? Your current document will
-            remain available as “Before restore” in history.
+            {t('Restore “')}
+            {confirm.entry.label || t('Automatic version')}
+            {t('”? Your current document will remain available as “Before restore” in history.')}
           </p>
           <p className="muted-text">
-            This changes the shared document for everyone. Changes made after this preview will stop
-            the restore so you can review them.
+            {t(
+              'This changes the shared document for everyone. Changes made after this preview will stop the restore so you can review them.',
+            )}
           </p>
           {error && (
             <p className="activity-error" role="alert">
-              {error}
+              {t(error)}
             </p>
           )}
           <footer className="dialog-actions">
             <button className="button" disabled={busy} onClick={() => setConfirm(null)}>
-              Cancel
+              {t('Cancel')}
             </button>
             <button
               className="button primary"
@@ -237,7 +246,7 @@ export function HistoryPanel({ pageId, canWrite }: { pageId: string; canWrite: b
                 )
               }
             >
-              {busy ? 'Restoring…' : 'Restore version'}
+              {busy ? t('Restoring…') : t('Restore version')}
             </button>
           </footer>
         </Dialog>

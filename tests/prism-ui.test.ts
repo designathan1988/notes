@@ -29,7 +29,7 @@ test('home is a routable workspace-wide view', () => {
   expect(GLOBAL_VIEWS).toContain('home');
 });
 
-test('home recent list skips empty untitled pages, records and templates', async () => {
+test('home recent list keeps untitled work and skips records and templates', async () => {
   const { recentPages } = await import('../apps/web/src/home/Home.js');
   const page = (id: string, title: string, kind = 'document', updatedAt = '2026-11-08T10:00:00Z') =>
     ({ id, title, kind, updatedAt, deletedAt: null, templateRootId: null }) as never;
@@ -40,5 +40,5 @@ test('home recent list skips empty untitled pages, records and templates', async
     page('d', 'User interviews', 'record'),
     page('e', 'Research', 'database', '2026-11-08T11:00:00Z'),
   ]);
-  expect(result.map((p: { id: string }) => p.id)).toEqual(['e', 'a']);
+  expect(result.map((p: { id: string }) => p.id)).toEqual(['e', 'b', 'c', 'a']);
 });

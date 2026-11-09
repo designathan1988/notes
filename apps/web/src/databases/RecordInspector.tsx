@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { lazy, Suspense, useEffect, useRef, useMemo } from 'react';
 import { compileFormulas } from '@note/data/formulas';
 import { ArrowUpRight, X } from 'lucide-react';
@@ -61,7 +62,7 @@ export function RecordInspector({
       tabIndex={-1}
       className="record-inspector"
       role="region"
-      aria-label="Record details"
+      aria-label={t('Record details')}
       onKeyDown={(event) => {
         // The record's own editor uses Escape first (it lifts the caret into a block selection).
         if (
@@ -75,9 +76,9 @@ export function RecordInspector({
       }}
     >
       <header>
-        <span>Record</span>
+        <span>{t('Record')}</span>
         <IconButton
-          label="Open record in tab"
+          label={t('Open record in tab')}
           onClick={() => {
             close();
             useWorkspace.getState().openTab(pageId);
@@ -85,7 +86,7 @@ export function RecordInspector({
         >
           <ArrowUpRight />
         </IconButton>
-        <IconButton label="Close record" onClick={close}>
+        <IconButton label={t('Close record')} onClick={close}>
           <X />
         </IconButton>
       </header>
@@ -93,7 +94,7 @@ export function RecordInspector({
         <div className="record-inspector-name">
           <Cell
             initial={record.title}
-            label="Record name"
+            label={t('Record name')}
             readOnly={readOnly}
             save={async (value) => {
               await useWorkspace
@@ -122,7 +123,7 @@ export function RecordInspector({
             ))}
         </dl>
         <div className="record-document">
-          <Suspense fallback={<p>Opening document…</p>}>
+          <Suspense fallback={<p>{t('Opening document…')}</p>}>
             {page && <Editor page={page} embedded />}
           </Suspense>
         </div>

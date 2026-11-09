@@ -1,3 +1,4 @@
+import { selectOption } from './select.js';
 import { APP_ORIGIN } from './origin.js';
 import { test, expect, type Browser, type Page } from '@playwright/test';
 
@@ -385,7 +386,7 @@ test('a database accepts every property type, edits records and switches every l
         .click();
       const form = page.getByRole('dialog', { name: 'Add a property', exact: true });
       await form.getByRole('textbox', { name: 'Name', exact: true }).fill(name);
-      await form.getByRole('combobox', { name: 'Type', exact: true }).selectOption(type);
+      await selectOption(form.getByRole('combobox', { name: 'Type', exact: true }), type);
       const options = form.getByRole('textbox', { name: 'Select options', exact: true });
       if (await options.isVisible().catch(() => false)) await options.fill('One, Two');
       await form.getByRole('button', { name: 'Add property', exact: true }).click();
@@ -418,9 +419,10 @@ test('a database accepts every property type, edits records and switches every l
       panel.getByRole('checkbox', { name: 'Done for Sweep record', exact: true }).check(),
     );
     await edit('select', () =>
-      panel
-        .getByRole('combobox', { name: 'Stage for Sweep record', exact: true })
-        .selectOption('Two'),
+      selectOption(
+        panel.getByRole('combobox', { name: 'Stage for Sweep record', exact: true }),
+        'Two',
+      ),
     );
     await edit('date', () =>
       panel.getByLabel('Due for Sweep record', { exact: true }).fill('2026-11-20'),
@@ -433,8 +435,7 @@ test('a database accepts every property type, edits records and switches every l
     await panel.getByRole('button', { name: 'Close record', exact: true }).click();
     for (const layout of ['board', 'list', 'calendar', 'table']) {
       const select = page.getByRole('combobox', { name: 'Layout', exact: true });
-      const ok = await select
-        .selectOption(layout)
+      const ok = await selectOption(select, layout)
         .then(() => true)
         .catch(() => false);
       if (!ok) {

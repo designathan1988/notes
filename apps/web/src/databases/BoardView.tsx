@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { GripVertical, Plus } from 'lucide-react';
 import type { DatabaseRecord, RecordField } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
@@ -38,7 +39,7 @@ export function BoardView({
   if (!field)
     return (
       <div className="table-empty">
-        Add a select or checkbox property, then choose how to group this board.
+        {t('Add a select or checkbox property, then choose how to group this board.')}
       </div>
     );
   return (
@@ -47,9 +48,9 @@ export function BoardView({
         const label =
           field.type === 'checkbox'
             ? group === 'true'
-              ? 'Checked'
-              : 'Unchecked'
-            : group || 'Unassigned';
+              ? t('Checked')
+              : t('Unchecked')
+            : group || t('Unassigned');
         const rows = records.filter((record) =>
           field.type === 'checkbox'
             ? String(!!record.values[field.id]) === group
@@ -59,7 +60,7 @@ export function BoardView({
           <section
             key={group}
             role="region"
-            aria-label={`${label} group`}
+            aria-label={t('{{value0}} group', { value0: label })}
             data-record-drop={group}
             className={`board-column ${drag.over === group ? 'drop-active' : ''}`}
           >
@@ -68,7 +69,7 @@ export function BoardView({
               <span>{rows.length}</span>
               {!readOnly && (
                 <button
-                  aria-label={`Add record to ${label}`}
+                  aria-label={t('Add record to {{value0}}', { value0: label })}
                   onClick={() =>
                     create({
                       [field.id]: field.type === 'checkbox' ? group === 'true' : group || null,
@@ -84,7 +85,7 @@ export function BoardView({
                 <div className="board-record-title">
                   <button
                     className="record-open"
-                    aria-label={`Inspect ${record.title}`}
+                    aria-label={t('Inspect {{value0}}', { value0: record.title })}
                     onClick={() => inspect(record.pageId)}
                   >
                     {record.title}
@@ -92,8 +93,8 @@ export function BoardView({
                   {!readOnly && (
                     <button
                       className="record-grip"
-                      aria-label={`Drag ${record.title}`}
-                      title="Drag or use left and right arrow keys to change group"
+                      aria-label={t('Drag {{value0}}', { value0: record.title })}
+                      title={t('Drag or use left and right arrow keys to change group')}
                       onPointerDown={(event) => drag.begin(record.pageId, record.title, event)}
                       onKeyDown={(event) => {
                         const next =

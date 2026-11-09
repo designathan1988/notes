@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { GripVertical, Plus } from 'lucide-react';
@@ -222,13 +223,13 @@ export function BlockGutter({
       {hover && (
         <div className="block-gutter" style={{ left: hover.left - 51, top: hover.top + 1 }}>
           <button
-            aria-label="Insert block here"
+            aria-label={t('Insert block here')}
             onClick={(event) => insert(hover.from, event.currentTarget)}
           >
             <Plus size={16} />
           </button>
           <button
-            aria-label="Drag or open block actions"
+            aria-label={t('Drag or open block actions')}
             draggable={false}
             onPointerDown={start}
             onClick={(event) => {

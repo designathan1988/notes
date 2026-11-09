@@ -1,3 +1,4 @@
+import { t, getLocale } from '../i18n/index.js';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Check, CornerDownRight, MessageSquare, RotateCcw, Send, X } from 'lucide-react';
 import { useWorkspace } from '../state/store.js';
@@ -5,7 +6,7 @@ import type { DiscussionThread } from '@note/contracts';
 import { ACTIVITY_PAGE_SIZE } from '@note/contracts';
 
 export const activityTime = (value: string) =>
-  new Date(value).toLocaleString('en-US', {
+  new Date(value).toLocaleString(getLocale(), {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
@@ -70,7 +71,7 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
   };
   return (
     <div className="discussion-panel" ref={root}>
-      <div className="activity-switch" role="group" aria-label="Discussion status">
+      <div className="activity-switch" role="group" aria-label={t('Discussion status')}>
         <button
           aria-pressed={!resolved}
           onClick={() => {
@@ -78,7 +79,7 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
             setSelected(null);
           }}
         >
-          Open
+          {t('Open')}
         </button>
         <button
           aria-pressed={resolved}
@@ -87,22 +88,22 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
             setSelected(null);
           }}
         >
-          Resolved
+          {t('Resolved')}
         </button>
       </div>
       {error && (
         <p className="activity-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
       {selected ? (
         <>
           <button className="activity-back" onClick={() => setSelected(null)}>
             <ArrowLeft size={14} />
-            All discussions
+            {t('All discussions')}
           </button>
           {thread?.quote && <blockquote className="discussion-quote">{thread.quote}</blockquote>}
-          <div role="region" aria-label="Discussion messages" className="discussion-messages">
+          <div role="region" aria-label={t('Discussion messages')} className="discussion-messages">
             {messages?.messages.map((message) => (
               <div className="discussion-message" key={message.id}>
                 <div className="message-byline">
@@ -113,7 +114,7 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
                 <p>{message.body}</p>
               </div>
             ))}
-            {!messages && <p className="muted-text">Loading discussion…</p>}
+            {!messages && <p className="muted-text">{t('Loading discussion…')}</p>}
             {messages?.hasMore && (
               <button
                 className="text-button"
@@ -124,7 +125,7 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
                   )
                 }
               >
-                Load earlier replies
+                {t('Load earlier replies')}
               </button>
             )}
           </div>
@@ -140,7 +141,7 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
               }
             >
               {thread.resolved ? <RotateCcw size={14} /> : <Check size={14} />}{' '}
-              {thread.resolved ? 'Reopen discussion' : 'Resolve discussion'}
+              {thread.resolved ? t('Reopen discussion') : t('Resolve discussion')}
             </button>
           )}
           {canWrite && thread && !thread.resolved && (
@@ -152,19 +153,19 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
               }}
             >
               <textarea
-                aria-label="Reply"
-                placeholder="Add to the discussion…"
+                aria-label={t('Reply')}
+                placeholder={t('Add to the discussion…')}
                 value={reply}
                 onChange={(event) => setReply(event.target.value)}
                 maxLength={10000}
                 rows={3}
               />
               <div>
-                <small>Visible to everyone with page access</small>
+                <small>{t('Visible to everyone with page access')}</small>
                 <button
                   className="button primary"
                   disabled={busy || !reply.trim()}
-                  aria-label="Send reply"
+                  aria-label={t('Send reply')}
                 >
                   <Send size={14} />
                 </button>
@@ -185,27 +186,27 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
                 <span className="discussion-excerpt">{item.firstMessage.body}</span>
                 <small>
                   <CornerDownRight size={12} />
-                  {item.messageCount - 1} {item.messageCount === 2 ? 'reply' : 'replies'}
+                  {item.messageCount - 1} {item.messageCount === 2 ? t('reply') : t('replies')}
                   {item.resolved && (
                     <>
                       <Check size={12} />
-                      Resolved
+                      {t('Resolved')}
                     </>
                   )}
                 </small>
               </button>
             ))
           ) : (
-            <p className="muted-text">Loading discussions…</p>
+            <p className="muted-text">{t('Loading discussions…')}</p>
           )}
           {data?.resolved === resolved && !data.threads.length && (
             <div className="activity-empty">
               <MessageSquare size={24} />
-              <strong>{resolved ? 'No resolved discussions' : 'Start a conversation'}</strong>
+              <strong>{resolved ? t('No resolved discussions') : t('Start a conversation')}</strong>
               <p>
                 {resolved
-                  ? 'Resolved conversations stay available here.'
-                  : 'Ask a question, share feedback, or capture a decision alongside this page.'}
+                  ? t('Resolved conversations stay available here.')
+                  : t('Ask a question, share feedback, or capture a decision alongside this page.')}
               </p>
             </div>
           )}
@@ -220,9 +221,11 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
                   )
                 }
               >
-                Previous discussions
+                {t('Previous discussions')}
               </button>
-              <small>Page {Math.floor(data.offset / ACTIVITY_PAGE_SIZE) + 1}</small>
+              <small>
+                {t('Page')} {Math.floor(data.offset / ACTIVITY_PAGE_SIZE) + 1}
+              </small>
               <button
                 className="text-button"
                 disabled={busy || !data.hasMore}
@@ -230,7 +233,7 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
                   void run(() => useWorkspace.getState().loadDiscussions(pageId, resolved, 'next'))
                 }
               >
-                More discussions
+                {t('More discussions')}
               </button>
             </div>
           )}
@@ -247,7 +250,7 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
                   {quote}
                   <button
                     type="button"
-                    aria-label="Remove quoted context"
+                    aria-label={t('Remove quoted context')}
                     onClick={() => useWorkspace.getState().clearDiscussionQuote()}
                   >
                     <X size={12} />
@@ -255,19 +258,19 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
                 </blockquote>
               )}
               <textarea
-                aria-label="New comment"
-                placeholder="Leave a comment…"
+                aria-label={t('New comment')}
+                placeholder={t('Leave a comment…')}
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
                 maxLength={10000}
                 rows={3}
               />
               <div>
-                <small>Everyone with page access can read</small>
+                <small>{t('Everyone with page access can read')}</small>
                 <button
                   className="button primary"
                   disabled={busy || !body.trim()}
-                  aria-label="Post comment"
+                  aria-label={t('Post comment')}
                 >
                   <Send size={14} />
                 </button>
@@ -276,7 +279,7 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
           )}
         </>
       )}
-      {!canWrite && <p className="muted-text">You have read-only access to this page.</p>}
+      {!canWrite && <p className="muted-text">{t('You have read-only access to this page.')}</p>}
     </div>
   );
 }

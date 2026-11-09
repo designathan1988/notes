@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js';
+import { Select } from '../ui/Select.js';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import {
   Database,
@@ -39,12 +41,14 @@ export default function Library() {
   return (
     <section
       className={`templates-screen ${selected ? 'template-selected' : ''}`}
-      aria-label="Template library"
+      aria-label={t('Template library')}
     >
       <header className="page-index-heading">
         <div>
-          <h1>Templates</h1>
-          <p className="muted-text">Keep your best starting points ready for the next idea.</p>
+          <h1>{t('Templates')}</h1>
+          <p className="muted-text">
+            {t('Keep your best starting points ready for the next idea.')}
+          </p>
         </div>
         <button
           className="button primary"
@@ -59,34 +63,36 @@ export default function Library() {
           }
         >
           <Plus size={15} />
-          New template
+          {t('New template')}
         </button>
       </header>
       {!!state.pendingCopies.length && (
-        <section className="pending-copies" aria-label="Unconfirmed copies">
-          <strong>Check your recent copies</strong>
+        <section className="pending-copies" aria-label={t('Unconfirmed copies')}>
+          <strong>{t('Check your recent copies')}</strong>
           <p>
-            A copy may already exist. Retry confirms the same request without creating it twice.
+            {t(
+              'A copy may already exist. Retry confirms the same request without creating it twice.',
+            )}
           </p>
           {state.pendingCopies.map((command) => (
             <div key={command.requestId}>
               <span>
                 {command.title ??
-                  (command.operation === 'blank' ? 'Untitled template' : 'Page copy')}
+                  (command.operation === 'blank' ? t('Untitled template') : t('Page copy'))}
               </span>
               <button
                 className="button"
                 disabled={!!state.copyBusy}
                 onClick={() => void state.copyPage(command).catch(state.setError)}
               >
-                Retry
+                {t('Retry')}
               </button>
               <button
                 className="text-button"
                 disabled={!!state.copyBusy}
                 onClick={() => state.dismissCopy(command.requestId)}
               >
-                Dismiss
+                {t('Dismiss')}
               </button>
             </div>
           ))}
@@ -97,27 +103,27 @@ export default function Library() {
           <Search size={16} />
           <input
             type="search"
-            aria-label="Search templates"
-            placeholder="Search your templates…"
+            aria-label={t('Search templates')}
+            placeholder={t('Search your templates…')}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
-        <select
-          aria-label="Template type"
+        <Select
+          aria-label={t('Template type')}
           value={kind}
           onChange={(event) => setKind(event.target.value)}
         >
-          <option value="">All types</option>
-          <option value="document">Pages and databases</option>
-          <option value="record">Record templates</option>
-        </select>
+          <option value="">{t('All types')}</option>
+          <option value="document">{t('Pages and databases')}</option>
+          <option value="record">{t('Record templates')}</option>
+        </Select>
         {database && (
           <button
             className="text-button"
             onClick={() => state.setTemplateFilters({ ...state.templateFilters, database: '' })}
           >
-            Clear database filter
+            {t('Clear database filter')}
           </button>
         )}
       </div>
@@ -125,20 +131,20 @@ export default function Library() {
         <p className="form-error" role="alert">
           {state.templateError}{' '}
           <button className="text-button" onClick={() => void state.loadTemplates()}>
-            Retry
+            {t('Retry')}
           </button>
         </p>
       )}
       <div className="template-workbench">
         <div
           className="template-list"
-          aria-label="Saved templates"
+          aria-label={t('Saved templates')}
           aria-busy={state.templateLoading}
         >
           {items.map((page) => (
             <button
               key={page.id}
-              aria-label={`Preview ${page.title}`}
+              aria-label={t('Preview {{value0}}', { value0: page.title })}
               aria-pressed={active?.id === page.id}
               onClick={() => setSelected(page.id)}
             >
@@ -157,11 +163,11 @@ export default function Library() {
                 <small>
                   {page.templateDatabaseId
                     ? (state.pages.find((item) => item.id === page.templateDatabaseId)?.title ??
-                      'Record template')
+                      t('Record template'))
                     : page.kind === 'database'
-                      ? 'Database template'
-                      : 'Page template'}{' '}
-                  · {page.visibility === 'private' ? 'Private' : 'Workspace'}
+                      ? t('Database template')
+                      : t('Page template')}{' '}
+                  · {page.visibility === 'private' ? t('Private') : t('Workspace')}
                 </small>
                 {page.description && <p>{page.description}</p>}
               </span>
@@ -171,11 +177,15 @@ export default function Library() {
           {!items.length && (
             <div className="template-empty">
               <LayoutTemplate size={28} />
-              <h2>{state.templateLoading ? 'Finding templates…' : 'A useful place to start'}</h2>
+              <h2>
+                {state.templateLoading ? t('Finding templates…') : t('A useful place to start')}
+              </h2>
               <p>
                 {query || kind || database
-                  ? 'No templates match these filters.'
-                  : 'Save a page or record as a template, or create one here. Each use becomes an independent copy.'}
+                  ? t('No templates match these filters.')
+                  : t(
+                      'Save a page or record as a template, or create one here. Each use becomes an independent copy.',
+                    )}
               </p>
             </div>
           )}
@@ -185,19 +195,19 @@ export default function Library() {
               disabled={state.templateLoading}
               onClick={() => void state.loadTemplates(undefined, true)}
             >
-              Load more templates
+              {t('Load more templates')}
             </button>
           )}
         </div>
         {active && (
-          <section className="template-preview" aria-label="Template preview">
+          <section className="template-preview" aria-label={t('Template preview')}>
             <button className="text-button template-preview-back" onClick={() => setSelected(null)}>
-              Back to templates
+              {t('Back to templates')}
             </button>
             <header>
               <span className="template-visibility">
                 {active.visibility === 'private' ? <LockKeyhole size={13} /> : <Users size={13} />}{' '}
-                {active.visibility === 'private' ? 'Only you' : 'Workspace'}
+                {active.visibility === 'private' ? t('Only you') : t('Workspace')}
               </span>
               <h2>{active.title}</h2>
               {active.description && <p>{active.description}</p>}
@@ -206,34 +216,37 @@ export default function Library() {
                   className="button"
                   onClick={() => state.navigate(active.id, pageView(active.kind))}
                 >
-                  {readOnly ? 'Open template' : 'Edit template'}
+                  {readOnly ? t('Open template') : t('Edit template')}
                 </button>
                 <button
                   className="button primary"
                   disabled={!state.canUseTemplate(active.id)}
                   onClick={() => void state.useTemplate(active.id).catch(state.setError)}
                 >
-                  Use template
+                  {t('Use template')}
                 </button>
               </div>
               <small>
                 {active.templateDatabaseId
-                  ? `New records follow the access settings of ${state.tables[active.templateDatabaseId]?.title ?? 'their database'}. `
-                  : 'New pages start private. '}
-                Page content, media and subpages are copied. Linked pages and databases stay
-                connected.
+                  ? t('New records follow the access settings of {{value0}}. ', {
+                      value0: state.tables[active.templateDatabaseId]?.title ?? t('their database'),
+                    })
+                  : t('New pages start private. ')}
+                {t(
+                  'Page content, media and subpages are copied. Linked pages and databases stay connected.',
+                )}
               </small>
             </header>
             {active.templateDatabaseId && <TemplateDefaults page={active} readOnly />}
             {state.templatePreview?.pageId === active.id ? (
-              <LazyBoundary key={active.id} name="Template preview">
-                <Suspense fallback={<p className="muted-text">Opening preview…</p>}>
-                  <TemplatePreview state={state.templatePreview.state} />
+              <LazyBoundary key={active.id} name={t('Template preview')}>
+                <Suspense fallback={<p className="muted-text">{t('Opening preview…')}</p>}>
+                  <TemplatePreview state={state.templatePreview.state} readOnly={!!readOnly} />
                 </Suspense>
               </LazyBoundary>
             ) : (
               <p className="muted-text">
-                {state.templateError ? 'Preview unavailable.' : 'Opening preview…'}
+                {state.templateError ? t('Preview unavailable.') : t('Opening preview…')}
               </p>
             )}
           </section>

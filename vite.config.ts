@@ -33,5 +33,30 @@ export default defineConfig({
       '/collaboration': { target: `ws://${api}`, ws: true },
     },
   },
-  build: { outDir: '../../dist/web', emptyOutDir: true },
+  build: {
+    outDir: '../../dist/web',
+    emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        // The source editor is already loaded on demand. Keep its reusable runtime
+        // and language grammars in separate cacheable chunks instead of one 530 kB file.
+        manualChunks(id) {
+          const module = id.replaceAll('\\', '/');
+          if (!module.includes('/node_modules/')) return;
+          // React changes less often than workspace code and locale catalogs.
+          // Cache its single shared runtime independently of the application entry.
+          if (/\/node_modules\/(react|react-dom|scheduler)\//.test(module)) return 'ui-runtime';
+          for (const language of ['html', 'css', 'javascript']) {
+            if (
+              module.includes(`/@codemirror/lang-${language}/`) ||
+              module.includes(`/@lezer/${language}/`)
+            )
+              return `source-${language}`;
+          }
+          if (module.includes('/@codemirror/') || module.includes('/@lezer/'))
+            return 'source-runtime';
+        },
+      },
+    },
+  },
 });
