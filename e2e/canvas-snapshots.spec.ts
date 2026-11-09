@@ -1,3 +1,4 @@
+import { APP_ORIGIN } from './origin.js';
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -5,10 +6,10 @@ import { resolve } from 'node:path';
 test('saved canvas history and templates preserve spatial content with local read-only navigation', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   const headers = { 'x-note-request': '1' };
   await context.request.post('/api/auth/sign-in/email', {
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
   });
   const session = await (await context.request.get('/api/session')).json();

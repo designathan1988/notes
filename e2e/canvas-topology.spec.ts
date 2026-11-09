@@ -1,3 +1,4 @@
+import { APP_ORIGIN, COLLABORATION_URL } from './origin.js';
 import { test, expect } from '@playwright/test';
 import { HocuspocusProvider, HocuspocusProviderWebsocket } from '@hocuspocus/provider';
 import WebSocket from 'ws';
@@ -9,7 +10,7 @@ test('an offline connection to a concurrently deleted note settles without block
 }) => {
   const headers = { 'x-note-request': '1' };
   await context.request.post('/api/auth/sign-in/email', {
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
   });
   const session = await (await context.request.get('/api/session')).json();
@@ -41,11 +42,11 @@ test('an offline connection to a concurrently deleted note settles without block
     .join('; ');
   class AuthenticatedSocket extends WebSocket {
     constructor(url: string) {
-      super(url, { headers: { cookie, origin: 'http://127.0.0.1:5173' } });
+      super(url, { headers: { cookie, origin: APP_ORIGIN } });
     }
   }
   const transport = new HocuspocusProviderWebsocket({
-    url: 'ws://127.0.0.1:3001/collaboration',
+    url: COLLABORATION_URL,
     WebSocketPolyfill: AuthenticatedSocket,
   });
   const document = new Y.Doc(),

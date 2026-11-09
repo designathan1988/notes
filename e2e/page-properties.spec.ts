@@ -1,16 +1,17 @@
+import { APP_ORIGIN } from './origin.js';
 import { test, expect, type BrowserContext } from '@playwright/test';
 const headers = { 'x-note-request': '1' };
 async function signIn(context: BrowserContext, email = 'jonathan@note.test') {
   await context.request.post('/api/auth/sign-in/email', {
     data: { email, password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
 }
 test('a pending property write retains its draft when a newer navigation reply arrives before rejection', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
-    colleague = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN }),
+    colleague = await browser.newContext({ baseURL: APP_ORIGIN });
   await signIn(context);
   await signIn(colleague, 'amelia@note.test');
   const session = await (await context.request.get('/api/session')).json(),
@@ -133,7 +134,7 @@ test('a pending property write retains its draft when a newer navigation reply a
 test('opening a property editor waits for this page’s own pending value write', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await signIn(context);
   const session = await (await context.request.get('/api/session')).json(),
     field = { id: 'hours', name: 'Hours', type: 'number' };
@@ -208,8 +209,8 @@ test('opening a property editor waits for this page’s own pending value write'
 test('ordinary-page properties edit inline, calculate, retain conflicts and archive without losing values', async ({
   browser,
 }) => {
-  const firstContext = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
-    secondContext = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const firstContext = await browser.newContext({ baseURL: APP_ORIGIN }),
+    secondContext = await browser.newContext({ baseURL: APP_ORIGIN });
   await signIn(firstContext);
   await signIn(secondContext, 'amelia@note.test');
   const session = await (await firstContext.request.get('/api/session')).json();
@@ -361,7 +362,7 @@ test('ordinary-page properties edit inline, calculate, retain conflicts and arch
 test('opening a record directly edits the canonical properties and updates its table', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await signIn(context);
   const session = await (await context.request.get('/api/session')).json();
   const database = await (

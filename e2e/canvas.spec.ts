@@ -1,3 +1,4 @@
+import { APP_ORIGIN } from './origin.js';
 import { expect, test, type Page } from '@playwright/test';
 async function createCanvas(page: Page, visibility = 'private') {
   const warnings: string[] = [];
@@ -6,7 +7,7 @@ async function createCanvas(page: Page, visibility = 'private') {
   });
   await page.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const session = await (await page.request.get('/api/session')).json();
   const response = await page.request.post(`/api/workspaces/${session.workspaces[0].id}/pages`, {
@@ -33,7 +34,7 @@ test('canvas creates editable notes directly, drags and resizes their canonical 
 }) => {
   const signed = await page.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   expect(signed.ok()).toBe(true);
   const session = await (await page.request.get('/api/session')).json();
@@ -189,7 +190,7 @@ test('the canvas catalog creates directly into a focused title without a setup f
 }) => {
   await page.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   let id: string | null = null;
   try {
@@ -225,7 +226,7 @@ test('a fresh canvas client waits for the canonical document before exposing edi
   page,
 }) => {
   const source = await createCanvas(page);
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   try {
     await page.getByRole('button', { name: 'Add note', exact: true }).click();
     await page.keyboard.type('Canonical content before delayed synchronization');
@@ -233,7 +234,7 @@ test('a fresh canvas client waits for the canonical document before exposing edi
     const before = await (await page.request.get(`/api/pages/${source.id}`)).json();
     await context.request.post('/api/auth/sign-in/email', {
       data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-      headers: { origin: 'http://127.0.0.1:5173' },
+      headers: { origin: APP_ORIGIN },
     });
     let held = true;
     const pending: (() => void)[] = [];
@@ -571,8 +572,8 @@ test('a long note scrolls with the wheel without changing the canvas zoom', asyn
 test('shared canvas media and page references remain authorized through renames and live private moves, including the catalog', async ({
   browser,
 }) => {
-  const owner = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
-    reader = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const owner = await browser.newContext({ baseURL: APP_ORIGIN }),
+    reader = await browser.newContext({ baseURL: APP_ORIGIN });
   const a = await owner.newPage(),
     source = await createCanvas(a, 'workspace');
   const createTarget = async (title: string, visibility: string) => {
@@ -606,7 +607,7 @@ test('shared canvas media and page references remain authorized through renames 
     await expect(a.locator('.save-status')).toHaveText('Saved');
     await reader.request.post('/api/auth/sign-in/email', {
       data: { email: 'amelia@note.test', password: 'Note-local-demo-2026' },
-      headers: { origin: 'http://127.0.0.1:5173' },
+      headers: { origin: APP_ORIGIN },
     });
     const b = await reader.newPage();
     await b.goto(`/#${source.id}/canvas`);

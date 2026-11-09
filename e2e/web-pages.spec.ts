@@ -1,3 +1,4 @@
+import { APP_ORIGIN } from './origin.js';
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
@@ -12,10 +13,10 @@ const file = (path: string, text: string) => ({
 test('creates a web page directly from commands and inserts a website component without replacing note content', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const session = await (await context.request.get('/api/session')).json(),
     page = await context.newPage();
@@ -85,12 +86,12 @@ test('creates a web page directly from commands and inserts a website component 
 test('a real website edits canonical files, runs modules and interactions, stays isolated, and reloads durably', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   expect(
     (
       await context.request.post('/api/auth/sign-in/email', {
         data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-        headers: { origin: 'http://127.0.0.1:5173' },
+        headers: { origin: APP_ORIGIN },
       })
     ).ok(),
   ).toBe(true);
@@ -177,8 +178,8 @@ test('a real website edits canonical files, runs modules and interactions, stays
 test('two source editors merge an offline draft and retain independent undo while live viewer access is enforced', async ({
   browser,
 }) => {
-  const alice = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
-    bob = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const alice = await browser.newContext({ baseURL: APP_ORIGIN }),
+    bob = await browser.newContext({ baseURL: APP_ORIGIN });
   for (const [context, email] of [
     [alice, 'jonathan@note.test'],
     [bob, 'amelia@note.test'],
@@ -187,7 +188,7 @@ test('two source editors merge an offline draft and retain independent undo whil
       (
         await context.request.post('/api/auth/sign-in/email', {
           data: { email, password: 'Note-local-demo-2026' },
-          headers: { origin: 'http://127.0.0.1:5173' },
+          headers: { origin: APP_ORIGIN },
         })
       ).ok(),
     ).toBe(true);
@@ -283,10 +284,10 @@ test('two source editors merge an offline draft and retain independent undo whil
 test('website media retains a failed original, retries once and stays readable after an independent page copy', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const session = await (await context.request.get('/api/session')).json();
   const result = await context.request.post(`/api/workspaces/${session.workspaces[0].id}/pages`, {

@@ -1,3 +1,4 @@
+import { runtimePath } from '../platform/runtime.js';
 import { mkdir, readFile, writeFile, rename, unlink } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import {
@@ -75,5 +76,5 @@ export function storageFromEnvironment(): Storage {
     });
   if (process.env.NODE_ENV === 'production')
     throw new Error('S3_BUCKET and object-storage credentials are required in production.');
-  return new FileStorage(resolve('.runtime/attachments'));
+  return new FileStorage(runtimePath('attachments'));
 }

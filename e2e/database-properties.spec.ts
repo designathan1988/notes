@@ -1,12 +1,13 @@
+import { APP_ORIGIN } from './origin.js';
 import { expect, test } from '@playwright/test';
 
 test('creates records inline and configures typed properties, formulas and actions without losing concurrent schema edits', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const session = await (await context.request.get('/api/session')).json();
   const database = await (

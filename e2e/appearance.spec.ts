@@ -1,3 +1,4 @@
+import { APP_ORIGIN } from './origin.js';
 import { test, expect, type BrowserContext } from '@playwright/test';
 const headers = { 'x-note-request': '1' };
 async function login(context: BrowserContext, email = 'jonathan@note.test') {
@@ -5,7 +6,7 @@ async function login(context: BrowserContext, email = 'jonathan@note.test') {
     (
       await context.request.post('/api/auth/sign-in/email', {
         data: { email, password: 'Note-local-demo-2026' },
-        headers: { origin: 'http://127.0.0.1:5173' },
+        headers: { origin: APP_ORIGIN },
       })
     ).ok(),
   ).toBe(true);
@@ -13,7 +14,7 @@ async function login(context: BrowserContext, email = 'jonathan@note.test') {
 test('personal and page appearance preview, persist, recover a failed write, and reset independently', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await login(context);
   const original = await (await context.request.get('/api/preferences/appearance')).json();
   expect(
@@ -136,7 +137,7 @@ test('personal and page appearance preview, persist, recover a failed write, and
 test('opening a quote-first document does not create an invalid initial text selection or change its body', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await login(context);
   const session = await (await context.request.get('/api/session')).json();
   const note = await (

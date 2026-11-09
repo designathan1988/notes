@@ -1,10 +1,11 @@
+import { APP_ORIGIN } from './origin.js';
 import { expect, test, type BrowserContext } from '@playwright/test';
 
 const headers = { 'x-note-request': '1' };
 async function createWritingPage(context: BrowserContext) {
   const signIn = await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   expect(signIn.ok()).toBe(true);
   const session = await (await context.request.get('/api/session')).json();
@@ -38,7 +39,7 @@ test('mobile reading prioritizes content while editing, customization and workin
   browser,
 }) => {
   const context = await browser.newContext({
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: APP_ORIGIN,
     viewport: { width: 390, height: 844 },
     hasTouch: true,
     isMobile: true,
@@ -109,7 +110,7 @@ test('desktop tools have their own compact navigation without displacing the pag
   browser,
 }) => {
   const context = await browser.newContext({
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: APP_ORIGIN,
     viewport: { width: 1487, height: 1058 },
   });
   const source = await createWritingPage(context),
@@ -140,7 +141,7 @@ test('desktop tools have their own compact navigation without displacing the pag
 test('the page explorer filters and sorts real pages with compact readable locations on desktop and mobile', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   const parent = await createWritingPage(context),
     suffix = crypto.randomUUID();
   const children = [];

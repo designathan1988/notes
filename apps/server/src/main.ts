@@ -1,3 +1,4 @@
+import { runtimeDir } from './platform/runtime.js';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -11,7 +12,7 @@ import { seedPreferences } from './identity/seed-preferences.js';
 import { storageFromEnvironment } from './attachments/storage.js';
 import { WebPreviews } from './web/service.js';
 import { createWebRenderer } from './web/renderer.js';
-const runtime = resolve('.runtime');
+const runtime = runtimeDir;
 await mkdir(runtime, { recursive: true });
 const production = process.env.NODE_ENV === 'production';
 if (
@@ -45,7 +46,7 @@ const app = await createApp({ db, auth, storage, previews });
 const renderer = createWebRenderer(previews);
 await renderer.listen({ host: '127.0.0.1', port: Number(process.env.USER_CONTENT_PORT ?? 3002) });
 await app.listen({ host: '127.0.0.1', port: Number(process.env.PORT ?? 3001) });
-app.log.info('Note API: http://127.0.0.1:3001');
+app.log.info(`Note API: http://127.0.0.1:${process.env.PORT ?? 3001} (data: ${runtimeDir})`);
 let closing = false;
 for (const signal of ['SIGINT', 'SIGTERM'] as const)
   process.on(signal, async () => {

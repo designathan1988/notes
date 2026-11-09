@@ -1,3 +1,4 @@
+import { APP_ORIGIN, COLLABORATION_URL } from './origin.js';
 import { test, expect, type BrowserContext } from '@playwright/test';
 import { HocuspocusProvider, HocuspocusProviderWebsocket } from '@hocuspocus/provider';
 import * as Y from 'yjs';
@@ -8,7 +9,7 @@ async function signedIn(context: BrowserContext) {
   expect(
     (
       await context.request.post('/api/auth/sign-in/email', {
-        headers: { origin: 'http://127.0.0.1:5173' },
+        headers: { origin: APP_ORIGIN },
         data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
       })
     ).ok(),
@@ -19,7 +20,7 @@ async function signedIn(context: BrowserContext) {
 test('shared page CSS stays inside its page even when its source contains unmatched scope delimiters', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
+  const context = await browser.newContext({ baseURL: APP_ORIGIN }),
     session = await signedIn(context);
   const note = await (
     await context.request.post(`/api/workspaces/${session.workspaces[0].id}/pages`, {
@@ -56,8 +57,8 @@ test('shared page CSS stays inside its page even when its source contains unmatc
 test('batched remote source insertions preserve the focused editing position between unchanged text', async ({
   browser,
 }) => {
-  const alice = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
-    bob = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const alice = await browser.newContext({ baseURL: APP_ORIGIN }),
+    bob = await browser.newContext({ baseURL: APP_ORIGIN });
   const session = await signedIn(alice);
   await signedIn(bob);
   const note = await (
@@ -102,14 +103,14 @@ test('batched remote source insertions preserve the focused editing position bet
     const cookie = (await bob.cookies()).map((value) => `${value.name}=${value.value}`).join('; ');
     class AuthenticatedSocket extends WebSocket {
       constructor(url: string) {
-        super(url, { headers: { cookie, origin: 'http://127.0.0.1:5173' } });
+        super(url, { headers: { cookie, origin: APP_ORIGIN } });
       }
     }
     const generation = (await (await bob.request.get(`/api/pages/${note.id}/document`)).json())
       .generation;
     const document = new Y.Doc(),
       transport = new HocuspocusProviderWebsocket({
-        url: 'ws://127.0.0.1:3001/collaboration',
+        url: COLLABORATION_URL,
         WebSocketPolyfill: AuthenticatedSocket,
       });
     const provider = new HocuspocusProvider({

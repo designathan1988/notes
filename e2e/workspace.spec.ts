@@ -1,3 +1,4 @@
+import { APP_ORIGIN } from './origin.js';
 import { test, expect, type BrowserContext } from '@playwright/test';
 import { zipSync, strToU8 } from 'fflate';
 test.beforeEach(async ({ request }) => {
@@ -17,15 +18,15 @@ test.beforeEach(async ({ request }) => {
 async function signIn(context: BrowserContext, email = 'jonathan@note.test') {
   const response = await context.request.post('/api/auth/sign-in/email', {
     data: { email, password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   expect(response.ok()).toBeTruthy();
 }
 test('two independent identities edit, persist, and reopen one shared document', async ({
   browser,
 }) => {
-  const first = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
-  const second = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const first = await browser.newContext({ baseURL: APP_ORIGIN });
+  const second = await browser.newContext({ baseURL: APP_ORIGIN });
   await signIn(first);
   await signIn(second, 'amelia@note.test');
   const session = await (await first.request.get('/api/session')).json();
@@ -81,7 +82,7 @@ test('two independent identities edit, persist, and reopen one shared document',
 test('pastes rich content safely and persists original source and uploaded image bytes', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await signIn(context);
   const session = await (await context.request.get('/api/session')).json();
   const created = await context.request.post(`/api/workspaces/${session.workspaces[0].id}/pages`, {
@@ -168,7 +169,7 @@ test('pastes rich content safely and persists original source and uploaded image
 test('creates and edits a structured record, finds its body, and follows its graph connection', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await signIn(context);
   const page = await context.newPage();
   await page.goto('/');
@@ -222,7 +223,7 @@ test('creates and edits a structured record, finds its body, and follows its gra
 test('imports a versioned workspace ZIP through settings and downloads an export', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await signIn(context);
   const page = await context.newPage();
   await page.goto('/');
@@ -283,7 +284,7 @@ test('imports a versioned workspace ZIP through settings and downloads an export
 test('recipient verifies an invitation and loses access when membership is revoked', async ({
   browser,
 }) => {
-  const owner = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const owner = await browser.newContext({ baseURL: APP_ORIGIN });
   await signIn(owner);
   const session = await (await owner.request.get('/api/session')).json();
   const workspace = session.workspaces[0].id;
@@ -294,9 +295,9 @@ test('recipient verifies an invitation and loses access when membership is revok
   });
   expect(response.ok()).toBeTruthy();
   const invitation = await response.json();
-  const recipient = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const recipient = await browser.newContext({ baseURL: APP_ORIGIN });
   const signup = await recipient.request.post('/api/auth/sign-up/email', {
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
     data: { name: 'Invitation fixture', email, password: 'Note-local-demo-2026' },
   });
   expect(signup.ok()).toBeTruthy();
@@ -323,7 +324,7 @@ test('recipient verifies an invitation and loses access when membership is revok
 test('keeps disconnected edits in local recovery and synchronizes them after reconnect', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await signIn(context);
   const session = await (await context.request.get('/api/session')).json();
   const created = await context.request.post(`/api/workspaces/${session.workspaces[0].id}/pages`, {

@@ -1,8 +1,9 @@
+import { APP_ORIGIN } from './origin.js';
 import { test, expect, type Page } from '@playwright/test';
 async function graphFixture(page: Page) {
   const signed = await page.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   expect(signed.ok()).toBeTruthy();
   const session = await (await page.request.get('/api/session')).json();
@@ -39,7 +40,7 @@ test('graph node dragging persists visual placement without changing canonical p
 }) => {
   await page.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const session = await (await page.request.get('/api/session')).json();
   const created = await page.request.post(`/api/workspaces/${session.workspaces[0].id}/pages`, {
@@ -183,8 +184,8 @@ test('wheel zoom keeps the pointed world position fixed and a normal click still
 test('focus connections uses the inspected page and revoking that local center returns to an authorized global graph', async ({
   browser,
 }) => {
-  const owner = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
-  const reader = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const owner = await browser.newContext({ baseURL: APP_ORIGIN });
+  const reader = await browser.newContext({ baseURL: APP_ORIGIN });
   for (const [context, email] of [
     [owner, 'jonathan@note.test'],
     [reader, 'amelia@note.test'],
@@ -193,7 +194,7 @@ test('focus connections uses the inspected page and revoking that local center r
       (
         await context.request.post('/api/auth/sign-in/email', {
           data: { email, password: 'Note-local-demo-2026' },
-          headers: { origin: 'http://127.0.0.1:5173' },
+          headers: { origin: APP_ORIGIN },
         })
       ).ok(),
     ).toBe(true);

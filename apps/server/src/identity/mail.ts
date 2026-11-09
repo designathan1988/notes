@@ -1,5 +1,6 @@
+import { runtimePath } from '../platform/runtime.js';
 import { mkdir, writeFile, readdir, readFile } from 'node:fs/promises';
-import { resolve, join } from 'node:path';
+import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 export interface MailMessage {
   to: string;
@@ -11,7 +12,7 @@ export interface MailTransport {
   send(message: MailMessage): Promise<void>;
 }
 export class FileMail implements MailTransport {
-  constructor(readonly directory: string = resolve('.runtime/mail')) {}
+  constructor(readonly directory: string = runtimePath('mail')) {}
   async send(message: MailMessage): Promise<void> {
     await mkdir(this.directory, { recursive: true });
     await writeFile(

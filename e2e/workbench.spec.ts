@@ -1,8 +1,9 @@
+import { APP_ORIGIN } from './origin.js';
 import { test, expect } from '@playwright/test';
 test('an authorized initial page opens while the redundant background navigation read is delayed', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   let release!: () => void;
   const pending = new Promise<void>((resolve) => {
     release = resolve;
@@ -11,7 +12,7 @@ test('an authorized initial page opens while the redundant background navigation
   try {
     await context.request.post('/api/auth/sign-in/email', {
       data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-      headers: { origin: 'http://127.0.0.1:5173' },
+      headers: { origin: APP_ORIGIN },
     });
     const page = await context.newPage();
     await page.route('**/api/workspaces/*/navigation', async (route) => {
@@ -38,10 +39,10 @@ test('an authorized initial page opens while the redundant background navigation
 test('background navigation refresh does not replace the global database catalog with a document', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const session = await (await context.request.get('/api/session')).json();
   const page = await context.newPage();
@@ -62,10 +63,10 @@ test('background navigation refresh does not replace the global database catalog
   await context.close();
 });
 test('two application windows do not overwrite each other’s restored tabs', async ({ browser }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const session = await (await context.request.get('/api/session')).json(),
     notes = [];
@@ -105,10 +106,10 @@ test('two application windows do not overwrite each other’s restored tabs', as
 test('modifier navigation and tree actions retain the current working page', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const session = await (await context.request.get('/api/session')).json();
   const notes = [];
@@ -149,10 +150,10 @@ test('modifier navigation and tree actions retain the current working page', asy
 test('creates directly from the keyboard and keeps independent working tabs through reload', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const page = await context.newPage();
   await page.goto('/');

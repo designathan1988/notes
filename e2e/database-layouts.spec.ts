@@ -1,3 +1,4 @@
+import { APP_ORIGIN } from './origin.js';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -11,10 +12,10 @@ async function capture(page: Page, name: string) {
 test('connected layouts, pointer grouping, record panel, computed values and actions use the same records', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const session = await (await context.request.get('/api/session')).json();
   const database = await (
@@ -150,10 +151,10 @@ test('connected layouts, pointer grouping, record panel, computed values and act
     .getByRole('button', { name: 'Interview', exact: true })
     .filter({ hasText: database.title })
     .click();
-  const second = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const second = await browser.newContext({ baseURL: APP_ORIGIN });
   await second.request.post('/api/auth/sign-in/email', {
     data: { email: 'amelia@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const colleague = await second.newPage();
   await colleague.goto(`/#${database.id}/database`);

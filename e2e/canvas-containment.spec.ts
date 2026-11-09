@@ -1,3 +1,4 @@
+import { APP_ORIGIN } from './origin.js';
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -7,7 +8,7 @@ test('canvas groups accept and release dropped notes, resize without clipping me
 }) => {
   const headers = { 'x-note-request': '1' };
   await page.request.post('/api/auth/sign-in/email', {
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
   });
   const session = await (await page.request.get('/api/session')).json();

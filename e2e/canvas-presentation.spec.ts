@@ -1,10 +1,11 @@
+import { APP_ORIGIN } from './origin.js';
 import { test, expect } from '@playwright/test';
 const headers = { 'x-note-request': '1' };
 test('canvas connection sides, endpoint arrows and arbitrary colors remain editable and survive reload', async ({
   page,
 }) => {
   await page.request.post('/api/auth/sign-in/email', {
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
   });
   const session = await (await page.request.get('/api/session')).json();

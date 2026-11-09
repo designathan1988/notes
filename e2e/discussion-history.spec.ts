@@ -1,3 +1,4 @@
+import { APP_ORIGIN } from './origin.js';
 import { expect, test } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -10,10 +11,10 @@ test('two editors discuss, resolve and reopen; saved history previews and restor
 }) => {
   const contexts = [];
   for (const email of ['jonathan@note.test', 'amelia@note.test']) {
-    const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+    const context = await browser.newContext({ baseURL: APP_ORIGIN });
     await context.request.post('/api/auth/sign-in/email', {
       data: { email, password: 'Note-local-demo-2026' },
-      headers: { origin: 'http://127.0.0.1:5173' },
+      headers: { origin: APP_ORIGIN },
     });
     contexts.push(context);
   }
@@ -170,15 +171,15 @@ test('two editors discuss, resolve and reopen; saved history previews and restor
 test('a disconnected collaborator recovers retained drafts as private pages and signs out safely', async ({
   browser,
 }) => {
-  const firstContext = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
-    secondContext = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const firstContext = await browser.newContext({ baseURL: APP_ORIGIN }),
+    secondContext = await browser.newContext({ baseURL: APP_ORIGIN });
   for (const [context, email] of [
     [firstContext, 'jonathan@note.test'],
     [secondContext, 'amelia@note.test'],
   ] as const)
     await context.request.post('/api/auth/sign-in/email', {
       data: { email, password: 'Note-local-demo-2026' },
-      headers: { origin: 'http://127.0.0.1:5173' },
+      headers: { origin: APP_ORIGIN },
     });
   const session = await (await firstContext.request.get('/api/session')).json(),
     headers = { 'x-note-request': '1' };
@@ -399,7 +400,7 @@ test('a disconnected collaborator recovers retained drafts as private pages and 
     if (recoveredIds.length || initialCopyId) {
       await secondContext.request.post('/api/auth/sign-in/email', {
         data: { email: 'amelia@note.test', password: 'Note-local-demo-2026' },
-        headers: { origin: 'http://127.0.0.1:5173' },
+        headers: { origin: APP_ORIGIN },
       });
       for (const id of new Set([...recoveredIds, ...(initialCopyId ? [initialCopyId] : [])]))
         await secondContext.request.delete(`/api/pages/${id}`, { headers }).catch(() => {});
@@ -413,10 +414,10 @@ test('a disconnected collaborator recovers retained drafts as private pages and 
 test('commenting on a record selection targets that record and retains failed comment drafts', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const session = await (await context.request.get('/api/session')).json(),
     headers = { 'x-note-request': '1' };
@@ -517,10 +518,10 @@ test('a private move revokes discussion and history access and clears displayed 
 }) => {
   const contexts = [];
   for (const email of ['jonathan@note.test', 'amelia@note.test']) {
-    const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+    const context = await browser.newContext({ baseURL: APP_ORIGIN });
     await context.request.post('/api/auth/sign-in/email', {
       data: { email, password: 'Note-local-demo-2026' },
-      headers: { origin: 'http://127.0.0.1:5173' },
+      headers: { origin: APP_ORIGIN },
     });
     contexts.push(context);
   }
@@ -598,10 +599,10 @@ test('a private move revokes discussion and history access and clears displayed 
 test('paging discussions and history retains the selected page during live refresh', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const session = await (await context.request.get('/api/session')).json(),
     headers = { 'x-note-request': '1' };

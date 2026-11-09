@@ -1,15 +1,16 @@
+import { APP_ORIGIN } from './origin.js';
 import { test, expect, type BrowserContext } from '@playwright/test';
 async function signIn(context: BrowserContext) {
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
 }
 test('mobile navigation is hidden from keyboard when closed and restores focus after Escape', async ({
   browser,
 }) => {
   const context = await browser.newContext({
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: APP_ORIGIN,
     viewport: { width: 390, height: 844 },
   });
   await signIn(context);
@@ -33,7 +34,7 @@ test('mobile navigation is hidden from keyboard when closed and restores focus a
 test('signing out from graph clears recovery even after the document editor was unmounted', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await signIn(context);
   const session = await (await context.request.get('/api/session')).json();
   const note = await (
@@ -83,7 +84,7 @@ test('signing out from graph clears recovery even after the document editor was 
 test('sign out preserves disconnected drafts after navigating away, then succeeds after recovery', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await signIn(context);
   const session = await (await context.request.get('/api/session')).json();
   const note = await (

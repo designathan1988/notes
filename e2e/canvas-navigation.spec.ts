@@ -1,3 +1,4 @@
+import { APP_ORIGIN } from './origin.js';
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -5,10 +6,10 @@ import { resolve } from 'node:path';
 test('canvas Details navigates to distant headings without document writes and owns metadata and new links', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
+  const context = await browser.newContext({ baseURL: APP_ORIGIN }),
     headers = { 'x-note-request': '1' };
   await context.request.post('/api/auth/sign-in/email', {
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
   });
   const session = await (await context.request.get('/api/session')).json();
@@ -175,15 +176,15 @@ test('canvas Details navigates to distant headings without document writes and o
 test('a viewer navigates the canvas outline while link creation and metadata remain read only', async ({
   browser,
 }) => {
-  const owner = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
-    viewer = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const owner = await browser.newContext({ baseURL: APP_ORIGIN }),
+    viewer = await browser.newContext({ baseURL: APP_ORIGIN });
   const headers = { 'x-note-request': '1' };
   for (const [context, email] of [
     [owner, 'jonathan@note.test'],
     [viewer, 'amelia@note.test'],
   ] as const)
     await context.request.post('/api/auth/sign-in/email', {
-      headers: { origin: 'http://127.0.0.1:5173' },
+      headers: { origin: APP_ORIGIN },
       data: { email, password: 'Note-local-demo-2026' },
     });
   const session = await (await owner.request.get('/api/session')).json(),

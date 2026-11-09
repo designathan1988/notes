@@ -3,9 +3,13 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
 
 const packages = fileURLToPath(new URL('./packages/', import.meta.url));
+const webPort = Number(process.env.WEB_PORT ?? 5173);
+const api = `127.0.0.1:${process.env.API_PORT ?? 3001}`;
 
 export default defineConfig({
   root: 'apps/web',
+  // A second dev server (the isolated browser-test instance) keeps its own optimizer cache.
+  cacheDir: webPort === 5173 ? undefined : `../../node_modules/.vite-${webPort}`,
   plugins: [react()],
   resolve: {
     // Workspace packages are TypeScript source. Resolve them to packages/ directly so Vite treats
@@ -22,11 +26,11 @@ export default defineConfig({
   // d3-force is only imported by the graph layout worker, which the dependency scanner skips.
   optimizeDeps: { include: ['fflate', 'y-prosemirror', 'd3-force'] },
   server: {
-    port: 5173,
+    port: webPort,
     strictPort: true,
     proxy: {
-      '/api': 'http://127.0.0.1:3001',
-      '/collaboration': { target: 'ws://127.0.0.1:3001', ws: true },
+      '/api': `http://${api}`,
+      '/collaboration': { target: `ws://${api}`, ws: true },
     },
   },
   build: { outDir: '../../dist/web', emptyOutDir: true },

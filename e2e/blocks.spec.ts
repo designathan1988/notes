@@ -1,10 +1,11 @@
+import { APP_ORIGIN } from './origin.js';
 import { test, expect } from '@playwright/test';
 
 test('edits, transforms, reorders and duplicates real blocks with durable reload and mobile controls', async ({
   browser,
 }) => {
   const context = await browser.newContext({
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: APP_ORIGIN,
     viewport: { width: 1440, height: 1000 },
   });
   await expect
@@ -18,7 +19,7 @@ test('edits, transforms, reorders and duplicates real blocks with durable reload
     .toBe(200);
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const session = await (await context.request.get('/api/session')).json();
   const note = await (

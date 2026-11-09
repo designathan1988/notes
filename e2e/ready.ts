@@ -1,8 +1,9 @@
+import { APP_ORIGIN } from './origin.js';
 import { expect, request } from '@playwright/test';
 
 // Vite may remain available while the API watcher is restarting shared modules.
 export default async function ready() {
-  const api = await request.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const api = await request.newContext({ baseURL: APP_ORIGIN });
   try {
     await expect
       .poll(

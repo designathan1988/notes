@@ -1,10 +1,11 @@
+import { APP_ORIGIN } from './origin.js';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
 const headers = { 'x-note-request': '1' };
 async function signIn(context: BrowserContext, email: string) {
   const response = await context.request.post('/api/auth/sign-in/email', {
     data: { email, password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   expect(response.ok()).toBe(true);
   return (await context.request.get('/api/session')).json();
@@ -74,8 +75,8 @@ async function startDrag(page: Page, dx: number, dy: number) {
 test('two canvas editors merge concurrent geometry and text, then recover a closed offline draft', async ({
   browser,
 }) => {
-  const owner = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
-    colleague = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const owner = await browser.newContext({ baseURL: APP_ORIGIN }),
+    colleague = await browser.newContext({ baseURL: APP_ORIGIN });
   const source = await sharedPage(owner),
     a = await owner.newPage();
   let hold = false;
@@ -168,8 +169,8 @@ test('two canvas editors merge concurrent geometry and text, then recover a clos
 test('an offline draft survives reopening as a viewer and synchronizes only after editing access returns', async ({
   browser,
 }) => {
-  const owner = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
-    colleague = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const owner = await browser.newContext({ baseURL: APP_ORIGIN }),
+    colleague = await browser.newContext({ baseURL: APP_ORIGIN });
   const source = await sharedPage(owner),
     session = await signIn(colleague, 'amelia@note.test'),
     a = await owner.newPage();
@@ -234,8 +235,8 @@ test('an offline draft survives reopening as a viewer and synchronizes only afte
 test('a live viewer downgrade cancels an uncommitted note drag and restoring the role permits durable edits', async ({
   browser,
 }) => {
-  const owner = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
-    colleague = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const owner = await browser.newContext({ baseURL: APP_ORIGIN }),
+    colleague = await browser.newContext({ baseURL: APP_ORIGIN });
   const source = await sharedPage(owner),
     session = await signIn(colleague, 'amelia@note.test'),
     page = await colleague.newPage();
@@ -289,7 +290,7 @@ test('a live viewer downgrade cancels an uncommitted note drag and restoring the
 test('clicking a populated note keeps text shortcuts in the note instead of the canvas', async ({
   browser,
 }) => {
-  const owner = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
+  const owner = await browser.newContext({ baseURL: APP_ORIGIN }),
     source = await sharedPage(owner),
     page = await owner.newPage();
   const errors: string[] = [];
@@ -315,8 +316,8 @@ test('clicking a populated note keeps text shortcuts in the note instead of the 
 test('moving a canvas under a private root removes another editor’s content and cancels an in-progress resize', async ({
   browser,
 }) => {
-  const owner = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
-    colleague = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const owner = await browser.newContext({ baseURL: APP_ORIGIN }),
+    colleague = await browser.newContext({ baseURL: APP_ORIGIN });
   const source = await sharedPage(owner),
     privateRoot = await (
       await owner.request.post(`/api/workspaces/${source.workspaceId}/pages`, {
@@ -366,7 +367,7 @@ test('moving a canvas under a private root removes another editor’s content an
 test('document-boundary shortcuts and Shift selection stay inside the current spatial note', async ({
   browser,
 }) => {
-  const owner = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
+  const owner = await browser.newContext({ baseURL: APP_ORIGIN }),
     source = await sharedPage(owner),
     page = await owner.newPage();
   try {
@@ -411,8 +412,8 @@ test('document-boundary shortcuts and Shift selection stay inside the current sp
 test('the same document session restores ordinary note editing after a live viewer downgrade', async ({
   browser,
 }) => {
-  const owner = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
-    colleague = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const owner = await browser.newContext({ baseURL: APP_ORIGIN }),
+    colleague = await browser.newContext({ baseURL: APP_ORIGIN });
   const source = await sharedPage(owner, 'document'),
     session = await signIn(colleague, 'amelia@note.test');
   const role = async (value: string) => {

@@ -1,15 +1,16 @@
+import { APP_ORIGIN } from './origin.js';
 import { test, expect, type BrowserContext } from '@playwright/test';
 async function signIn(context: BrowserContext, email: string) {
   await context.request.post('/api/auth/sign-in/email', {
     data: { email, password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
 }
 test('a graph already open in another identity removes a page when its root becomes private', async ({
   browser,
 }) => {
-  const owner = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
-    editor = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const owner = await browser.newContext({ baseURL: APP_ORIGIN }),
+    editor = await browser.newContext({ baseURL: APP_ORIGIN });
   await signIn(owner, 'jonathan@note.test');
   await signIn(editor, 'amelia@note.test');
   const session = await (await owner.request.get('/api/session')).json();

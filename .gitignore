@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .runtime/
+.runtime-e2e/
+.runtime-audit/
 .env
 .env.*
 !.env.example

@@ -1,3 +1,4 @@
+import { APP_ORIGIN } from './origin.js';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 async function useDefinition(page: Page, name: string) {
   await page.getByRole('button', { name: 'Use template', exact: true }).click();
@@ -11,7 +12,7 @@ const headers = { 'x-note-request': '1' };
 async function signIn(context: BrowserContext, email = 'jonathan@note.test') {
   const response = await context.request.post('/api/auth/sign-in/email', {
     data: { email, password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   expect(response.ok()).toBe(true);
   return (await (await context.request.get('/api/session')).json()).workspaces[0].id as string;
@@ -46,7 +47,7 @@ const body = (text: string) => ({
 test('saves and edits reusable page trees, captures the last typed content and creates independent instances', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
+  const context = await browser.newContext({ baseURL: APP_ORIGIN }),
     workspace = await signIn(context),
     roots: string[] = [];
   const create = async (title: string, parentId?: string) => {
@@ -203,7 +204,7 @@ test('saves and edits reusable page trees, captures the last typed content and c
 test('record templates keep independent defaults, create canonical records and require review after schema changes', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
+  const context = await browser.newContext({ baseURL: APP_ORIGIN }),
     workspace = await signIn(context),
     roots: string[] = [];
   const database = await (
@@ -333,7 +334,7 @@ test('record templates keep independent defaults, create canonical records and r
 test('an unknown save result survives reload, stays account-scoped and retries without another template', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
+  const context = await browser.newContext({ baseURL: APP_ORIGIN }),
     workspace = await signIn(context);
   const source = await (
     await context.request.post(`/api/workspaces/${workspace}/pages`, {
@@ -407,7 +408,7 @@ test('an unknown save result survives reload, stays account-scoped and retries w
 test('blank templates open directly for writing and duplicate as independent definitions', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await signIn(context);
   const page = await context.newPage(),
     roots: string[] = [],
@@ -453,7 +454,7 @@ test('blank templates open directly for writing and duplicate as independent def
 test('copying a closed page cannot silently omit its unsynchronized local draft', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
+  const context = await browser.newContext({ baseURL: APP_ORIGIN }),
     workspace = await signIn(context),
     roots: string[] = [];
   const source = await (
@@ -518,7 +519,7 @@ test('copying a closed page cannot silently omit its unsynchronized local draft'
 test('database templates edit their owned record relations and instantiate a separate working database', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
+  const context = await browser.newContext({ baseURL: APP_ORIGIN }),
     workspace = await signIn(context),
     roots: string[] = [];
   const source = await (

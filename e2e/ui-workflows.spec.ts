@@ -1,12 +1,13 @@
+import { APP_ORIGIN } from './origin.js';
 import { test, expect } from '@playwright/test';
 
 test('internal database links open the table even when their branch has never been expanded', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const page = await context.newPage();
   const session = await (await context.request.get('/api/session')).json();
@@ -35,10 +36,10 @@ test('internal database links open the table even when their branch has never be
 test('creates pages through the UI, edits table structure, embeds an editable database, and drags the page tree', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const page = await context.newPage();
   const session = await (await context.request.get('/api/session')).json();
@@ -129,10 +130,10 @@ test('creates pages through the UI, edits table structure, embeds an editable da
 test('a failed document request offers a working retry instead of an endless loading message', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const page = await context.newPage();
   let fail = true;
@@ -156,10 +157,10 @@ test('a failed document request offers a working retry instead of an endless loa
 test('rapid title and description edits persist in order rather than conflicting with each other', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: 'http://127.0.0.1:5173' },
+    headers: { origin: APP_ORIGIN },
   });
   const session = await (await context.request.get('/api/session')).json();
   const note = await (
