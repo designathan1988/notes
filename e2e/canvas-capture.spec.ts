@@ -55,7 +55,7 @@ test('native stage paste and file drop create independent rich notes without cha
       .locator('[data-canvas-card="existing"]')
       .getByRole('textbox', { name: 'Note content', exact: true })
       .click();
-    await page.locator('.canvas-stage').click({ position: { x: 30, y: 30 } });
+    await page.locator('.canvas-stage').click({ position: { x: 30, y: 120 } });
     await page.evaluate(async () =>
       navigator.clipboard.write([
         new ClipboardItem({
@@ -140,7 +140,7 @@ for (const removeTarget of [false, true])
       try {
         await page.goto(`/#${canvas.id}/canvas`);
         await expect(page.locator('.save-status')).toHaveText('Saved');
-        await page.locator('.canvas-stage').click({ position: { x: 30, y: 30 } });
+        await page.locator('.canvas-stage').click({ position: { x: 30, y: 120 } });
         const html =
           '<h2>Async capture</h2><p>Keep the captured image.</p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=">';
         await page.evaluate(

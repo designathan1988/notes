@@ -122,6 +122,8 @@ export function CanvasProvider({
   const cleanup = useRef<(() => void) | null>(null),
     selectionStart = useRef<Point | null>(null);
   const fresh = useRef({ readOnly });
+  // A heading asked for while the stage has no size (a phone sheet covering it) waits for it.
+  const pendingHeading = useRef<number | null>(null);
   fresh.current = { readOnly };
   function run(command: (tr: Transaction) => Transaction) {
     if (fresh.current.readOnly || editor.isDestroyed) return false;
@@ -252,6 +254,11 @@ export function CanvasProvider({
     };
   }
   function revealHeading(index: number) {
+    if (!view.size.width || !view.size.height) {
+      pendingHeading.current = index;
+      return;
+    }
+    pendingHeading.current = null;
     const position = headingPositions(editor.state.doc)[index];
     const target = position === undefined ? null : editor.view.nodeDOM(position);
     if (!(target instanceof HTMLElement)) return;
@@ -637,6 +644,12 @@ export function CanvasProvider({
     };
   }, []);
   // Losing edit rights stops whatever gesture is in progress.
+  const revealPending = useEffectEvent(() => {
+    if (pendingHeading.current !== null) revealHeading(pendingHeading.current);
+  });
+  useEffect(() => {
+    if (view.size.width && view.size.height) revealPending();
+  }, [view.size.width, view.size.height]);
   const stopGestures = useEffectEvent(() => {
     cleanup.current?.();
     view.cancelItem();

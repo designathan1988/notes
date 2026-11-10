@@ -288,3 +288,49 @@ test('home cards stay readable beside a side panel and settings tabs fit a phone
   }
   await context.close();
 });
+
+test('the page rail stays a labelled list to the right of the text at every width, also on hover', async ({
+  browser,
+}) => {
+  const { context, page } = await open(browser);
+  // The seeded "Product direction" has headings and pages that cite it.
+  const session = await (await context.request.get('/api/session')).json();
+  const listed = await (
+    await context.request.get(`/api/workspaces/${session.workspaces[0].id}/pages`)
+  ).json();
+  const direction = (Array.isArray(listed) ? listed : listed.pages).find(
+    (item: { title: string }) => item.title === 'Product direction',
+  );
+  await page.goto(`/#${direction.id}`);
+  await expect(page.locator('.connection-thread .thread-tick').first()).toBeAttached();
+  for (const width of [1440, 1280, 1180, 1024]) {
+    await page.setViewportSize({ width, height: 860 });
+    const rail = page.locator('.connection-thread');
+    const column = (await page.locator('.document-canvas').boundingBox())!;
+    // A collapsed, zero-width thread also counts as invisible to isVisible(), so ask for display.
+    if ((await rail.evaluate((element) => getComputedStyle(element).display)) === 'none') {
+      // Without room the rail steps aside entirely; it never becomes a bare thread.
+      continue;
+    }
+    await expect(rail.getByRole('heading', { name: 'On this page' })).toBeVisible();
+    const labels = rail.locator('.thread-label');
+    for (const label of await labels.all()) {
+      const box = (await label.boundingBox())!;
+      expect(box.width, `label visible at ${width}`).toBeGreaterThan(20);
+      expect(
+        await label.evaluate((element) => Number(getComputedStyle(element).opacity)),
+        `label readable without hover at ${width}`,
+      ).toBe(1);
+      expect(box.x, `label right of the text at ${width}`).toBeGreaterThanOrEqual(
+        column.x + column.width + 24,
+      );
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
+    }
+    const knot = rail.locator(':is(.thread-tick, .thread-knot)').first();
+    const before = (await knot.locator('.thread-label').boundingBox())!;
+    await knot.hover();
+    const after = (await knot.locator('.thread-label').boundingBox())!;
+    expect(after.x, `hover keeps the label in place at ${width}`).toBeCloseTo(before.x, 0);
+  }
+  await context.close();
+});

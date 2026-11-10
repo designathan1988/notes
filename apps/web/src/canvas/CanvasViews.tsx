@@ -34,13 +34,17 @@ export function CanvasRootView() {
         }
       }}
     >
+      {/* The board's title and hint sit on the stage; the tools float at the bottom. */}
+      <div className="canvas-heading" contentEditable={false} data-spatial-control>
+        <PageHeader page={c.page} compact />
+        <p className="canvas-help">{t('Double-click to add a note · Space to pan')}</p>
+      </div>
       <div
         className="canvas-toolbar"
         role="toolbar"
         aria-label={t('Canvas tools')}
         contentEditable={false}
       >
-        <PageHeader page={c.page} compact />
         <div className="canvas-tool-group">
           {(
             [
@@ -52,6 +56,7 @@ export function CanvasRootView() {
             <button
               key={tool}
               aria-label={t(label)}
+              title={t(label)}
               aria-pressed={c.tool === tool}
               disabled={c.readOnly && tool === 'connect'}
               onClick={() => c.setTool(tool)}
@@ -61,20 +66,36 @@ export function CanvasRootView() {
             </button>
           ))}
         </div>
-        <button aria-label={t('Add note')} disabled={c.readOnly} onClick={() => c.addNote()}>
+        <button
+          aria-label={t('Add note')}
+          title={t('Add note')}
+          disabled={c.readOnly}
+          onClick={() => c.addNote()}
+        >
           <Plus />
           <span>{t('Note')}</span>
         </button>
-        <button aria-label={t('Link page')} disabled={c.readOnly} onClick={c.link}>
+        <button
+          aria-label={t('Link page')}
+          title={t('Link page')}
+          disabled={c.readOnly}
+          onClick={c.link}
+        >
           <Link />
           <span>{t('Link page')}</span>
         </button>
-        <button aria-label={t('Add media')} disabled={c.readOnly} onClick={c.media}>
+        <button
+          aria-label={t('Add media')}
+          title={t('Add media')}
+          disabled={c.readOnly}
+          onClick={c.media}
+        >
           <Image />
           <span>{t('Media')}</span>
         </button>
         <button
           aria-label={t('Group selection')}
+          title={t('Group selection')}
           disabled={c.readOnly || !c.selected.length}
           onClick={c.group}
         >
@@ -213,9 +234,6 @@ export function CanvasRootView() {
             <Focus />
           </IconButton>
         </div>
-        <p className="canvas-help" contentEditable={false}>
-          {t('Double-click to add a note · Space to pan')}
-        </p>
       </div>
     </NodeViewWrapper>
   );
