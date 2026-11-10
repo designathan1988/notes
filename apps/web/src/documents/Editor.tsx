@@ -43,6 +43,7 @@ import { BlockControls } from './BlockControls.js';
 import { BlockMarquee } from './BlockMarquee.js';
 import { TableTools } from './TableTools.js';
 import { DatabasePicker } from './DatabasePicker.js';
+import { blockAt } from '@note/editor/blocks';
 import { SelectionToolbar } from './SelectionToolbar.js';
 import { Templates } from './Templates.js';
 import { DocumentFind, FindInPage } from './FindInPage.js';
@@ -127,7 +128,7 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
   const [blockActions, setBlockActions] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [embedOpen, setEmbedOpen] = useState(false);
-  const [databaseOpen, setDatabaseOpen] = useState(false);
+  const [databaseOpen, setDatabaseOpen] = useState<number | null>(null);
   const [findOpen, setFindOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const templateAnchor = useRef<HTMLButtonElement>(null);
@@ -373,7 +374,12 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
           attachment={() => fileInput.current?.click()}
           embed={() => setEmbedOpen(true)}
           link={() => setLinkOpen(true)}
-          database={() => setDatabaseOpen(true)}
+          database={() =>
+            setDatabaseOpen(
+              blockAt(editor.state.doc, editor.state.selection.from)?.to ??
+                editor.state.doc.content.size,
+            )
+          }
         />
       )}
       {uploading > 0 && (
@@ -475,11 +481,12 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
         </div>
       )}
       {linkOpen && <LinkPicker editor={editor} close={() => setLinkOpen(false)} />}
-      {databaseOpen && (
+      {databaseOpen !== null && (
         <DatabasePicker
           editor={editor}
           pageId={session.page.id}
-          close={() => setDatabaseOpen(false)}
+          position={databaseOpen}
+          close={() => setDatabaseOpen(null)}
         />
       )}
       {embedOpen && (

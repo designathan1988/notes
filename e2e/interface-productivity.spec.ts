@@ -204,7 +204,7 @@ test('the page explorer filters and sorts real pages with compact readable locat
       );
       await expect(rows.first()).toContainText('Zulu');
     }
-    await page.getByRole('button', { name: `${children[0].title} document`, exact: true }).click();
+    await page.getByRole('button', { name: `${children[0].title} page`, exact: true }).click();
     await expect(page.getByRole('textbox', { name: 'Page title', exact: true })).toHaveValue(
       children[0].title,
     );

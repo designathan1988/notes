@@ -470,7 +470,7 @@
 @layer atelier {
   :root {
     --rail: 48px;
-    --panel: 236px;
+    --panel: 232px;
   }
   @media (min-width: 701px) {
     .sidebar,
@@ -548,9 +548,18 @@
     background: var(--selected);
     color: var(--ink);
   }
-  /* The rail is icons only: names live in tooltips and accessible labels. */
+  /* The rail is icons only to the eye; the names stay in the accessible name, so screen
+     readers (and anything that finds a button by its name) still hear "Search Ctrl K". */
   .sidebar-rail :is(.search-trigger, .workspace-destinations > button) > :is(span, kbd),
-  .sidebar-rail .account-trigger > :is(span:not(.avatar), svg) {
+  .sidebar-rail .account-trigger > span:not(.avatar) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .sidebar-rail .account-trigger > svg {
     display: none;
   }
   .sidebar-rail svg {

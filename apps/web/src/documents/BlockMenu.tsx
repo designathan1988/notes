@@ -99,7 +99,13 @@ const choices = [
 ] as const;
 /** Accent- and case-insensitive match, so "titulo" finds "Título". */
 const fold = (text: string) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLocaleLowerCase();
-export function insertBlock(editor: Editor, position: number, type: string, level = 2) {
+export function insertBlock(
+  editor: Editor,
+  position: number,
+  type: string,
+  level = 2,
+  attrs?: Record<string, unknown>,
+) {
   const paragraph = { type: 'paragraph' };
   const node =
     type === 'webComponent'
@@ -133,7 +139,7 @@ export function insertBlock(editor: Editor, position: number, type: string, leve
                     })),
                   })),
                 }
-              : { type, attrs: type === 'heading' ? { level } : undefined };
+              : { type, attrs: type === 'heading' ? { level } : attrs };
   const selected = blockAt(editor.state.doc, editor.state.selection.from);
   const empty =
     selected?.node.type.name === 'paragraph' &&

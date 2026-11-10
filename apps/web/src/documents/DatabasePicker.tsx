@@ -6,14 +6,18 @@ import { Dialog } from '../ui/Dialog.js';
 import { api } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
 import type { Page } from '@note/contracts';
+import { insertBlock } from './BlockMenu.js';
 
 export function DatabasePicker({
   editor,
   pageId,
+  position,
   close,
 }: {
   editor: Editor;
   pageId: string;
+  /** End of the block the menu was opened from, captured before the dialog took focus. */
+  position: number;
   close(): void;
 }) {
   const workspaceId = useWorkspace((state) => state.workspaceId);
@@ -36,12 +40,12 @@ export function DatabasePicker({
       active = false;
     };
   }, [workspaceId, query]);
+  // A database view is a block of its own: it goes where the menu was opened, at the top level,
+  // never into whatever the caret happens to be inside (a table cell, a list item).
   const insert = (id: string) => {
-    editor
-      .chain()
-      .focus()
-      .insertContent({ type: 'databaseView', attrs: { databaseId: id } })
-      .run();
+    insertBlock(editor, Math.min(position, editor.state.doc.content.size), 'databaseView', 2, {
+      databaseId: id,
+    });
     close();
   };
   return (
