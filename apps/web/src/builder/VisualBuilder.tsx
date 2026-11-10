@@ -344,8 +344,56 @@ export function VisualBuilder({
     setSelected({ kind: 'block', id: created.id });
   };
 
+  const insertFromBar = (type: BlockType) => {
+    const created = localizeVisual(newBlock(type), (text) => t(text));
+    const found = block ? findBlock(model, block.id) : null;
+    const host = found ? model.sections[found.section] : (section ?? model.sections.at(-1));
+    if (!host) {
+      const fresh = { ...sectionPresets.Blank(), blocks: [created] };
+      commit(insertSection(model, null, fresh));
+    } else {
+      const after = found ? host.blocks[found.block].id : (host.blocks.at(-1)?.id ?? null);
+      commit(insertBlock(model, host.id, after, created));
+    }
+    setSelected({ kind: 'block', id: created.id });
+    // The new block is where the eye should go: bring it into view once it is drawn.
+    requestAnimationFrame(() =>
+      document
+        .querySelector(`[data-block="${created.id}"]`)
+        ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }),
+    );
+  };
+
   return (
     <div className="visual-builder" onKeyDown={keys} data-readonly={readOnly || undefined}>
+      {!readOnly && (
+        <div className="vb-bar" role="toolbar" aria-label={t('Insert')}>
+          {palette.map(({ type, label, Icon }) => (
+            <button key={type} title={t(label)} onClick={() => insertFromBar(type)}>
+              <Icon size={15} />
+              <span>{t(label)}</span>
+            </button>
+          ))}
+          <i aria-hidden="true" />
+          <button
+            title={t('Add a section')}
+            onClick={() => {
+              setAddSectionAfter(section?.id ?? model.sections.at(-1)?.id ?? null);
+              setAdding('section');
+            }}
+          >
+            <Plus size={15} />
+            <span>{t('Section')}</span>
+          </button>
+          <span className="vb-bar-spacer" />
+          <IconButton label={t('Undo')} disabled={!history.current.past.length} onClick={undo}>
+            <Undo2 size={15} />
+          </IconButton>
+          <IconButton label={t('Redo')} disabled={!history.current.future.length} onClick={redo}>
+            <Redo2 size={15} />
+          </IconButton>
+        </div>
+      )}
       <div
         className="vb-stage"
         onClick={() => {
@@ -353,16 +401,6 @@ export function VisualBuilder({
           setAdding(null);
         }}
       >
-        {!readOnly && (
-          <div className="vb-history" onClick={(event) => event.stopPropagation()}>
-            <IconButton label={t('Undo')} disabled={!history.current.past.length} onClick={undo}>
-              <Undo2 size={15} />
-            </IconButton>
-            <IconButton label={t('Redo')} disabled={!history.current.future.length} onClick={redo}>
-              <Redo2 size={15} />
-            </IconButton>
-          </div>
-        )}
         <div className="vb-page" ref={canvas} aria-label={t('Document canvas')}>
           <style>{css}</style>
           {model.sections.map((item) => (

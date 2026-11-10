@@ -188,5 +188,6 @@ const messages: Record<string, string> = {
     'Coloque a explicação ao lado da imagem que ela descreve.',
   'Ready when you are': 'Pronto quando você estiver',
   'Start now': 'Começar agora',
+  Insert: 'Inserir',
 };
 export default messages;

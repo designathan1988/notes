@@ -1,5 +1,5 @@
 import { t, useLocale } from '../i18n/index.js';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { NodeViewContent, NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import {
@@ -104,6 +104,14 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
       cancelAnimationFrame(frame);
     };
   }, [mode, selected?.id, signature]);
+  // Leaving the visual editor shows the page as it now is: what it generated since the last run
+  // is the author's own document, so it runs instead of leaving a stale preview behind.
+  const refresh = useEffectEvent(() => {
+    if (visual && runNode && runNode !== node) void preview.current?.run();
+  });
+  useEffect(() => {
+    if (mode === 'split' || mode === 'preview') refresh();
+  }, [mode]);
   useEffect(() => {
     const narrow = matchMedia('(max-width:700px)');
     const resize = () => {

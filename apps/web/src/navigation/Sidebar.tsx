@@ -19,6 +19,7 @@ import {
   SlidersHorizontal,
   MoreHorizontal,
   LayoutTemplate,
+  ListTree,
   Shapes,
   House,
   Monitor,
@@ -240,24 +241,56 @@ export function Sidebar() {
           <X size={18} />
         </button>
         <div className="sidebar-pane">
-          <div className="workspace-identity">
-            <label className="workspace-select">
-              <BrandMark size={24} />
-              <span className="workspace-names">
-                <strong>Mosaic</strong>
-                <Select
-                  aria-label={t('Workspace')}
-                  value={state.workspaceId ?? ''}
-                  onChange={(event) => void state.chooseWorkspace(event.target.value)}
-                >
-                  {state.workspaces.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </Select>
-              </span>
-            </label>
+          {/* The rail: icons only, always present. The page list beside it opens on demand. */}
+          <div className="sidebar-rail">
+            <span className="rail-brand" title="Mosaic">
+              <BrandMark size={22} />
+            </span>
+            <button
+              className="search-trigger"
+              title={t('Search')}
+              onClick={() => state.openDialog('search')}
+            >
+              <Search size={15} />
+              <span>{t('Search')}</span>
+              <kbd>Ctrl K</kbd>
+            </button>
+            <nav className="workspace-destinations" aria-label={t('Workspace tools')}>
+              {destinations.map(({ view, label, Icon }) => {
+                // Databases and Canvases are indexes: an open database or canvas page is
+                // highlighted in the page tree, not as the index.
+                const active = template
+                  ? view === 'templates'
+                  : state.view === view && (GLOBAL_VIEWS.includes(view) || !state.selectedId);
+                return (
+                  <button
+                    key={view}
+                    aria-label={t(label)}
+                    title={t(label)}
+                    aria-current={active ? 'page' : undefined}
+                    onClick={() =>
+                      state.navigate(
+                        ['all', 'graph'].includes(view) ? state.selectedId : null,
+                        view,
+                      )
+                    }
+                  >
+                    <Icon size={16} />
+                    <span>{t(label)}</span>
+                  </button>
+                );
+              })}
+            </nav>
+            <button
+              className="rail-pages"
+              aria-label={t('Pages')}
+              title={t('Pages')}
+              aria-pressed={!state.sidebarCollapsed}
+              onClick={state.toggleSidebar}
+            >
+              <ListTree size={17} />
+            </button>
+            <span className="rail-spacer" />
             <IconButton
               label={t('New page')}
               disabled={workspace?.role === 'viewer'}
@@ -265,182 +298,178 @@ export function Sidebar() {
             >
               <SquarePen size={17} />
             </IconButton>
-          </div>
-          <button className="search-trigger" onClick={() => state.openDialog('search')}>
-            <Search size={15} />
-            <span>{t('Search')}</span>
-            <kbd>Ctrl K</kbd>
-          </button>
-          <nav className="workspace-destinations" aria-label={t('Workspace tools')}>
-            {destinations.map(({ view, label, Icon }) => {
-              // Databases and Canvases are indexes: an open database or canvas page is
-              // highlighted in the page tree, not as the index.
-              const active = template
-                ? view === 'templates'
-                : state.view === view && (GLOBAL_VIEWS.includes(view) || !state.selectedId);
-              return (
-                <button
-                  key={view}
-                  aria-label={t(label)}
-                  aria-current={active ? 'page' : undefined}
-                  onClick={() =>
-                    state.navigate(['all', 'graph'].includes(view) ? state.selectedId : null, view)
-                  }
+            <footer className="sidebar-footer">
+              <button
+                className="account-trigger"
+                aria-label={t('Account menu')}
+                aria-haspopup="menu"
+                aria-expanded={!!accountMenu}
+                onClick={(event) => setAccountMenu(accountMenu ? null : event.currentTarget)}
+              >
+                <span className="avatar">{state.user?.name[0]}</span>
+                <span>{state.user?.name}</span>
+                <ChevronDown size={13} />
+                {!state.online && <small>{t('Offline')}</small>}
+              </button>
+              {accountMenu && (
+                <Popover
+                  anchor={accountMenu}
+                  label={t('Account')}
+                  close={() => setAccountMenu(null)}
                 >
-                  <Icon size={16} />
-                  <span>{t(label)}</span>
-                </button>
-              );
-            })}
-          </nav>
-          <div className="sidebar-scroll">
-            {state.favorites.length > 0 && (
-              <>
-                <div className="section-label favorites-label">{t('Favorites')}</div>
-                <div className="favorites">
-                  {state.pages
-                    .filter((page) => state.favorites.includes(page.id) && !page.templateRootId)
-                    .map((page) => (
+                  <div className="theme-switch" role="group" aria-label={t('Theme')}>
+                    {(
+                      [
+                        ['light', 'Light', Sun],
+                        ['dark', 'Dark', Moon],
+                        ['system', 'System', Monitor],
+                      ] as [Theme, string, typeof Sun][]
+                    ).map(([value, label, Icon]) => (
                       <button
-                        key={page.id}
-                        data-kind={page.kind}
-                        onClick={() => state.navigate(page.id, pageView(page.kind))}
+                        key={value}
+                        role="menuitemradio"
+                        aria-checked={theme === value}
+                        onClick={() => applyTheme(value)}
                       >
-                        {page.icon ? (
-                          <span className="page-reference-icon" aria-hidden="true">
-                            {page.icon}
-                          </span>
-                        ) : (
-                          <FileText />
-                        )}
-                        <span>{page.title}</span>
+                        <Icon size={14} />
+                        {t(label)}
                       </button>
                     ))}
-                </div>
-              </>
-            )}
-            <div
-              className="section-label"
-              data-tree-root
-              data-drag-over={drag.target?.id === null || undefined}
-            >
-              <span>{t('Pages')}</span>
-              <IconButton
-                label={t('Create page')}
-                disabled={workspace?.role === 'viewer'}
-                onClick={() => void state.createQuickPage().catch(state.setError)}
-              >
-                <Plus />
-              </IconButton>
-              <IconButton
-                label={t('New page options')}
-                disabled={workspace?.role === 'viewer'}
-                onClick={() => state.openCreatePage()}
-              >
-                <SlidersHorizontal size={13} />
-              </IconButton>
-            </div>
-            {drag.label && (
-              <div className="tree-drag-status" role="status">
-                {t('Moving {{title}}. Drop between pages to reorder, or on a page to nest.', {
-                  title: drag.label,
-                })}
-              </div>
-            )}
-            <div className="page-tree">
-              {state.pages
-                .filter((page) => !page.parentId && !page.templateRootId)
-                .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
-                .map((page) => (
-                  <PageRow key={page.id} page={page} depth={0} drop={drag.target} />
-                ))}
-              {state.navigationCursors.root && (
-                <button
-                  className="tree-more"
-                  onClick={() => void state.loadChildren(null, true).catch(state.setError)}
-                >
-                  {t('Load more pages')}
-                </button>
-              )}
-            </div>
-            {template && (
-              <>
-                <div className="section-label">{t('Editing template')}</div>
-                <div className="page-tree">
-                  <PageRow key={template.id} page={template} depth={0} drop={drag.target} />
-                </div>
-              </>
-            )}
-          </div>
-          <footer className="sidebar-footer">
-            <button
-              className="account-trigger"
-              aria-label={t('Account menu')}
-              aria-haspopup="menu"
-              aria-expanded={!!accountMenu}
-              onClick={(event) => setAccountMenu(accountMenu ? null : event.currentTarget)}
-            >
-              <span className="avatar">{state.user?.name[0]}</span>
-              <span>{state.user?.name}</span>
-              <ChevronDown size={13} />
-              {!state.online && <small>{t('Offline')}</small>}
-            </button>
-            {accountMenu && (
-              <Popover anchor={accountMenu} label={t('Account')} close={() => setAccountMenu(null)}>
-                <div className="theme-switch" role="group" aria-label={t('Theme')}>
-                  {(
-                    [
-                      ['light', 'Light', Sun],
-                      ['dark', 'Dark', Moon],
-                      ['system', 'System', Monitor],
-                    ] as [Theme, string, typeof Sun][]
-                  ).map(([value, label, Icon]) => (
+                  </div>
+                  <div className="menu-list">
                     <button
-                      key={value}
-                      role="menuitemradio"
-                      aria-checked={theme === value}
-                      onClick={() => applyTheme(value)}
-                    >
-                      <Icon size={14} />
-                      {t(label)}
-                    </button>
-                  ))}
-                </div>
-                <div className="menu-list">
-                  <button
-                    onClick={() => {
-                      setAccountMenu(null);
-                      state.openAppearance('app');
-                    }}
-                  >
-                    <Palette />
-                    {t('Appearance')}
-                  </button>
-                  {utilities.map(({ label, Icon, run }) => (
-                    <button
-                      key={t(label)}
                       onClick={() => {
                         setAccountMenu(null);
-                        run();
+                        state.openAppearance('app');
                       }}
                     >
-                      <Icon />
-                      {t(label)}
+                      <Palette />
+                      {t('Appearance')}
                     </button>
-                  ))}
-                  <button
-                    onClick={() => {
-                      setAccountMenu(null);
-                      void state.signOut().catch(state.setError);
-                    }}
+                    {utilities.map(({ label, Icon, run }) => (
+                      <button
+                        key={t(label)}
+                        onClick={() => {
+                          setAccountMenu(null);
+                          run();
+                        }}
+                      >
+                        <Icon />
+                        {t(label)}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => {
+                        setAccountMenu(null);
+                        void state.signOut().catch(state.setError);
+                      }}
+                    >
+                      <LogOut />
+                      {t('Sign out')}
+                    </button>
+                  </div>
+                </Popover>
+              )}
+            </footer>
+          </div>
+          <div className="sidebar-panel">
+            <div className="workspace-identity">
+              <label className="workspace-select">
+                <span className="workspace-names">
+                  <Select
+                    aria-label={t('Workspace')}
+                    value={state.workspaceId ?? ''}
+                    onChange={(event) => void state.chooseWorkspace(event.target.value)}
                   >
-                    <LogOut />
-                    {t('Sign out')}
-                  </button>
+                    {state.workspaces.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </Select>
+                </span>
+              </label>
+            </div>
+            <div className="sidebar-scroll">
+              {state.favorites.length > 0 && (
+                <>
+                  <div className="section-label favorites-label">{t('Favorites')}</div>
+                  <div className="favorites">
+                    {state.pages
+                      .filter((page) => state.favorites.includes(page.id) && !page.templateRootId)
+                      .map((page) => (
+                        <button
+                          key={page.id}
+                          data-kind={page.kind}
+                          onClick={() => state.navigate(page.id, pageView(page.kind))}
+                        >
+                          {page.icon ? (
+                            <span className="page-reference-icon" aria-hidden="true">
+                              {page.icon}
+                            </span>
+                          ) : (
+                            <FileText />
+                          )}
+                          <span>{page.title}</span>
+                        </button>
+                      ))}
+                  </div>
+                </>
+              )}
+              <div
+                className="section-label"
+                data-tree-root
+                data-drag-over={drag.target?.id === null || undefined}
+              >
+                <span>{t('Pages')}</span>
+                <IconButton
+                  label={t('Create page')}
+                  disabled={workspace?.role === 'viewer'}
+                  onClick={() => void state.createQuickPage().catch(state.setError)}
+                >
+                  <Plus />
+                </IconButton>
+                <IconButton
+                  label={t('New page options')}
+                  disabled={workspace?.role === 'viewer'}
+                  onClick={() => state.openCreatePage()}
+                >
+                  <SlidersHorizontal size={13} />
+                </IconButton>
+              </div>
+              {drag.label && (
+                <div className="tree-drag-status" role="status">
+                  {t('Moving {{title}}. Drop between pages to reorder, or on a page to nest.', {
+                    title: drag.label,
+                  })}
                 </div>
-              </Popover>
-            )}
-          </footer>
+              )}
+              <div className="page-tree">
+                {state.pages
+                  .filter((page) => !page.parentId && !page.templateRootId)
+                  .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
+                  .map((page) => (
+                    <PageRow key={page.id} page={page} depth={0} drop={drag.target} />
+                  ))}
+                {state.navigationCursors.root && (
+                  <button
+                    className="tree-more"
+                    onClick={() => void state.loadChildren(null, true).catch(state.setError)}
+                  >
+                    {t('Load more pages')}
+                  </button>
+                )}
+              </div>
+              {template && (
+                <>
+                  <div className="section-label">{t('Editing template')}</div>
+                  <div className="page-tree">
+                    <PageRow key={template.id} page={template} depth={0} drop={drag.target} />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </aside>
     </>

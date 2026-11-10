@@ -6,6 +6,7 @@ import { useWorkspace } from '../state/store.js';
 import { api } from '../state/api.js';
 import { pageView } from '../workbench/route.js';
 import { PageGlyph } from '../ui/PageGlyph.js';
+import { pageType, typeLabel } from '../pages/type.js';
 import { WorkspaceMap } from './WorkspaceMap.js';
 import { MosaicPattern } from '../ui/MosaicPattern.js';
 
@@ -164,14 +165,7 @@ export function Home() {
                             <span>{page.title || t('Untitled')}</span>
                           </strong>
                           <span className="home-continue-text">
-                            {page.description ||
-                              t(
-                                page.kind === 'database'
-                                  ? 'Database'
-                                  : page.kind === 'canvas'
-                                    ? 'Canvas'
-                                    : 'Page',
-                              )}
+                            {page.description || t(typeLabel[pageType(page)])}
                           </span>
                           <small>
                             {titleOf(page.parentId) ?? workspace?.name ?? t('Workspace')}

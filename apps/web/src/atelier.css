@@ -462,3 +462,178 @@
     }
   }
 }
+
+/* ==========================================================================
+   Shell: an icon rail that is always there, a page list that opens beside it on demand,
+   and bars kept low so the work gets the height.
+   ========================================================================== */
+@layer atelier {
+  :root {
+    --rail: 48px;
+    --panel: 236px;
+  }
+  @media (min-width: 701px) {
+    .sidebar,
+    .app-shell.sidebar-collapsed > .sidebar {
+      display: flex;
+      width: calc(var(--rail) + var(--panel));
+      margin: 0;
+      transition: width 260ms var(--ease-out);
+    }
+    .app-shell.sidebar-collapsed > .sidebar {
+      width: var(--rail);
+    }
+    .app-shell.sidebar-collapsed .sidebar-panel {
+      display: none;
+    }
+    .app-shell.sidebar-collapsed .workspace-main,
+    .workspace-main {
+      margin: 6px 6px 6px 0;
+    }
+  }
+  .sidebar-pane {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+  }
+  .sidebar-rail {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: var(--rail);
+    padding: 10px 0 8px;
+  }
+  .rail-brand {
+    display: grid;
+    place-items: center;
+    height: 30px;
+    margin-bottom: 8px;
+  }
+  .rail-spacer {
+    flex: 1;
+  }
+  .sidebar-rail .workspace-destinations {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .sidebar-rail :is(.search-trigger, .workspace-destinations > button, .rail-pages, .icon-button) {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border-radius: 9px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--muted);
+  }
+  .sidebar-rail :is(.search-trigger, .workspace-destinations > button, .rail-pages, .icon-button):hover {
+    background: var(--hover);
+    color: var(--ink);
+  }
+  .sidebar-rail .workspace-destinations > button[aria-current='page'],
+  .sidebar-rail .rail-pages[aria-pressed='true'] {
+    background: var(--selected);
+    color: var(--ink);
+  }
+  /* The rail is icons only: names live in tooltips and accessible labels. */
+  .sidebar-rail :is(.search-trigger, .workspace-destinations > button) > :is(span, kbd),
+  .sidebar-rail .account-trigger > :is(span:not(.avatar), svg) {
+    display: none;
+  }
+  .sidebar-rail svg {
+    width: 17px;
+    height: 17px;
+  }
+  .sidebar-rail .rail-pages {
+    margin-top: 8px;
+  }
+  .sidebar-rail .sidebar-footer {
+    margin: 4px 0 0;
+    padding: 0;
+    border: 0;
+  }
+  .sidebar-rail .account-trigger {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 9px;
+  }
+  .sidebar-rail .avatar {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+  .sidebar-panel {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    padding: 8px 8px 0 2px;
+    animation: panel-in 220ms var(--ease-out);
+  }
+  .sidebar-panel .workspace-identity {
+    min-height: 34px;
+    margin-bottom: 4px;
+  }
+  .sidebar-panel .workspace-select {
+    padding: 4px 6px;
+  }
+  .sidebar-panel .sidebar-scroll {
+    flex: 1;
+    min-height: 0;
+  }
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateX(-6px);
+    }
+  }
+
+  /* ---------- low bars: every pixel of height goes to the work ---------- */
+  .topbar {
+    height: 40px;
+    min-height: 40px;
+    padding-left: 10px;
+  }
+  .workbench-tab,
+  .workbench-tab.active {
+    height: 28px;
+  }
+  .topbar .workbench-tabs {
+    padding-top: 0;
+    align-items: center;
+  }
+  .status-bar {
+    height: 24px;
+    font-size: 0.78rem;
+  }
+  .web-toolbar {
+    min-height: 40px;
+    padding: 4px 12px;
+  }
+  .web-toolbar .page-title {
+    font-size: 0.95rem;
+  }
+  .web-file-bar {
+    min-height: 34px;
+  }
+  /* The sidebar toggle in the top bar duplicates the rail's Pages button. */
+  .workbench-window-tools {
+    display: none;
+  }
+}
