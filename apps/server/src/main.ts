@@ -7,7 +7,7 @@ import { createAuth } from './identity/auth.js';
 import { createApp } from './app.js';
 import { seed } from './seed.js';
 import { seedContent } from './documents/seed-content.js';
-import { backfillPageFormats } from './documents/service.js';
+import { backfillPageFormats } from './pages/format.js';
 import { seedRecords } from './databases/seed.js';
 import { seedPreferences } from './identity/seed-preferences.js';
 import { storageFromEnvironment } from './attachments/storage.js';

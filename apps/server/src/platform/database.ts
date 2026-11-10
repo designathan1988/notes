@@ -14,11 +14,13 @@ export interface Database {
   exec(text: string): Promise<void>;
   transaction<T>(fn: (tx: Database) => Promise<T>): Promise<T>;
   close(): Promise<void>;
+  /** Local databases only: the whole data directory, to start another database from it. */
+  snapshot?(): Promise<Blob>;
   orm: ReturnType<typeof localDrizzle> | ReturnType<typeof postgresDrizzle>;
 }
 
 export async function openDatabase(
-  options: { directory?: string; url?: string } = {},
+  options: { directory?: string; url?: string; snapshot?: Blob } = {},
 ): Promise<Database> {
   if (options.url) {
     const pool = new pg.Pool({ connectionString: options.url });
@@ -53,7 +55,13 @@ export async function openDatabase(
     });
     return make(pool);
   }
-  const client = new PGlite({ dataDir: options.directory, extensions: { pg_trgm } });
+  // Starting from a snapshot skips initialization and migrations: tests use it to get a
+  // ready database in milliseconds instead of rebuilding one each time.
+  const client = new PGlite({
+    dataDir: options.directory,
+    loadDataDir: options.snapshot,
+    extensions: { pg_trgm },
+  });
   await client.waitReady;
   const orm = localDrizzle(client, { schema });
   type LocalQuery = Pick<PGlite, 'query' | 'exec'>;
@@ -73,11 +81,32 @@ export async function openDatabase(
     async close() {
       await client.close();
     },
+    snapshot: () => client.dumpDataDir('none'),
   });
   return make(client);
 }
 
 const MIGRATION_LOCK = 4_242_001;
+
+/**
+ * Runs a data repair exactly once, recorded beside the schema migrations. The repair and its
+ * marker commit together.
+ */
+export async function runOnce(
+  db: Database,
+  version: string,
+  repair: (tx: Database) => Promise<void>,
+): Promise<void> {
+  const [done] = await db.query('SELECT 1 FROM schema_migrations WHERE version=$1', [version]);
+  if (done) return;
+  await db.transaction(async (tx) => {
+    await repair(tx);
+    await tx.query(
+      'INSERT INTO schema_migrations (version, checksum) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [version, 'data'],
+    );
+  });
+}
 
 /**
  * Applies numbered `NNN-name.sql` files in order, each in its own transaction, once.

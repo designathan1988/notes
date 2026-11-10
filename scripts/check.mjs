@@ -2,7 +2,8 @@
 //
 //   node scripts/check.mjs            changed files since HEAD (staged, unstaged, untracked)
 //   node scripts/check.mjs --since X  changed files since commit/branch X
-//   node scripts/check.mjs --full     everything (CI, or to refresh e2e/impact-map.json)
+//   node scripts/check.mjs --browser  also run the browser specs the change affects
+//   node scripts/check.mjs --full     everything, once, at the end of a stage (and in CI)
 //   node scripts/check.mjs --budget N seconds of browser tests to run (default 90)
 //
 // Types are checked incrementally, lint and format only on changed files, unit tests only where
@@ -34,7 +35,10 @@ const changed = full
         ...git('diff', '--name-only', since),
         ...git('ls-files', '--others', '--exclude-standard'),
       ]),
-    ].filter((file) => existsSync(file));
+    ]
+      // Only project sources count: runtime data folders and caches are not a change.
+      .filter((file) => /^(apps|packages|tests|e2e|scripts)\/|^[\w.-]+\.(json|ts|mjs)$/.test(file))
+      .filter((file) => existsSync(file));
 
 const node = process.execPath;
 const bin = (name) => join('node_modules', name);
@@ -161,6 +165,12 @@ if (full) {
 } else {
   const { hit, direct } = affectedSpecs();
   if (!hit.size) console.log('ok   browser specs: no spec is affected by this change');
+  else if (!flag('--browser'))
+    // The working loop stays in seconds. Driving a browser costs about a second per page
+    // load, so affected specs run on request and the whole suite once per stage.
+    console.log(
+      `note browser specs: ${hit.size} affected, not run (add --browser, or --full at stage end)`,
+    );
   else {
     // Specs that load the most changed files first; among equals, the narrowest spec.
     const ordered = [...hit.keys()].sort(

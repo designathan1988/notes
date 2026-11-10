@@ -31,7 +31,7 @@ test('records each applied migration once', async () => {
   const db = await database();
   await migrate(db);
   await migrate(db);
-  expect(await versions(db)).toEqual(['001-initial']);
+  expect(await versions(db)).toEqual(['001-initial', '002-page-format']);
 });
 
 test('applies a new non-idempotent migration exactly once on an existing database', async () => {
@@ -79,5 +79,5 @@ test('adopts a database created by the previous unversioned bootstrap', async ()
   const { readFile } = await import('node:fs/promises');
   await db.exec(await readFile(resolve('apps/server/migrations/001-initial.sql'), 'utf8'));
   await migrate(db);
-  expect(await versions(db)).toEqual(['001-initial']);
+  expect(await versions(db)).toEqual(['001-initial', '002-page-format']);
 });
