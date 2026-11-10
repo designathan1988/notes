@@ -288,15 +288,13 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
   // In the visual editor its own toolbar carries the title, the view switch and export, so the
   // page keeps one bar of chrome instead of two.
   const merged = !!visual && mode === 'visual' && canEdit;
-  const views = (
+  const views = visual ? null : (
     <div className="web-mode-control" role="group" aria-label={t('Document view')}>
-      {([...(visual ? (['visual'] as const) : []), 'code', 'split', 'preview'] as const).map(
-        (view) => (
-          <button key={view} aria-pressed={mode === view} onClick={() => setMode(view)}>
-            {t(view[0].toUpperCase() + view.slice(1))}
-          </button>
-        ),
-      )}
+      {(['code', 'split', 'preview'] as const).map((view) => (
+        <button key={view} aria-pressed={mode === view} onClick={() => setMode(view)}>
+          {t(view[0].toUpperCase() + view.slice(1))}
+        </button>
+      ))}
     </div>
   );
   const exporter = (

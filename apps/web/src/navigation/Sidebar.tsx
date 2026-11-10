@@ -275,6 +275,27 @@ export function Sidebar() {
                 <span>{t('Search')}</span>
                 <kbd>Ctrl K</kbd>
               </button>
+              <nav className="workspace-destinations" aria-label={t('Workspace tools')}>
+                {destinations.map(({ view, label, Icon }) => {
+                  const active = !template && state.view === view;
+                  return (
+                    <button
+                      key={view}
+                      aria-label={t(label)}
+                      title={t(label)}
+                      aria-current={active ? 'page' : undefined}
+                      onClick={() =>
+                        state.navigate(
+                          ['all', 'graph'].includes(view) ? state.selectedId : null,
+                          view,
+                        )
+                      }
+                    >
+                      <Icon size={16} />
+                    </button>
+                  );
+                })}
+              </nav>
               <IconButton
                 label={t('New page')}
                 disabled={workspace?.role === 'viewer'}
@@ -283,28 +304,6 @@ export function Sidebar() {
                 <SquarePen size={17} />
               </IconButton>
             </div>
-            <nav className="workspace-destinations" aria-label={t('Workspace tools')}>
-              {destinations.map(({ view, label, Icon }) => {
-                const active = !template && state.view === view;
-                return (
-                  <button
-                    key={view}
-                    aria-label={t(label)}
-                    title={t(label)}
-                    aria-current={active ? 'page' : undefined}
-                    onClick={() =>
-                      state.navigate(
-                        ['all', 'graph'].includes(view) ? state.selectedId : null,
-                        view,
-                      )
-                    }
-                  >
-                    <Icon size={16} />
-                    <span>{t(label)}</span>
-                  </button>
-                );
-              })}
-            </nav>
             <div className="sidebar-scroll">
               {state.favorites.length > 0 && (
                 <>

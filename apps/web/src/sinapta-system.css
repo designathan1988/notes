@@ -951,4 +951,209 @@
       opacity: 0;
     }
   }
+
+  /* ==========================================================================
+     One standard, the quiet kind people know from Notion.
+       surfaces  page white · side a hair darker · hairlines, no shadows
+       state     hover a 5% tint · selected a 7.5% tint with darker, heavier text
+       controls  28px, 4px corner, transparent until used · icons 16px in a soft grey
+       text      13.5px UI · 12px section titles and meta · ink only for what is current
+     ========================================================================== */
+  :root {
+    --side: #f7f7f8;
+    --icon: #8e8e96;
+    --row-hover: rgb(24 24 27 / 0.055);
+    --row-selected: rgb(24 24 27 / 0.075);
+    --row-selected-edge: none;
+    --graphite: #27272a;
+    --graphite-shadow: none;
+    --control: 28px;
+  }
+  :root[data-theme='dark'] {
+    --side: #131316;
+    --icon: #7c7c85;
+    --row-hover: rgb(255 255 255 / 0.055);
+    --row-selected: rgb(255 255 255 / 0.09);
+    --row-selected-edge: none;
+    --graphite: #e4e4e7;
+    --graphite-shadow: none;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light'], [data-theme='dark']) {
+      --side: #131316;
+      --icon: #7c7c85;
+      --row-hover: rgb(255 255 255 / 0.055);
+      --row-selected: rgb(255 255 255 / 0.09);
+      --row-selected-edge: none;
+      --graphite: #e4e4e7;
+      --graphite-shadow: none;
+    }
+  }
+
+  /* ---------- one icon button ---------- */
+  .sidebar-collapse,
+  .sidebar-expand,
+  .sidebar-actions .icon-button,
+  .sidebar-actions .workspace-destinations > button,
+  .topbar .icon-button,
+  .context-panel header .icon-button {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: var(--control);
+    height: var(--control);
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--muted);
+    filter: none;
+    transition: background-color 140ms var(--ease);
+  }
+  .sidebar-collapse:hover,
+  .sidebar-expand:hover,
+  .sidebar-actions .icon-button:hover:not(:disabled),
+  .sidebar-actions .workspace-destinations > button:hover,
+  .topbar .icon-button:hover:not(:disabled),
+  .context-panel header .icon-button:hover {
+    background: var(--row-hover);
+    box-shadow: none;
+    color: var(--ink);
+    filter: none;
+    transition-duration: 0ms;
+  }
+  .sidebar-actions .workspace-destinations > button[aria-current='page'],
+  .topbar .icon-button[aria-pressed='true'] {
+    background: var(--row-selected);
+    box-shadow: none;
+    color: var(--ink);
+  }
+  /* The command palette opens from the keyboard and the account menu, not from the bar. */
+  .topbar-actions > [data-command-palette] {
+    display: none;
+  }
+  .sidebar-collapse svg,
+  .sidebar-expand svg,
+  .sidebar-actions :is(.icon-button, .workspace-destinations > button) svg,
+  .topbar .icon-button svg,
+  .context-panel header .icon-button svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 1.75;
+    color: inherit;
+  }
+
+  /* ---------- the sidebar's top: search and three icons on one line ---------- */
+  .sidebar-actions {
+    gap: 2px;
+    margin-bottom: 4px;
+  }
+  .sidebar-actions .search-trigger {
+    height: var(--control);
+    margin-right: 4px;
+    border-radius: 4px;
+    background: var(--row-hover);
+    box-shadow: none;
+    color: var(--muted);
+  }
+  .sidebar-actions .search-trigger:hover {
+    background: var(--row-selected);
+    box-shadow: none;
+    color: var(--ink);
+  }
+  .sidebar-actions .search-trigger > svg {
+    stroke-width: 1.75;
+    color: var(--icon);
+  }
+  .sidebar-actions .search-trigger > kbd {
+    background: transparent;
+    color: var(--icon);
+    font-weight: 500;
+  }
+  .sidebar-actions .workspace-destinations {
+    flex-direction: row;
+    gap: 2px;
+    margin: 0;
+  }
+
+  /* ---------- the list: a tint for where you are, nothing drawn on its edge ---------- */
+  .sidebar-panel .tree-row.selected::before {
+    content: none;
+  }
+  .sidebar .tree-row.selected,
+  .sidebar-panel .tree-row.selected {
+    background: var(--row-selected);
+    box-shadow: none;
+  }
+  .sidebar-panel .tree-row.selected .tree-page {
+    font-weight: 600;
+  }
+  .sidebar-panel :is(.tree-page, .favorites > button) > :is(svg, .page-reference-icon),
+  .sidebar-panel .tree-row.selected .tree-page > svg {
+    color: var(--icon);
+  }
+  .sidebar-panel :is(.tree-page, .favorites > button) > svg {
+    stroke-width: 1.75;
+  }
+  .sidebar-panel button.tree-toggle > svg {
+    color: var(--muted);
+  }
+  .sidebar-panel .account-trigger {
+    height: 32px;
+    font-weight: 500;
+    color: var(--text2);
+  }
+  .sidebar-panel .sidebar-footer {
+    border-top: 0;
+  }
+
+  /* ---------- buttons: flat ---------- */
+  .button.primary,
+  .button.primary:hover:not(:disabled) {
+    border-radius: 4px;
+    box-shadow: none;
+  }
+  .button.primary:hover:not(:disabled) {
+    filter: none;
+    opacity: 0.88;
+  }
+  .share-button,
+  .share-button:hover:not(:disabled) {
+    height: var(--control);
+    font-weight: 500;
+  }
+
+  /* ---------- home: bordered white cards and quiet actions ---------- */
+  .home-action {
+    height: var(--control);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--hairline);
+    font-weight: 500;
+  }
+  .home-action svg {
+    color: var(--icon);
+  }
+  .home-continue button {
+    background: var(--canvas);
+    box-shadow: inset 0 0 0 1px var(--hairline);
+  }
+  .home-continue button:hover {
+    background: var(--row-hover);
+  }
+
+  /* ---------- details pane: the same list rows ---------- */
+  .context-panel
+    .page-panel-tabs
+    > button:is([aria-selected='true'], [aria-pressed='true'], .active) {
+    box-shadow: none;
+  }
+  .capture-dock {
+    border-radius: 6px;
+    box-shadow:
+      inset 0 0 0 1px var(--hairline),
+      0 6px 18px -12px rgb(24 24 27 / 0.25);
+  }
 }
