@@ -1,6 +1,6 @@
 import { selectOption } from './select.js';
 import { APP_ORIGIN } from './origin.js';
-import { test, expect, type BrowserContext } from '@playwright/test';
+import { test, expect, type BrowserContext } from './test.js';
 const headers = { 'x-note-request': '1' };
 async function signIn(context: BrowserContext, email = 'jonathan@note.test') {
   await context.request.post('/api/auth/sign-in/email', {
@@ -397,7 +397,6 @@ test('opening a record directly edits the canonical properties and updates its t
       exact: true,
     });
     await expect(hours).toHaveValue('3');
-    await page.getByRole('tab', { name: 'Interview analysis', exact: true }).dblclick();
     await hours.fill('5');
     await hours.press('Enter');
     await expect(page.getByLabel('Cost for Interview analysis', { exact: true })).toHaveText('75');
@@ -416,7 +415,7 @@ test('opening a record directly edits the canonical properties and updates its t
     await expect(hours).toHaveValue('5');
     await hours.fill('7');
     await hours.press('Enter');
-    await page.getByRole('tab', { name: 'Interview analysis', exact: true }).click();
+    await page.getByRole('button', { name: 'Go back', exact: true }).click();
     await expect(hours).toHaveValue('7');
     await page.setViewportSize({ width: 360, height: 844 });
     expect((await done.boundingBox())!.width).toBeLessThanOrEqual(24);

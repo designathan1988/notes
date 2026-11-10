@@ -1,5 +1,5 @@
 import { APP_ORIGIN, COLLABORATION_URL } from './origin.js';
-import { test, expect, type BrowserContext } from '@playwright/test';
+import { test, expect, type BrowserContext } from './test.js';
 import { HocuspocusProvider, HocuspocusProviderWebsocket } from '@hocuspocus/provider';
 import * as Y from 'yjs';
 import WebSocket from 'ws';
@@ -46,8 +46,9 @@ test('shared page CSS stays inside its page even when its source contains unmatc
     const page = await context.newPage();
     await page.goto(`/#${note.id}/document`);
     await expect(page.getByLabel('Page title', { exact: true })).toHaveCSS('font-style', 'italic');
+    // The page's CSS tries to hide the workspace switcher, which lives in the account menu.
+    await page.getByRole('button', { name: 'Account menu', exact: true }).click();
     await expect(page.getByRole('combobox', { name: 'Workspace', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Account menu', exact: true })).toBeVisible();
   } finally {
     await context.request.delete(`/api/pages/${note.id}`, { headers });
     await context.close();

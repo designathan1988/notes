@@ -1,5 +1,6 @@
 import { APP_ORIGIN } from './origin.js';
-import { test, expect, type BrowserContext } from '@playwright/test';
+import { test, expect, type BrowserContext } from './test.js';
+import { openCatalog } from './navigate.js';
 async function signIn(context: BrowserContext) {
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
@@ -119,7 +120,7 @@ test('sign out preserves disconnected drafts after navigating away, then succeed
   expect(strFromU8(archive[draft.jsonFile])).toContain('Keep this disconnected draft');
   expect(archive[draft.yjsFile].byteLength).toBeGreaterThan(0);
   await page.getByRole('dialog').getByRole('button', { name: 'Close dialog', exact: true }).click();
-  await page.getByRole('button', { name: 'All pages', exact: true }).click();
+  await openCatalog(page, 'all');
   await page.getByRole('button', { name: 'Account menu', exact: true }).click();
 
   await page.getByRole('menuitem', { name: 'Sign out', exact: true }).click();

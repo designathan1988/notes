@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test.js';
 import { APP_ORIGIN } from './origin.js';
 import { selectOption } from './select.js';
 

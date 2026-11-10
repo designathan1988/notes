@@ -1,5 +1,5 @@
 import { APP_ORIGIN } from './origin.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test.js';
 
 test('page icons, uploaded covers, repositioning and tags persist and drive search', async ({
   browser,

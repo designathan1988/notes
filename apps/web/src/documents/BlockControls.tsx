@@ -3,6 +3,8 @@ import { useEffect, useState, useRef } from 'react';
 import { BlockGutter } from './BlockGutter.js';
 import { Plus } from 'lucide-react';
 import type { Editor } from '@tiptap/react';
+import type { Selection } from '@tiptap/pm/state';
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { blockAt } from '@note/editor/blocks';
 import { blocksInRange } from '@note/editor/block-selection';
 import { BlockMenu, insertBlock } from './BlockMenu.js';
@@ -41,16 +43,36 @@ export function BlockControls({
             ? current
             : button.current,
       );
+      opened.current = null;
       setMenu(actionsRequested ? 'actions' : 'insert');
       reset();
     }
   }, [requested, actionsRequested, reset, editor]);
-  const close = () => setMenu(null);
+  // Opening a block's actions selects the block. Closing the menu without choosing anything
+  // gives the caret back where it was: otherwise the next keystroke would replace the block.
+  const opened = useRef<{ before: Selection; doc: ProseMirrorNode; selected: Selection } | null>(
+    null,
+  );
+  const close = () => {
+    const state = opened.current;
+    opened.current = null;
+    if (
+      state &&
+      editor.state.doc === state.doc &&
+      editor.state.selection.eq(state.selected) &&
+      !editor.isDestroyed
+    )
+      editor.view.dispatch(editor.state.tr.setSelection(state.before));
+    setMenu(null);
+  };
   const open = (mode: 'insert' | 'actions', target: HTMLElement, position?: number) => {
     // A handle on a block inside a block selection acts on the whole selection.
     const index = position === undefined ? -1 : blockAt(editor.state.doc, position)?.index;
-    if (position !== undefined && !blocksInRange(editor.state.selection).includes(index ?? -1))
+    if (position !== undefined && !blocksInRange(editor.state.selection).includes(index ?? -1)) {
+      const before = editor.state.selection;
       editor.commands.setNodeSelection(position);
+      opened.current = { before, doc: editor.state.doc, selected: editor.state.selection };
+    } else opened.current = null;
     setAnchor(target);
     setMenu(mode);
   };

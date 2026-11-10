@@ -12,7 +12,7 @@
 // file or calls a route declared next to one. Affected specs that do not fit the time budget
 // are listed, never silently skipped.
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { cpus } from 'node:os';
 
@@ -159,9 +159,11 @@ function affectedSpecs() {
   return { hit, direct };
 }
 
-const clean = () => rmSync('.runtime-e2e', { recursive: true, force: true });
+// The test servers stay warm between runs (scripts/test-servers.mjs). A full run starts them on
+// fresh data; an affected-specs run reuses them as they are.
+const fresh = () => run('fresh test servers', '../scripts/test-servers.mjs', ['--fresh']);
 if (full) {
-  clean();
+  fresh();
   run('browser specs (all)', '@playwright/test/cli.js', ['test']);
 } else {
   const { hit, direct } = affectedSpecs();
@@ -185,7 +187,7 @@ if (full) {
       Number(process.env.E2E_WORKERS) || Math.min(4, Math.floor(cpus().length / 5)),
     );
     const chosen = [];
-    let spent = 25000; // starting the test servers
+    let spent = 0; // the servers are already warm
     for (const spec of ordered) {
       // Recorded test time plus what each spec costs in setup around it.
       const cost = ((map[spec]?.ms ?? 15000) * 1.3 + 1500) / parallel;
@@ -195,7 +197,6 @@ if (full) {
     }
     const skipped = ordered.filter((spec) => !chosen.includes(spec));
     console.log(`${hit.size} affected spec(s); running ${chosen.length} within ${budget / 1000}s`);
-    clean();
     run(`browser specs (${chosen.length})`, '@playwright/test/cli.js', ['test', ...chosen]);
     if (skipped.length) {
       console.log(

@@ -53,19 +53,6 @@ import { richEditorExtensions } from './richExtensions.js';
 import { useUploads, FailedFile } from './useUploads.js';
 const CanvasEditor = lazy(() => import('../canvas/CanvasEditor.js'));
 
-/** Top of the line holding the caret, relative to the editor wrapper; null before layout. */
-function lineTop(editor: NonNullable<ReturnType<typeof useEditor>>): number | null {
-  const wrap = editor.view.dom.closest('.editor-wrap');
-  if (!wrap || !editor.view.hasFocus()) return null;
-  try {
-    return Math.round(
-      editor.view.coordsAtPos(editor.state.selection.from).top - wrap.getBoundingClientRect().top,
-    );
-  } catch {
-    return null;
-  }
-}
-
 export function DocumentEditor({ page, embedded = false }: { page: Page; embedded?: boolean }) {
   const [session, setSession] = useState<DocumentSession | null>(null);
   const [failure, setFailure] = useState('');
@@ -297,10 +284,6 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
             undo: editor.can().undo(),
             redo: editor.can().redo(),
             website: editor.state.doc.firstChild?.type.name === 'webPage',
-            // The block toolbar sits beside the line being edited, not fixed below the page.
-            // A text selection has its own toolbar, so this one steps aside.
-            selecting: !editor.state.selection.empty,
-            line: lineTop(editor),
           }
         : null,
   });
@@ -375,6 +358,7 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
         />
       )}
       <EditorContent editor={editor} />
+      {!session.readOnly && <TableTools editor={editor} attached />}
       {!session.readOnly && !formatting?.website && (
         <SelectionToolbar editor={editor} pageId={session.page.id} link={() => setLinkOpen(true)} />
       )}
@@ -436,18 +420,7 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
         }}
       />
       {!session.readOnly && (
-        <div
-          className="document-tools"
-          role="toolbar"
-          aria-label={t('Document formatting')}
-          data-anchored={formatting?.line === null ? undefined : ''}
-          data-selecting={formatting?.selecting || undefined}
-          style={
-            formatting?.line === null || formatting?.line === undefined
-              ? undefined
-              : { top: formatting.line < 48 ? formatting.line + 32 : formatting.line - 46 }
-          }
-        >
+        <div className="document-tools" role="toolbar" aria-label={t('Document formatting')}>
           <IconButton
             data-block-actions
             label={t('Block actions')}

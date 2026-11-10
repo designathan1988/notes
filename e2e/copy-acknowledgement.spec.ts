@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './test.js';
+import { openCatalog } from './navigate.js';
 import { APP_ORIGIN } from './origin.js';
 
 async function hasPending(page: Page, id: string) {
@@ -88,7 +89,7 @@ test('leaving a newly opened template before its socket acknowledgement does not
     );
     await expect.poll(() => dropped).toBeGreaterThan(0);
     await expect.poll(() => hasPending(page, template.id)).toBe(true);
-    await page.getByRole('button', { name: 'Templates', exact: true }).click();
+    await openCatalog(page, 'templates');
     await page.getByRole('button', { name: `Preview ${title}`, exact: true }).click();
     const verified = page.waitForResponse((response) =>
       response.url().endsWith(`/pages/${template.id}/document/acknowledgement`),

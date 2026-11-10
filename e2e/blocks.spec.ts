@@ -1,5 +1,5 @@
 import { APP_ORIGIN } from './origin.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test.js';
 
 test('edits, transforms, reorders and duplicates real blocks with durable reload and mobile controls', async ({
   browser,
@@ -46,13 +46,13 @@ test('edits, transforms, reorders and duplicates real blocks with durable reload
       .evaluate((element) => getComputedStyle(element).borderTopWidth),
   ).toBe('0px');
   await content.locator('[data-content-block]').nth(1).click();
-  await page.getByRole('button', { name: 'Block actions', exact: true }).click();
+  await page.getByRole('button', { name: 'Drag or open block actions', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Move up', exact: true }).click();
   await expect(content.locator('[data-content-block]').first()).toHaveText('Second block');
-  await page.getByRole('button', { name: 'Block actions', exact: true }).click();
+  await page.getByRole('button', { name: 'Drag or open block actions', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Duplicate', exact: true }).click();
   await expect(content.locator('[data-content-block]')).toHaveCount(3);
-  await page.getByRole('button', { name: 'Block actions', exact: true }).click();
+  await page.getByRole('button', { name: 'Drag or open block actions', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Heading 2', exact: true }).click();
   await expect(content.locator('h2')).toHaveText('Second block');
   await page.getByRole('button', { name: 'Add a block', exact: true }).click();

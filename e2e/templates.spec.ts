@@ -1,6 +1,7 @@
 import { selectValue, selectOption } from './select.js';
 import { APP_ORIGIN } from './origin.js';
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { allowBrowserErrors, expect, test, type BrowserContext, type Page } from './test.js';
+import { openCatalog } from './navigate.js';
 async function useDefinition(page: Page, name: string) {
   await page.getByRole('button', { name: 'Use template', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Template definition', exact: true })).toBeHidden();
@@ -148,7 +149,7 @@ test('saves and edits reusable page trees, captures the last typed content and c
     await page.keyboard.press('Enter');
     await page.keyboard.type('Only this instance');
     await expect(page.locator('.save-status')).toHaveText('Saved');
-    await page.getByRole('button', { name: 'Templates', exact: true }).click();
+    await openCatalog(page, 'templates');
     await page.getByRole('searchbox', { name: 'Search templates', exact: true }).fill(title);
     await page.getByRole('button', { name: `Preview ${title}`, exact: true }).click();
     const preview = page.getByRole('region', { name: 'Template preview', exact: true });
@@ -190,7 +191,7 @@ test('saves and edits reusable page trees, captures the last typed content and c
       false,
     );
     await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
-    await page.getByRole('button', { name: 'Templates', exact: true }).click();
+    await openCatalog(page, 'templates');
     await expect(page.getByRole('heading', { name: 'Templates', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(
       false,
@@ -438,7 +439,7 @@ test('blank templates open directly for writing and duplicate as independent def
     await expect(page.getByRole('textbox', { name: 'Page content', exact: true })).toContainText(
       'A fresh starting point.',
     );
-    await page.getByRole('button', { name: 'Templates', exact: true }).click();
+    await openCatalog(page, 'templates');
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Templates', exact: true })).toBeVisible();
     await page.getByRole('searchbox', { name: 'Search templates', exact: true }).fill(name);
@@ -455,6 +456,9 @@ test('blank templates open directly for writing and duplicate as independent def
 test('copying a closed page cannot silently omit its unsynchronized local draft', async ({
   browser,
 }) => {
+  // The templates library is opened while offline on purpose: its code cannot be fetched, and
+  // the app shows its reconnect fallback. React reports the caught failure on the console.
+  allowBrowserErrors(/Failed to fetch dynamically imported module/);
   const context = await browser.newContext({ baseURL: APP_ORIGIN }),
     workspace = await signIn(context),
     roots: string[] = [];
@@ -480,7 +484,7 @@ test('copying a closed page cannot silently omit its unsynchronized local draft'
       .getByRole('textbox', { name: 'Page content', exact: true })
       .pressSequentially('Important text written without a connection');
     await expect(page.locator('.save-status')).toHaveText('Saved locally');
-    await page.getByRole('button', { name: 'Templates', exact: true }).click();
+    await openCatalog(page, 'templates');
     await expect(page.getByRole('button', { name: 'Reload view', exact: true })).toBeVisible();
     await context.setOffline(false);
     await page.getByRole('button', { name: 'Reload view', exact: true }).click();

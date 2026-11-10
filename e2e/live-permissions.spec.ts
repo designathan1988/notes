@@ -1,5 +1,5 @@
 import { APP_ORIGIN } from './origin.js';
-import { test, expect, type BrowserContext } from '@playwright/test';
+import { test, expect, type BrowserContext } from './test.js';
 async function signIn(context: BrowserContext, email: string) {
   await context.request.post('/api/auth/sign-in/email', {
     data: { email, password: 'Note-local-demo-2026' },

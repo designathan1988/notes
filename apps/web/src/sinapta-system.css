@@ -56,10 +56,6 @@
     box-shadow: var(--loose-edge);
     color: var(--ink);
   }
-  .topbar :is(.icon-button, .button):focus-visible {
-    outline: none;
-    box-shadow: var(--ring);
-  }
   .topbar .save-status {
     font-size: var(--fs-meta);
     color: var(--muted);
@@ -1458,8 +1454,9 @@
     line-height: 1.2;
     letter-spacing: -0.02em;
   }
+  /* Notion sets 16px; a size chosen in Appearance (--body-size) still wins. */
   .note-editor {
-    font-size: 16px;
+    font-size: var(--body-size, 16px);
     line-height: 1.5;
     color: var(--ink);
   }
@@ -1523,35 +1520,43 @@
     line-height: 20px;
   }
 
-  /* ---------- the block toolbar sits beside the line being edited ---------- */
+  /* ---------- nothing floats over the text ----------
+     As in Notion, a desktop page has no toolbar of its own: the + and ⋮⋮ handle sits in the margin
+     beside the block being edited or pointed at (BlockGutter follows both the caret and the
+     pointer), and formatting appears over selected text. Phones keep the toolbar at the bottom. */
   @media (min-width: 701px) {
-    .document-canvas > .editor-wrap > .document-tools[data-anchored] {
-      position: absolute;
-      left: 0;
-      right: auto;
-      bottom: auto;
-      order: 0;
-      margin: 0;
-      padding: 3px;
-      border-radius: 6px;
-      box-shadow:
-        0 0 0 1px var(--hairline),
-        0 6px 18px -8px rgb(15 15 15 / 0.22);
-      transform: none;
-      transition:
-        top 140ms var(--ease),
-        opacity 120ms var(--ease);
-      z-index: 6;
+    .document-canvas > .editor-wrap > .document-tools {
+      display: none;
     }
-    .document-canvas > .editor-wrap > .document-tools[data-selecting] {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
+  }
+  /* A table's actions hang from its top-right corner, in the margin beside it. */
+  .table-corner {
+    position: absolute;
+    z-index: 6;
+    margin-left: 6px;
+    color: var(--faint);
+  }
+  .table-corner .icon-button {
+    width: 24px;
+    height: 24px;
+    border-radius: 3px;
+    color: inherit;
+  }
+  .table-corner .icon-button:hover {
+    background: var(--row-hover);
+    color: var(--muted);
+  }
+  @media (max-width: 700px) {
+    .table-corner {
+      display: none;
     }
-    .document-tools .icon-button {
-      width: 28px;
-      height: 28px;
-      border-radius: 4px;
+  }
+
+  /* ---------- a finger needs 44px: the bar's buttons on a phone ---------- */
+  @media (max-width: 700px) {
+    .topbar .icon-button {
+      width: 44px;
+      height: 44px;
     }
   }
 

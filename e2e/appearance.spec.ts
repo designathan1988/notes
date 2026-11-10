@@ -1,5 +1,5 @@
 import { APP_ORIGIN } from './origin.js';
-import { test, expect, type BrowserContext } from '@playwright/test';
+import { test, expect, type BrowserContext } from './test.js';
 const headers = { 'x-note-request': '1' };
 async function login(context: BrowserContext, email = 'jonathan@note.test') {
   expect(
@@ -61,7 +61,10 @@ test('personal and page appearance preview, persist, recover a failed write, and
       'font-family',
       /Georgia/,
     );
-    await expect(page.locator('.workspace-select')).toHaveCSS('font-family', /Verdana/);
+    await expect(page.getByRole('button', { name: 'Account menu', exact: true })).toHaveCSS(
+      'font-family',
+      /Verdana/,
+    );
     await expect(page.getByRole('textbox', { name: 'Page content', exact: true })).toHaveCSS(
       'font-size',
       '19px',

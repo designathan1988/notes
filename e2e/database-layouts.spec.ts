@@ -1,6 +1,6 @@
 import { selectOption, selectValue } from './select.js';
 import { APP_ORIGIN } from './origin.js';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './test.js';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 async function capture(page: Page, name: string) {

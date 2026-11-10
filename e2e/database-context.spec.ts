@@ -1,6 +1,6 @@
 import { selectValue } from './select.js';
 import { APP_ORIGIN } from './origin.js';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test.js';
 
 test('switching databases closes the previous record panel and keeps each saved view context', async ({
   browser,

@@ -1,6 +1,6 @@
 import { selectValue } from './select.js';
 import { APP_ORIGIN } from './origin.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test.js';
 
 test('internal database links open the table even when their branch has never been expanded', async ({
   browser,

@@ -1,5 +1,5 @@
 import { APP_ORIGIN } from './origin.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test.js';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 

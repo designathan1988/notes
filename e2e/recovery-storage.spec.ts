@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test.js';
 test('real recovery storage acknowledges only the exact state that was copied', async ({
   page,
 }) => {

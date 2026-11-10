@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test.js';
 import { APP_ORIGIN } from './origin.js';
 
 test('themed selects support labels, keyboard navigation, dialog dismissal and form values', async ({

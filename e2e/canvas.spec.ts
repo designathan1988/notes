@@ -1,5 +1,6 @@
 import { APP_ORIGIN } from './origin.js';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './test.js';
+import { openCatalog } from './navigate.js';
 async function createCanvas(page: Page, visibility = 'private') {
   const warnings: string[] = [];
   page.on('console', (message) => {
@@ -195,7 +196,7 @@ test('the canvas catalog creates directly into a focused title without a setup f
   let id: string | null = null;
   try {
     await page.goto('/');
-    await page.getByRole('button', { name: 'Canvases', exact: true }).click();
+    await openCatalog(page, 'canvas');
     await expect(page.getByRole('region', { name: 'Canvases', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'New canvas', exact: true }).click();
     await expect(page.getByRole('textbox', { name: 'Page title', exact: true })).toBeFocused();
@@ -206,7 +207,7 @@ test('the canvas catalog creates directly into a focused title without a setup f
     await page.getByRole('textbox', { name: 'Page title', exact: true }).press('Enter');
     await expect(page.getByRole('toolbar', { name: 'Canvas tools', exact: true })).toBeVisible();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Canvases', exact: true }).click();
+    await openCatalog(page, 'canvas');
     await expect(
       page
         .getByRole('region', { name: 'Canvases', exact: true })
@@ -333,7 +334,7 @@ test.describe('native mobile canvas interactions', () => {
     let created: string | undefined;
     try {
       await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
-      await page.getByRole('button', { name: 'Canvases', exact: true }).click();
+      await openCatalog(page, 'canvas');
       await page.getByRole('button', { name: 'New canvas', exact: true }).click();
       created = new URL(page.url()).hash.slice(1).split('/')[0];
       const title = page.getByRole('textbox', { name: 'Page title', exact: true });
@@ -638,7 +639,7 @@ test('shared canvas media and page references remain authorized through renames 
     await expect(
       b.locator('.canvas-page-reference').filter({ hasText: current.title }),
     ).toHaveCount(0);
-    await b.getByRole('button', { name: 'Canvases', exact: true }).click();
+    await openCatalog(b, 'canvas');
     const row = b
       .getByRole('region', { name: 'Canvases', exact: true })
       .getByRole('button')

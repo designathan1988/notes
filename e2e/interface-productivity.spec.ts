@@ -1,6 +1,7 @@
 import { selectOption } from './select.js';
 import { APP_ORIGIN } from './origin.js';
-import { expect, test, type BrowserContext } from '@playwright/test';
+import { expect, test, type BrowserContext } from './test.js';
+import { catalogName, openCatalog } from './navigate.js';
 
 const headers = { 'x-note-request': '1' };
 async function createWritingPage(context: BrowserContext) {
@@ -36,7 +37,7 @@ async function createWritingPage(context: BrowserContext) {
   return response.json();
 }
 
-test('mobile reading prioritizes content while editing, customization and working tabs remain usable', async ({
+test('mobile reading prioritizes content while editing and customization remain usable', async ({
   browser,
 }) => {
   const context = await browser.newContext({
@@ -61,16 +62,15 @@ test('mobile reading prioritizes content while editing, customization and workin
       page.getByRole('toolbar', { name: 'Document formatting', exact: true }),
     ).toBeHidden();
 
-    const tabs = page.getByRole('button', { name: 'Open tabs', exact: true });
-    await expect(tabs).toBeVisible();
-    const target = await tabs.boundingBox();
+    const navigation = page.getByRole('button', { name: 'Open navigation', exact: true });
+    await expect(navigation).toBeVisible();
+    const target = await navigation.boundingBox();
     expect(target!.width).toBeGreaterThanOrEqual(44);
     expect(target!.height).toBeGreaterThanOrEqual(44);
     // Header controls must have separate hit areas, even with a page title and save state.
     const headerItems = [
-      page.getByRole('button', { name: 'Open navigation', exact: true }),
+      navigation,
       page.locator('.topbar > .breadcrumb'),
-      tabs,
       page.getByRole('button', { name: 'Page actions', exact: true }),
     ];
     const boxes = await Promise.all(headerItems.map((item) => item.boundingBox()));
@@ -83,15 +83,6 @@ test('mobile reading prioritizes content while editing, customization and workin
     }
     await expect(page.locator('.mobile-save-label')).toHaveText('Saved');
     await expect(page.locator('.save-status')).toBeHidden();
-    await tabs.click();
-    await expect(page.getByRole('tablist', { name: 'Open pages', exact: true })).toBeVisible();
-    await expect(page.getByRole('tab', { name: source.title, exact: true })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
-    await page.keyboard.press('Escape');
-    await expect(tabs).toBeFocused();
-
     await body.locator('p').first().click();
     await page.keyboard.press('End');
     await page.keyboard.type(' A useful continuation.');
@@ -136,19 +127,26 @@ test('desktop tools have their own compact navigation without displacing the pag
   try {
     await page.goto(`/#${source.id}/document`);
     await expect(page.getByRole('textbox', { name: 'Page content', exact: true })).toBeVisible();
+    // Home and the graph are icons beside the mark; nothing else competes with the page tree.
     const tools = page.getByRole('navigation', { name: 'Workspace tools', exact: true });
-    await expect(tools).toBeVisible();
-    expect((await tools.boundingBox())!.width).toBeLessThan(270);
+    await expect(tools.getByRole('button')).toHaveCount(2);
+    for (const button of await tools.getByRole('button').all()) {
+      await expect(button).toHaveText('');
+      expect((await button.boundingBox())!.width).toBeLessThanOrEqual(32);
+    }
     expect((await page.locator('.topbar').boundingBox())!.height).toBeLessThanOrEqual(50);
     expect((await page.locator('.document-scroll').boundingBox())!.width).toBeGreaterThan(1200);
     expect((await page.locator('.sidebar-scroll').boundingBox())!.height).toBeGreaterThan(400);
-    for (const name of ['Databases', 'Templates', 'Canvases', 'All pages']) {
-      await tools.getByRole('button', { name, exact: true }).click();
-      await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
-      await expect(tools.getByRole('button', { name, exact: true })).toHaveAttribute(
-        'aria-current',
-        'page',
-      );
+    await tools.getByRole('button', { name: 'Knowledge graph', exact: true }).click();
+    await expect(
+      tools.getByRole('button', { name: 'Knowledge graph', exact: true }),
+    ).toHaveAttribute('aria-current', 'page');
+    // The catalogs are one command away.
+    for (const view of ['database', 'templates', 'canvas', 'all'] as const) {
+      await openCatalog(page, view);
+      await expect(
+        page.getByRole('heading', { name: catalogName(view), exact: true }),
+      ).toBeVisible();
     }
   } finally {
     await context.request.delete(`/api/pages/${source.id}`, { headers }).catch(() => {});
@@ -175,7 +173,7 @@ test('the page explorer filters and sorts real pages with compact readable locat
   try {
     await page.goto(`/#${parent.id}/document`);
     await expect(page.locator('.save-status')).toHaveText('Saved');
-    await page.getByRole('button', { name: 'All pages', exact: true }).click();
+    await openCatalog(page, 'all');
     for (const width of [1487, 390]) {
       await page.setViewportSize({ width, height: 844 });
       const catalog = page.getByRole('region', { name: 'All pages', exact: true });

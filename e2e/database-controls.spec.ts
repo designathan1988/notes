@@ -1,6 +1,7 @@
 import { selectOption } from './select.js';
 import { APP_ORIGIN } from './origin.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test.js';
+import { openCatalog } from './navigate.js';
 test('database controls save typed values, relations, filtered views, sorting, favorites and trash restoration', async ({
   browser,
 }) => {
@@ -13,7 +14,7 @@ test('database controls save typed values, relations, filtered views, sorting, f
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
-  await page.getByRole('button', { name: 'Databases', exact: true }).click();
+  await openCatalog(page, 'database');
   await page.getByRole('button', { name: 'New database', exact: true }).click();
   const dialog = page.getByRole('dialog'),
     title = `Database workflow ${Date.now()}`;

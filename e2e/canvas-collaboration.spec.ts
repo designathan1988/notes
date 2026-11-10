@@ -1,5 +1,5 @@
 import { APP_ORIGIN } from './origin.js';
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { allowBrowserErrors, expect, test, type BrowserContext, type Page } from './test.js';
 
 const headers = { 'x-note-request': '1' };
 async function signIn(context: BrowserContext, email: string) {
@@ -75,6 +75,9 @@ async function startDrag(page: Page, dx: number, dy: number) {
 test('two canvas editors merge concurrent geometry and text, then recover a closed offline draft', async ({
   browser,
 }) => {
+  // The collaborator opens the graph while offline on purpose: its code cannot be fetched, and the
+  // app shows its reconnect fallback. React reports the caught failure on the console.
+  allowBrowserErrors(/Failed to fetch dynamically imported module/);
   const owner = await browser.newContext({ baseURL: APP_ORIGIN }),
     colleague = await browser.newContext({ baseURL: APP_ORIGIN });
   const source = await sharedPage(owner),

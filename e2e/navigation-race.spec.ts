@@ -1,5 +1,5 @@
 import { APP_ORIGIN } from './origin.js';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test.js';
 test('a delayed page removal preserves settings opened while the request is pending', async ({
   browser,
 }) => {

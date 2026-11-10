@@ -5,6 +5,8 @@ import { getRelativeSelection, ySyncPluginKey } from '@tiptap/y-tiptap';
 import type { Transaction as YTransaction } from 'yjs';
 
 type ObservedView = EditorView & {
+  /** ProseMirror's own record that focus has settled in the text (false while it is arriving). */
+  focused?: boolean;
   domObserver?: {
     flush(): void;
     currentSelection: { eq(range: unknown): boolean };
@@ -26,7 +28,7 @@ type Binding = Parameters<typeof getRelativeSelection>[0] & {
  * applied, read the pending browser caret so the binding keeps where the person actually is.
  */
 export function syncPendingSelection(view: ObservedView, binding: Binding, origin: unknown) {
-  if (origin === ySyncPluginKey || !view.hasFocus()) return false;
+  if (origin === ySyncPluginKey || !view.hasFocus() || view.focused === false) return false;
   const observer = view.domObserver;
   const range = view.domSelectionRange?.();
   if (!observer || !range || observer.currentSelection.eq(range)) return false;
@@ -57,6 +59,8 @@ export const RemoteSelection = Extension.create({
           attach();
           // A collaborator's caret moving redraws decorations, which also rewrites the browser
           // caret from the editor's (possibly stale) selection. Read the pending caret first.
+          // Only once focus has settled: while focus is coming back (from a menu, say), the
+          // browser caret sits at the start of the text and is not where the person was.
           const observed = view as ObservedView;
           const dispatch = view.dispatch.bind(view);
           view.dispatch = (transaction) => {
@@ -65,6 +69,7 @@ export const RemoteSelection = Extension.create({
               !transaction.docChanged &&
               !transaction.selectionSet &&
               view.hasFocus() &&
+              observed.focused !== false &&
               observed.domObserver &&
               range &&
               !observed.domObserver.currentSelection.eq(range)

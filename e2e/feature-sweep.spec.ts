@@ -1,6 +1,7 @@
 import { selectOption } from './select.js';
 import { APP_ORIGIN } from './origin.js';
-import { test, expect, type Browser, type Page } from '@playwright/test';
+import { test, expect, type Browser, type Page } from './test.js';
+import { openCatalog } from './navigate.js';
 
 /**
  * Feature sweep: drives every user-facing capability end to end and asserts its effect,
@@ -196,10 +197,10 @@ test('block actions move, duplicate, turn into every type and delete', async ({ 
     await page.keyboard.press('Enter');
     await page.keyboard.type('Beta');
     await blocks(page).nth(1).click();
-    await page.getByRole('button', { name: 'Block actions', exact: true }).click();
+    await page.getByRole('button', { name: 'Drag or open block actions', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Move up', exact: true }).click();
     await expect(blocks(page).first()).toHaveText('Beta');
-    await page.getByRole('button', { name: 'Block actions', exact: true }).click();
+    await page.getByRole('button', { name: 'Drag or open block actions', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Duplicate', exact: true }).click();
     await expect(blocks(page)).toHaveCount(3);
     const failures: string[] = [];
@@ -217,7 +218,7 @@ test('block actions move, duplicate, turn into every type and delete', async ({ 
       'Text',
     ]) {
       await blocks(page).first().click();
-      await page.getByRole('button', { name: 'Block actions', exact: true }).click();
+      await page.getByRole('button', { name: 'Drag or open block actions', exact: true }).click();
       const item = page.getByRole('menuitem', { name: label, exact: true });
       if (
         !(await item.waitFor({ timeout: 3000 }).then(
@@ -234,7 +235,7 @@ test('block actions move, duplicate, turn into every type and delete', async ({ 
         failures.push(`turn into ${label}: lost the text`);
     }
     await blocks(page).last().click();
-    await page.getByRole('button', { name: 'Block actions', exact: true }).click();
+    await page.getByRole('button', { name: 'Drag or open block actions', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
     await expect(blocks(page)).toHaveCount(2);
     expect(failures, failures.join('\n')).toEqual([]);
@@ -516,10 +517,7 @@ test('workspace tools open and respond: search, commands, graph, templates, sett
       await expect(page.locator('.graph-point').first()).toBeVisible();
     });
     await check('templates library opens', async () => {
-      await page
-        .getByRole('navigation', { name: 'Workspace tools' })
-        .getByRole('button', { name: 'Templates' })
-        .click();
+      await openCatalog(page, 'templates');
       await expect(page.getByRole('heading', { name: 'Templates' })).toBeVisible();
     });
     await check('settings tabs open', async () => {

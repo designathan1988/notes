@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './test.js';
 import { APP_ORIGIN } from './origin.js';
 
 async function chooseLanguage(page: Page, label: string, option: string) {

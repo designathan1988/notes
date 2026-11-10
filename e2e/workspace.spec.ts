@@ -1,6 +1,7 @@
 import { selectOption, selectValue } from './select.js';
 import { APP_ORIGIN } from './origin.js';
-import { test, expect, type BrowserContext } from '@playwright/test';
+import { test, expect, type BrowserContext } from './test.js';
+import { openCatalog } from './navigate.js';
 import { zipSync, strToU8 } from 'fflate';
 test.beforeEach(async ({ request }) => {
   await expect
@@ -174,7 +175,7 @@ test('creates and edits a structured record, finds its body, and follows its gra
   await signIn(context);
   const page = await context.newPage();
   await page.goto('/');
-  await page.getByRole('button', { name: 'Databases', exact: true }).click();
+  await openCatalog(page, 'database');
   await page
     .getByRole('region', { name: 'Databases', exact: true })
     .getByRole('button', { name: 'Research database', exact: true })
@@ -196,7 +197,12 @@ test('creates and edits a structured record, finds its body, and follows its gra
   await page
     .getByRole('textbox', { name: 'Page content' })
     .pressSequentially('uniquediscoveryphrase ');
-  await page.getByRole('button', { name: 'Insert link', exact: true }).click();
+  // As in Notion, a page link comes from the slash menu on a new line.
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('/');
+  const menu = page.getByRole('menu', { name: 'Add a block', exact: true });
+  await menu.getByRole('textbox').fill('Page connection');
+  await menu.getByRole('menuitem', { name: 'Page connection', exact: true }).click();
   await page.getByRole('dialog').getByRole('textbox').fill('Product direction');
   await page
     .getByRole('dialog')

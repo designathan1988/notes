@@ -1,6 +1,6 @@
 import { selectOption } from './select.js';
 import { APP_ORIGIN } from './origin.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test.js';
 const headers = { 'x-note-request': '1' };
 test('canvas connection sides, endpoint arrows and arbitrary colors remain editable and survive reload', async ({
   page,

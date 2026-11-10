@@ -1,5 +1,5 @@
 import { APP_ORIGIN } from './origin.js';
-import { test, expect, type Browser } from '@playwright/test';
+import { test, expect, type Browser } from './test.js';
 async function setup(browser: Browser) {
   const context = await browser.newContext({
       baseURL: APP_ORIGIN,

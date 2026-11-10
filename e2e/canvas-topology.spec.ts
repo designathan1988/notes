@@ -1,5 +1,5 @@
 import { APP_ORIGIN, COLLABORATION_URL } from './origin.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test.js';
 import { HocuspocusProvider, HocuspocusProviderWebsocket } from '@hocuspocus/provider';
 import WebSocket from 'ws';
 import * as Y from 'yjs';

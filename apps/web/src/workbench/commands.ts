@@ -171,6 +171,13 @@ export const commands: AppCommand[] = [
     run: (state) => state.navigate(null, 'database'),
   },
   {
+    id: 'workspace.canvases',
+    title: 'Open canvases',
+    group: 'Navigate',
+    keywords: 'boards whiteboards spatial',
+    run: (state) => state.navigate(null, 'canvas'),
+  },
+  {
     id: 'page.details',
     title: 'Toggle page details',
     group: 'Page',

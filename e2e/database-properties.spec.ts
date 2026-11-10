@@ -1,6 +1,6 @@
 import { selectOption, selectValue } from './select.js';
 import { APP_ORIGIN } from './origin.js';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test.js';
 
 test('creates records inline and configures typed properties, formulas and actions without losing concurrent schema edits', async ({
   browser,

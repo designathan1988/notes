@@ -1,5 +1,5 @@
 import { APP_ORIGIN } from './origin.js';
-import { expect, test, type Browser } from '@playwright/test';
+import { expect, test, type Browser } from './test.js';
 
 // Regressions found by using the app in real Chrome and reading the screenshots.
 async function open(browser: Browser, options: Parameters<Browser['newContext']>[0] = {}) {
@@ -79,39 +79,7 @@ test('the block menu keeps filtering after arrow navigation, ignores accents and
   await context.close();
 });
 
-test('many open tabs stay readable and the active tab is fully revealed', async ({ browser }) => {
-  const { context, create, page } = await open(browser, {
-    viewport: { width: 1280, height: 800 },
-  });
-  const pages = await Promise.all(
-    Array.from({ length: 9 }, (_, index) => create(`Tab width ${index} ${Date.now()}`)),
-  );
-  for (const item of pages) {
-    await page.goto(`/#${item.id}/document`);
-    await expect(page.locator('.save-status')).toHaveText('Saved');
-    // A second navigation would reuse a preview tab: keep each one open.
-    await page.locator('.workbench-tab.active [role=tab]').dblclick();
-  }
-  const strip = page.getByRole('tablist', { name: 'Open pages', exact: true });
-  const widths = await strip
-    .locator('.workbench-tab')
-    .evaluateAll((tabs) => tabs.map((tab) => tab.getBoundingClientRect().width));
-  expect(widths.length).toBeGreaterThanOrEqual(9);
-  expect(Math.min(...widths)).toBeGreaterThanOrEqual(104);
-  await expect
-    .poll(() =>
-      strip.evaluate((element) => {
-        const tab = element.querySelector('.workbench-tab.active')!.getBoundingClientRect();
-        const box = element.getBoundingClientRect();
-        return tab.left >= box.left - 1 && tab.right <= box.right + 1;
-      }),
-    )
-    .toBe(true);
-  await expect(strip).toHaveAttribute('data-clip-start', '');
-  await context.close();
-});
-
-test('graph counts read as words and the phone tab list fits the screen', async ({ browser }) => {
+test('graph counts read as words and a phone page fills the screen', async ({ browser }) => {
   const { context, page } = await open(browser);
   await page.goto('/#/graph');
   await expect(page.locator('.graph-screen > footer > span').first()).toHaveText(
@@ -119,20 +87,12 @@ test('graph counts read as words and the phone tab list fits the screen', async 
   );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/#/home');
-  await page.getByRole('button', { name: 'Open tabs', exact: true }).click();
-  const panel = page.locator('.mobile-tabs-panel');
-  await expect(panel).toBeVisible();
-  const box = (await panel.boundingBox())!;
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(390);
-  const row = (await panel.locator('.workbench-tab').first().boundingBox())!;
-  expect(row.width).toBeGreaterThan(box.width - 40);
+  await expect(page.locator('.workspace-main')).toBeVisible();
   // On a phone the page fills the screen: no sidebar-colored backdrop around the document.
-  await page.keyboard.press('Escape');
   const main = page.locator('.workspace-main');
   const colors = await main.evaluate((element) => [
     getComputedStyle(element).backgroundColor,
-    getComputedStyle(element.closest('.app-shell')!).backgroundColor,
+    getComputedStyle(document.querySelector('.sidebar-panel')!).backgroundColor,
   ]);
   expect(colors[0]).not.toBe('rgba(0, 0, 0, 0)');
   expect(colors[0]).not.toBe(colors[1]);

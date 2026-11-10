@@ -1,5 +1,5 @@
 import { APP_ORIGIN } from './origin.js';
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './test.js';
 async function graphFixture(page: Page) {
   const signed = await page.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },

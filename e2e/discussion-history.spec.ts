@@ -1,5 +1,6 @@
 import { APP_ORIGIN } from './origin.js';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test.js';
+import { openCatalog } from './navigate.js';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { readFile } from 'node:fs/promises';
@@ -387,7 +388,7 @@ test('a disconnected collaborator recovers retained drafts as private pages and 
       .getByRole('dialog')
       .getByRole('button', { name: 'Close dialog', exact: true })
       .click();
-    await second.getByRole('button', { name: 'All pages', exact: true }).click();
+    await openCatalog(second, 'all');
     await second.getByRole('button', { name: 'Account menu', exact: true }).click();
 
     await second.getByRole('menuitem', { name: 'Sign out', exact: true }).click();

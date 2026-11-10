@@ -1,5 +1,6 @@
 import { APP_ORIGIN } from './origin.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test.js';
+import { openCatalog } from './navigate.js';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
@@ -191,16 +192,14 @@ test('saved canvas history and templates preserve spatial content with local rea
     await page.setViewportSize({ width: 1487, height: 1058 });
     await page.getByRole('button', { name: 'Page actions', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Save as template', exact: true }).click();
+    // Unique per run: the warm test servers keep earlier runs' templates.
+    const templateName = `Spatial evidence template ${Date.now()}`;
     const save = page.getByRole('dialog', { name: 'Save as template', exact: true });
-    await save
-      .getByRole('textbox', { name: 'Template name', exact: true })
-      .fill('Spatial evidence template');
+    await save.getByRole('textbox', { name: 'Template name', exact: true }).fill(templateName);
     await save.getByRole('button', { name: 'Save template', exact: true }).click();
     await expect(save).toBeHidden();
-    await page.getByRole('button', { name: 'Templates', exact: true }).click();
-    await page
-      .getByRole('button', { name: 'Preview Spatial evidence template', exact: true })
-      .click();
+    await openCatalog(page, 'templates');
+    await page.getByRole('button', { name: `Preview ${templateName}`, exact: true }).click();
     const template = page.getByRole('region', { name: 'Template preview', exact: true });
     await expect(
       template.getByRole('application', { name: 'Saved canvas', exact: true }),
@@ -210,9 +209,7 @@ test('saved canvas history and templates preserve spatial content with local rea
     const definition = await (
       await context.request.get(`/api/workspaces/${session.workspaces[0].id}/templates`)
     ).json();
-    const entry = definition.items.find(
-      (item: { title: string }) => item.title === 'Spatial evidence template',
-    );
+    const entry = definition.items.find((item: { title: string }) => item.title === templateName);
     expect(entry).toBeTruthy();
     roots.push(entry.id);
     await template.getByRole('button', { name: 'Use template', exact: true }).click();

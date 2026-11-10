@@ -1,5 +1,6 @@
 import { APP_ORIGIN } from './origin.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test.js';
+import { openCatalog } from './navigate.js';
 test('an authorized initial page opens while the redundant background navigation read is delayed', async ({
   browser,
 }) => {
@@ -47,7 +48,7 @@ test('background navigation refresh does not replace the global database catalog
   const session = await (await context.request.get('/api/session')).json();
   const page = await context.newPage();
   await page.goto('/');
-  await page.getByRole('button', { name: 'Databases', exact: true }).click();
+  await openCatalog(page, 'database');
   await expect(page.getByRole('region', { name: 'Databases', exact: true })).toBeVisible();
   const note = await (
     await context.request.post(`/api/workspaces/${session.workspaces[0].id}/pages`, {
@@ -62,50 +63,7 @@ test('background navigation refresh does not replace the global database catalog
   await context.request.delete(`/api/pages/${note.id}`, { headers: { 'x-note-request': '1' } });
   await context.close();
 });
-test('two application windows do not overwrite each other’s restored tabs', async ({ browser }) => {
-  const context = await browser.newContext({ baseURL: APP_ORIGIN });
-  await context.request.post('/api/auth/sign-in/email', {
-    data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
-    headers: { origin: APP_ORIGIN },
-  });
-  const session = await (await context.request.get('/api/session')).json(),
-    notes = [];
-  for (const suffix of ['one', 'two', 'three'])
-    notes.push(
-      await (
-        await context.request.post(`/api/workspaces/${session.workspaces[0].id}/pages`, {
-          data: { title: `Workbench window ${suffix} ${Date.now()}` },
-          headers: { 'x-note-request': '1' },
-        })
-      ).json(),
-    );
-  const a = await context.newPage();
-  await a.goto(`/#${notes[0].id}/document`);
-  await a
-    .locator('.page-tree')
-    .getByRole('button', { name: notes[1].title, exact: true })
-    .click({ modifiers: ['Control'] });
-  const b = await context.newPage();
-  await b.goto(`/#${notes[2].id}/document`);
-  await expect(b.getByLabel('Page title', { exact: true })).toHaveValue(notes[2].title);
-  for (const note of notes.slice(0, 2)) {
-    const close = b.getByRole('button', { name: `Close ${note.title}`, exact: true });
-    if (await close.count()) await close.click();
-  }
-  await a.reload();
-  await expect(a.getByRole('tab', { name: notes[0].title, exact: true })).toBeVisible();
-  await expect(a.getByRole('tab', { name: notes[1].title, exact: true })).toBeVisible();
-  await b.reload();
-  await expect(b.getByRole('tab', { name: notes[2].title, exact: true })).toBeVisible();
-  await expect(b.getByRole('tab', { name: notes[0].title, exact: true })).toHaveCount(0);
-  await expect(b.getByRole('tab', { name: notes[1].title, exact: true })).toHaveCount(0);
-  for (const note of notes)
-    await context.request.delete(`/api/pages/${note.id}`, { headers: { 'x-note-request': '1' } });
-  await context.close();
-});
-test('modifier navigation and tree actions retain the current working page', async ({
-  browser,
-}) => {
+test('trashing another page from the tree keeps the current page in front', async ({ browser }) => {
   const context = await browser.newContext({ baseURL: APP_ORIGIN });
   await context.request.post('/api/auth/sign-in/email', {
     data: { email: 'jonathan@note.test', password: 'Note-local-demo-2026' },
@@ -128,12 +86,6 @@ test('modifier navigation and tree actions retain the current working page', asy
   await page
     .locator('.page-tree')
     .getByRole('button', { name: notes[1].title, exact: true })
-    .click({ modifiers: ['Control'] });
-  await expect(page.getByRole('tab', { name: notes[0].title, exact: true })).toBeVisible();
-  await page.getByRole('tab', { name: notes[0].title, exact: true }).click();
-  await page
-    .locator('.page-tree')
-    .getByRole('button', { name: notes[1].title, exact: true })
     .click({ button: 'right' });
   await page
     .getByRole('menu', { name: 'Page actions' })
@@ -143,11 +95,10 @@ test('modifier navigation and tree actions retain the current working page', asy
     page.locator('.page-tree').getByRole('button', { name: notes[1].title, exact: true }),
   ).toHaveCount(0);
   await expect(page.getByLabel('Page title', { exact: true })).toHaveValue(notes[0].title);
-  await expect(page.getByRole('tab', { name: notes[1].title, exact: true })).toHaveCount(0);
   await context.request.delete(`/api/pages/${notes[0].id}`, { headers: { 'x-note-request': '1' } });
   await context.close();
 });
-test('creates directly from the keyboard and keeps independent working tabs through reload', async ({
+test('creates directly from the keyboard, moves through history and keeps an offline draft', async ({
   browser,
 }) => {
   const context = await browser.newContext({ baseURL: APP_ORIGIN });
@@ -181,36 +132,20 @@ test('creates directly from the keyboard and keeps independent working tabs thro
     .pressSequentially('The second independent working note.');
   await expect(page.locator('.save-status')).toHaveText('Saved');
   const secondId = page.url().split('#')[1].split('/')[0];
-  const firstTab = page.getByRole('tab', { name: first, exact: true }),
-    secondTab = page.getByRole('tab', { name: second, exact: true });
-  const a = await firstTab.boundingBox(),
-    b = await secondTab.boundingBox();
-  await page.mouse.move(b!.x + 35, b!.y + 15);
-  await page.mouse.down();
-  await page.mouse.move(a!.x + 20, a!.y + 15, { steps: 10 });
-  await page.mouse.up();
-  const order = await page.getByRole('tab').allTextContents();
-  expect(order.indexOf(second)).toBeLessThan(order.indexOf(first));
-  await page.getByRole('tab', { name: first, exact: true }).click();
-  await expect(page.getByRole('textbox', { name: 'Page content' })).toContainText(
-    'The first independent working note.',
-  );
+  // History moves between the pages written in this window.
   await page.getByRole('button', { name: 'Go back', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Page content' })).toContainText(
-    'The second independent working note.',
+    'The first independent working note.',
   );
   await page.getByRole('button', { name: 'Go forward', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Page content' })).toContainText(
-    'The first independent working note.',
+    'The second independent working note.',
   );
+  await page.getByRole('button', { name: 'Go back', exact: true }).click();
+  await expect(page.getByLabel('Page title', { exact: true })).toHaveValue(first);
+  // A reload reopens the page that was in front.
   await page.reload();
-  await expect(page.getByRole('tab', { name: first, exact: true })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  );
-  await expect(page.getByRole('tab', { name: second, exact: true })).toBeVisible();
-  const restoredOrder = await page.getByRole('tab').allTextContents();
-  expect(restoredOrder.indexOf(second)).toBeLessThan(restoredOrder.indexOf(first));
+  await expect(page.getByLabel('Page title', { exact: true })).toHaveValue(first);
   await page.keyboard.press('Control+k');
   await expect(
     page.getByRole('dialog').getByText('Recently opened', { exact: true }),
@@ -226,9 +161,8 @@ test('creates directly from the keyboard and keeps independent working tabs thro
     .fill('all pages');
   await page.keyboard.press('Enter');
   await expect(page.getByRole('region', { name: 'All pages', exact: true })).toBeVisible();
-  await page.getByRole('tab', { name: second, exact: true }).click();
-  await page.getByRole('button', { name: `Close ${second}`, exact: true }).click();
-  await page.keyboard.press('Control+Alt+Shift+t');
+  // A draft written offline survives leaving the page and coming back to it.
+  await page.locator('.page-tree').getByRole('button', { name: second, exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Page content' })).toContainText(
     'The second independent working note.',
   );
@@ -238,14 +172,15 @@ test('creates directly from the keyboard and keeps independent working tabs thro
   await page.getByRole('textbox', { name: 'Page content' }).press('End');
   await page
     .getByRole('textbox', { name: 'Page content' })
-    .pressSequentially(' Disconnected tab draft.');
+    .pressSequentially(' Disconnected draft.');
   await expect(page.locator('.save-status')).toHaveText('Saved locally');
-  await page.keyboard.press('Control+Alt+w');
+  await page.locator('.page-tree').getByRole('button', { name: first, exact: true }).click();
+  await expect(page.getByLabel('Page title', { exact: true })).toHaveValue(first);
   await context.setOffline(false);
   await page.evaluate(() => window.dispatchEvent(new Event('online')));
-  await page.keyboard.press('Control+Alt+Shift+t');
+  await page.locator('.page-tree').getByRole('button', { name: second, exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Page content' })).toContainText(
-    'Disconnected tab draft.',
+    'Disconnected draft.',
   );
   await expect(page.locator('.save-status')).toHaveText('Saved');
   await context.request.delete(`/api/pages/${firstId}`, { headers: { 'x-note-request': '1' } });
