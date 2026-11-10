@@ -1,0 +1,379 @@
+/* ==========================================================================
+   Sinapta consistency pass: one type scale, one control size, one way to show state.
+     label 11.5px/700 caps · meta 12.5px · UI 13.5px · body 16px
+     controls 32px, radius 9 · rows 30px, radius 8 · panes and sheet radius 16
+   ========================================================================== */
+@layer sinapta {
+  :root {
+    --fs-label: 11.5px;
+    --fs-meta: 12.5px;
+    --fs-ui: 13.5px;
+    --stage: #18181b;
+    --stage-ink: #f4f4f5;
+    --stage-muted: #a1a1aa;
+    --stage-rule: #2e2e33;
+    --map-document: #9dbcdb;
+    --map-database: #e8b54c;
+    --map-canvas: #ea94b6;
+    --map-record: #93cba3;
+    --scroll-thumb: rgb(24 24 27 / 0.22);
+    --hairline: rgb(24 24 27 / 0.12);
+  }
+  :root[data-theme='dark'] {
+    --scroll-thumb: rgb(255 255 255 / 0.2);
+    --hairline: rgb(255 255 255 / 0.1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light'], [data-theme='dark']) {
+      --scroll-thumb: rgb(255 255 255 / 0.2);
+      --hairline: rgb(255 255 255 / 0.1);
+    }
+  }
+
+  /* ---------- scrollbars: thin, quiet until the pointer is there ---------- */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  *:hover,
+  *:focus-within {
+    scrollbar-color: var(--scroll-thumb) transparent;
+  }
+
+  /* ---------- the bar on the ground: one control size, no outlined odd one ---------- */
+  .topbar .icon-button {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    color: var(--text2);
+  }
+  .topbar .icon-button:hover:not(:disabled),
+  .topbar .icon-button[aria-pressed='true'] {
+    background: var(--loose);
+    box-shadow: var(--loose-edge);
+    color: var(--ink);
+  }
+  .topbar :is(.icon-button, .button):focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+  }
+  .topbar .save-status {
+    font-size: var(--fs-meta);
+    color: var(--muted);
+  }
+  .share-button,
+  .share-button:hover:not(:disabled) {
+    height: 32px;
+    padding: 0 12px 0 10px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--text2);
+    font-size: var(--fs-ui);
+    font-weight: 600;
+  }
+  .share-button:hover:not(:disabled) {
+    background: var(--loose);
+    box-shadow: var(--loose-edge);
+    color: var(--ink);
+  }
+
+  /* ---------- tabs: the open one is the sheet; the rest are quiet labels on the ground ---------- */
+  .workbench-tab {
+    max-width: 220px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--muted);
+    font-size: var(--fs-ui);
+    font-weight: 500;
+  }
+  .workbench-tab:hover:not(.active) {
+    background: var(--loose);
+    box-shadow: var(--loose-edge);
+    color: var(--ink);
+  }
+  .workbench-tab.active,
+  .topbar .workbench-tab.active {
+    font-size: var(--fs-ui);
+    font-weight: 650;
+  }
+  .workbench-tab > [role='tab'] {
+    gap: 8px;
+    padding: 0 6px 0 12px;
+    font-size: inherit;
+  }
+  /* A hairline between two quiet tabs keeps them apart without boxing them. */
+  .workbench-tab:not(.active) + .workbench-tab:not(.active)::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 9px;
+    bottom: 9px;
+    width: 1px;
+    background: var(--hairline);
+    transition: opacity 160ms var(--ease);
+  }
+  .workbench-tab:not(.active):hover::before,
+  .workbench-tab:not(.active):hover + .workbench-tab:not(.active)::before {
+    opacity: 0;
+  }
+  .tab-close {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    color: var(--muted);
+  }
+  .tab-close:hover {
+    background: var(--row-hover);
+    color: var(--ink);
+  }
+
+  /* ---------- pages pane: one rhythm ---------- */
+  .sidebar-panel .workspace-identity {
+    border-bottom: 0;
+  }
+  .sidebar-panel :is(.workspace-select, .workspace-names) {
+    font-size: var(--fs-ui);
+    font-weight: 700;
+  }
+  .sidebar-panel .section-label {
+    min-height: 26px;
+    margin-top: 16px;
+    font: 700 var(--fs-label) / 1 var(--ui);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .sidebar-panel .tree-row,
+  .sidebar-panel .favorites > button {
+    min-height: 30px;
+    border-radius: 8px;
+  }
+  .sidebar-panel :is(.tree-page, .favorites > button) {
+    font-size: var(--fs-ui);
+    font-weight: 500;
+    color: var(--text2);
+  }
+  .sidebar-panel .tree-row.selected .tree-page {
+    font-weight: 600;
+  }
+  .sidebar-panel :is(.tree-page, .favorites > button) > svg {
+    width: 16px;
+    height: 16px;
+    color: var(--k, var(--muted));
+  }
+  .sidebar-panel .tree-row.selected .tree-page > svg {
+    color: var(--on-accent);
+  }
+
+  /* ---------- the work area: when details are open, they are their own pane ---------- */
+  @media (min-width: 701px) {
+    .workspace-content {
+      position: relative;
+    }
+    .workspace-content:has(> .context-panel) {
+      gap: 8px;
+      background: transparent;
+      box-shadow: none;
+      overflow: visible;
+    }
+    .workspace-content:has(> .context-panel) > :not(.context-panel, .details-scrim) {
+      border-radius: 16px;
+      background: var(--canvas);
+      box-shadow: var(--sheet-shadow);
+    }
+    .workspace-main:has(.workbench-tab.active:first-child)
+      .workspace-content:has(> .context-panel)
+      > :first-child {
+      border-top-left-radius: 0;
+    }
+    .context-panel,
+    .context-panel.page-panel {
+      align-self: stretch;
+      margin: 0;
+      padding: 16px 16px 12px;
+      border: 0;
+      border-radius: 16px;
+      background: var(--pane);
+      backdrop-filter: blur(22px) saturate(1.5);
+      box-shadow: var(--pane-edge);
+    }
+  }
+
+  /* ---------- details content: the same scale as the pages pane ---------- */
+  .context-panel header h2 {
+    font: 700 var(--fs-ui) / 1.2 var(--ui);
+    color: var(--ink);
+  }
+  .context-panel .page-panel-tabs {
+    gap: 2px;
+    padding: 3px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--row-hover);
+  }
+  .context-panel .page-panel-tabs > button {
+    flex: 1;
+    justify-content: center;
+    height: 28px;
+    border: 0;
+    border-radius: 8px;
+    font-size: var(--fs-meta);
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .context-panel
+    .page-panel-tabs
+    > button:is([aria-selected='true'], [aria-pressed='true'], .active) {
+    background: var(--canvas);
+    color: var(--ink);
+    box-shadow: 0 1px 2px rgb(24 24 27 / 0.1);
+  }
+  .context-panel .page-facts,
+  .context-panel .page-facts :is(dt, dd) {
+    font-size: var(--fs-meta);
+  }
+  .context-panel .page-facts dt {
+    color: var(--muted);
+  }
+  .context-panel .context-section > summary {
+    min-height: 28px;
+    font: 700 var(--fs-label) / 1 var(--ui);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .context-panel .context-section > summary > span {
+    font-size: var(--fs-meta);
+    letter-spacing: 0;
+  }
+  .context-panel :is(.context-outline, .connected-list) > button,
+  .context-panel .mention {
+    min-height: 30px;
+    height: auto;
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: var(--fs-ui);
+    color: var(--text2);
+    transition: background-color 280ms var(--ease) 90ms;
+  }
+  .context-panel :is(.context-outline, .connected-list) > button:hover,
+  .context-panel .mention:hover {
+    background: var(--row-hover);
+    color: var(--ink);
+    transition-duration: 70ms;
+    transition-delay: 0ms;
+  }
+  .context-panel :is(.context-outline, .connected-list) {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 4px 0 8px;
+  }
+  .context-panel :is(.context-outline, .connected-list) > button {
+    min-height: 28px;
+    padding: 4px 8px;
+  }
+  .context-panel .context-section {
+    padding: 10px 0;
+    border-top: 1px solid var(--hairline);
+  }
+  .context-panel .mention :is(span, small),
+  .context-panel :is(.context-graph-preview > summary, .details-graph-link, .context-connect) {
+    font-size: var(--fs-meta);
+  }
+
+  /* ---------- document: meta and utilities at one quiet level ---------- */
+  .document-canvas .page-meta,
+  .document-utilities,
+  .document-utilities span,
+  .add-block-row,
+  .add-block-row span {
+    font-size: var(--fs-meta);
+  }
+
+  /* The capture dock floats above a soft fade, so text never sits half under it. */
+  @media (min-width: 701px) {
+    .workspace-main:has(.capture-dock) .workspace-content:not(:has(> .context-panel))::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 88px;
+      border-radius: 0 0 16px 16px;
+      background: linear-gradient(to bottom, transparent, var(--canvas) 72%);
+      pointer-events: none;
+      z-index: 2;
+    }
+  }
+
+  /* ---------- home: the same surfaces as everywhere else ---------- */
+  .home-action {
+    height: 34px;
+    border: 0;
+    border-radius: 9px;
+    background: var(--soft);
+    box-shadow: inset 0 0 0 1px rgb(24 24 27 / 0.05);
+    font-size: var(--fs-ui);
+    font-weight: 600;
+    color: var(--text2);
+  }
+  .home-action:hover {
+    background: var(--row-hover);
+    color: var(--ink);
+  }
+  .home-continue button {
+    border: 0;
+    border-radius: 12px;
+    background: var(--soft);
+    box-shadow: inset 0 0 0 1px rgb(24 24 27 / 0.05);
+    transition: background-color 260ms var(--ease) 80ms;
+  }
+  .home-continue button:hover {
+    background: color-mix(in oklab, var(--soft) 88%, var(--ink));
+    transition-duration: 80ms;
+    transition-delay: 0ms;
+  }
+  .home-section-head h2,
+  .home-section > h2 {
+    font: 700 var(--fs-label) / 1 var(--ui);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .home-section .text-button {
+    font-size: var(--fs-meta);
+    font-weight: 600;
+  }
+  .map-edge {
+    stroke: #3f3f46;
+  }
+  .map-loose {
+    fill: #52525b;
+  }
+  .workspace-map {
+    border-radius: 14px;
+  }
+
+  /* ---------- phones: the page uses the width it has ---------- */
+  @media (max-width: 700px) {
+    .document-canvas:not(.database-page, :has(.web-authoring-page)) {
+      width: calc(100% - 40px);
+    }
+    .workspace-main:has(.capture-dock) .workspace-content {
+      position: relative;
+    }
+    .workspace-main:has(.capture-dock) .workspace-content::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 96px;
+      background: linear-gradient(to bottom, transparent, var(--canvas) 70%);
+      pointer-events: none;
+      z-index: 2;
+    }
+  }
+}

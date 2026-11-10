@@ -19,13 +19,18 @@
     --accent-soft: rgb(24 24 27 / 0.07);
     --ring: 0 0 0 3px rgb(24 24 27 / 0.16);
     --brand-signal: #ffc247;
+    --kind-document: #5f7f9c;
+    --kind-database: #b7862c;
+    --kind-canvas: #b85f82;
+    --kind-record: #5f9070;
+    --row-press: rgb(24 24 27 / 0.1);
     --sheet-shadow: 0 1px 2px rgb(24 24 27 / 0.05), 0 18px 44px -22px rgb(24 24 27 / 0.3);
     --soft: #f1f1f3;
     --ground-light:
       radial-gradient(900px 640px at 0% 0%, rgb(255 255 255 / 0.55), transparent 62%),
       radial-gradient(860px 620px at 100% 100%, rgb(24 24 27 / 0.07), transparent 60%);
     --pane-edge: 0 10px 28px -14px rgb(24 24 27 / 0.18), inset 0 0 0 1px rgb(255 255 255 / 0.5);
-    --row-hover: rgb(255 255 255 / 0.6);
+    --row-hover: rgb(24 24 27 / 0.065);
     --dock: rgb(255 255 255 / 0.9);
   }
   :root[data-theme='dark'] {
@@ -143,13 +148,35 @@
     box-shadow: var(--loose-edge);
     color: var(--text2);
     font-weight: 600;
-    transition:
-      background-color 160ms var(--ease),
-      transform 160ms var(--ease);
+    transition: background-color 240ms var(--ease) 60ms;
   }
   .workbench-tab:hover:not(.active) {
-    background: color-mix(in oklab, var(--loose) 60%, var(--canvas));
-    transform: translateY(-1px);
+    background: color-mix(in oklab, var(--loose) 40%, var(--canvas));
+    transition-duration: 80ms;
+    transition-delay: 0ms;
+  }
+  /* The close button always keeps its place, so a tab never grows under the pointer. */
+  .topbar .workbench-tab:not(.active, :hover, :focus-within) .tab-close {
+    display: grid;
+    opacity: 0;
+  }
+  .workbench-tab .tab-close {
+    transition: opacity 200ms var(--ease) 80ms;
+  }
+  .workbench-tab:is(:hover, :focus-within, .active) .tab-close {
+    opacity: 1;
+    transition-delay: 0ms;
+  }
+  .workbench-tab [role='tab'] svg,
+  .workbench-tab.active [role='tab'] svg {
+    display: block;
+    box-sizing: border-box;
+    width: 15px;
+    height: 15px;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--k, var(--muted));
   }
   .workbench-tab.active,
   .topbar .workbench-tab.active {
@@ -191,8 +218,38 @@
   .sidebar-panel .tree-row.selected :is(.tree-page, .tree-toggle, .tree-more, svg) {
     color: var(--on-accent);
   }
+  .sidebar-panel .tree-row {
+    transition: background-color 280ms var(--ease) 90ms;
+  }
   .sidebar-panel .tree-row:not(.selected):hover {
     background: var(--row-hover);
+    transition-duration: 70ms;
+    transition-delay: 0ms;
+  }
+  .sidebar-panel .tree-row:not(.selected):active {
+    background: var(--row-press);
+  }
+  .sidebar-panel .favorites > button {
+    transition: background-color 280ms var(--ease) 90ms;
+  }
+  .sidebar-panel .favorites > button:hover {
+    background: var(--row-hover);
+    transition-duration: 70ms;
+    transition-delay: 0ms;
+  }
+  /* Row actions sit on the row itself: the title fades under them instead of a pasted block. */
+  .tree-row > .tree-row-actions,
+  .tree-row.selected > .tree-row-actions {
+    background: transparent;
+  }
+  .tree-row:is(:hover, :focus-within) > .tree-page {
+    mask-image: linear-gradient(to right, #000 calc(100% - 64px), transparent calc(100% - 44px));
+  }
+  .sidebar-panel .tree-row.selected > .tree-row-actions > button {
+    color: var(--on-accent);
+  }
+  .sidebar-panel .tree-row.selected > .tree-row-actions > button:hover {
+    background: rgb(255 255 255 / 0.14);
   }
 
   /* ---------- the rail: loose tabs, the open place on glass ---------- */

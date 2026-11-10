@@ -182,6 +182,7 @@ export function Workspace() {
             {['document', 'canvas'].includes(state.view) && (
               <IconButton
                 label={state.contextOpen ? t('Close page details') : t('Open page details')}
+                aria-pressed={state.contextOpen}
                 onClick={() => useWorkspace.getState().setContextOpen(!state.contextOpen)}
               >
                 <PanelRight />

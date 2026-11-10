@@ -6,4 +6,5 @@ import './atelier.css';
 import './signature.css';
 import '@fontsource-variable/manrope';
 import './sinapta.css';
+import './sinapta-system.css';
 createRoot(document.getElementById('root')!).render(<App />);

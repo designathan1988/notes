@@ -7530,8 +7530,8 @@
     line-height: 1;
   }
   .avatar {
-    color: var(--kind-document) !important;
-    background: color-mix(in oklab, var(--kind-document) var(--tint), transparent) !important;
+    color: var(--kind-document);
+    background: color-mix(in oklab, var(--kind-document) var(--tint), transparent);
     font-weight: 600;
   }
 
