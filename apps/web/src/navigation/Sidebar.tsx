@@ -26,6 +26,7 @@ import {
   Palette,
   SquarePen,
   ChevronsUpDown,
+  Files,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '../state/store.js';
@@ -83,6 +84,7 @@ function PageRow({
           event.preventDefault();
           setMenu(event.currentTarget);
         }}
+        data-depth={Math.min(depth, 8)}
         style={{ '--depth': Math.min(depth, 8) } as React.CSSProperties}
       >
         {hasChildren ? (
@@ -114,6 +116,7 @@ function PageRow({
             <Icon />
           )}
           <span>{page.title}</span>
+          {children.length > 0 && <span className="tree-count">{children.length}</span>}
         </button>
         <span className="tree-row-actions" data-tree-control>
           {page.kind === 'document' && !readOnly && (
@@ -160,9 +163,23 @@ function PageRow({
     </>
   );
 }
+/** Default names a page keeps until someone titles it, in both languages the app speaks. */
+const untitled = new Set([
+  '',
+  'untitled',
+  'untitled canvas',
+  'untitled document',
+  'untitled database',
+  'sem título',
+  'quadro sem título',
+  'documento sem título',
+  'banco de dados sem título',
+]);
+
 export function Sidebar() {
   const state = useWorkspace();
   const [accountMenu, setAccountMenu] = useState<HTMLElement | null>(null);
+  const [draftsOpen, setDraftsOpen] = useState(false);
   const theme = useTheme();
   const drag = useTreeDrag();
   const drawer = useRef<HTMLElement>(null);
@@ -201,6 +218,18 @@ export function Sidebar() {
     };
   }, [state.sidebarOpen]);
   const workspace = state.workspaces.find((item) => item.id === state.workspaceId);
+  // Untitled pages without children are grouped, collapsed, under one row (the open one shows).
+  const roots = state.pages
+    .filter((page) => !page.parentId && !page.templateRootId)
+    .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
+  const drafts = roots.filter(
+    (page) =>
+      untitled.has(page.title.trim().toLowerCase()) &&
+      !page.hasChildren &&
+      !state.pages.some((child) => child.parentId === page.id),
+  );
+  const groupDrafts = drafts.length >= 2;
+  const showDrafts = draftsOpen || drafts.some((page) => page.id === state.selectedId);
   const rootCount = state.pages.filter(
     (page) => !page.parentId && !page.templateRootId && page.kind !== 'record',
   ).length;
@@ -350,12 +379,39 @@ export function Sidebar() {
                 </div>
               )}
               <div className="page-tree">
-                {state.pages
-                  .filter((page) => !page.parentId && !page.templateRootId)
-                  .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
-                  .map((page) => (
+                {(groupDrafts ? roots.filter((page) => !drafts.includes(page)) : roots).map(
+                  (page) => (
                     <PageRow key={page.id} page={page} depth={0} drop={drag.target} />
-                  ))}
+                  ),
+                )}
+                {groupDrafts && (
+                  <>
+                    <div className="tree-row tree-drafts" data-depth={0}>
+                      <button
+                        className="tree-toggle"
+                        aria-label={t(showDrafts ? 'Collapse {{title}}' : 'Expand {{title}}', {
+                          title: t('Untitled drafts'),
+                        })}
+                        onClick={() => setDraftsOpen(!showDrafts)}
+                      >
+                        {showDrafts ? <ChevronDown /> : <ChevronRight />}
+                      </button>
+                      <button
+                        className="tree-page"
+                        aria-expanded={showDrafts}
+                        onClick={() => setDraftsOpen(!showDrafts)}
+                      >
+                        <Files />
+                        <span>{t('Untitled drafts')}</span>
+                        <span className="tree-count">{drafts.length}</span>
+                      </button>
+                    </div>
+                    {showDrafts &&
+                      drafts.map((page) => (
+                        <PageRow key={page.id} page={page} depth={1} drop={drag.target} />
+                      ))}
+                  </>
+                )}
                 {state.navigationCursors.root && (
                   <button
                     className="tree-more"

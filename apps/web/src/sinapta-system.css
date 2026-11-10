@@ -2383,4 +2383,40 @@
   .details-content .context-mentions > button:hover > span {
     color: var(--ink);
   }
+
+  /* Unit 5, the tree: child counts, a guide line under an open page, untitled drafts grouped. */
+  .page-tree .tree-row {
+    position: relative;
+  }
+  .page-tree .tree-page .tree-count {
+    flex: none;
+    margin-left: auto;
+    padding-left: 6px;
+    color: var(--faint);
+    font-size: 12px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .page-tree .tree-row:hover .tree-page .tree-count,
+  .page-tree .tree-row:focus-within .tree-page .tree-count {
+    visibility: hidden;
+  }
+  .page-tree .tree-drafts:hover .tree-page .tree-count {
+    visibility: visible;
+  }
+  .page-tree .tree-row:not([data-depth='0'])::before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(17px + (var(--depth) - 1) * 13px);
+    z-index: 1;
+    width: 1px;
+    background: var(--hair2);
+    pointer-events: none;
+  }
+  .page-tree .tree-drafts .tree-page {
+    color: var(--muted);
+  }
 }

@@ -212,6 +212,7 @@ const messages: Record<string, string> = {
   'Open canvases': 'Abrir quadros',
   'Add comment': 'Adicionar comentário',
   Share: 'Compartilhar',
+  'Untitled drafts': 'Rascunhos sem título',
   Neighbourhood: 'Vizinhança',
   Backlinks: 'Links de retorno',
   Mentions: 'Menciona',
