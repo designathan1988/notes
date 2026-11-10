@@ -1,0 +1,241 @@
+/* ==========================================================================
+   Sinapta: the approved canvas direction "v15 · Neutro com presença".
+   A real neutral ground, panes with body, real tabs that join the sheet, and graphite only on
+   where you are and what is primary. Appearance overrides still win: they are inline on :root.
+   ========================================================================== */
+@layer sinapta {
+  :root {
+    --ui: 'Manrope Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --ground: #dcdde1;
+    --pane: rgb(250 250 251 / 0.74);
+    --loose: rgb(255 255 255 / 0.55);
+    --loose-edge: inset 0 0 0 1px rgb(255 255 255 / 0.7), 0 1px 2px rgb(24 24 27 / 0.06);
+    --graphite: linear-gradient(180deg, #3f3f46, #18181b);
+    --graphite-shadow: 0 6px 14px -6px rgb(24 24 27 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.12);
+    --accent: #27272a;
+    --accent-hover: #18181b;
+    --accent-ink: #18181b;
+    --on-accent: #ffffff;
+    --accent-soft: rgb(24 24 27 / 0.07);
+    --ring: 0 0 0 3px rgb(24 24 27 / 0.16);
+    --brand-signal: #ffc247;
+    --sheet-shadow: 0 1px 2px rgb(24 24 27 / 0.05), 0 18px 44px -22px rgb(24 24 27 / 0.3);
+    --soft: #f1f1f3;
+    --ground-light:
+      radial-gradient(900px 640px at 0% 0%, rgb(255 255 255 / 0.55), transparent 62%),
+      radial-gradient(860px 620px at 100% 100%, rgb(24 24 27 / 0.07), transparent 60%);
+    --pane-edge: 0 10px 28px -14px rgb(24 24 27 / 0.18), inset 0 0 0 1px rgb(255 255 255 / 0.5);
+    --row-hover: rgb(255 255 255 / 0.6);
+    --dock: rgb(255 255 255 / 0.9);
+  }
+  :root[data-theme='dark'] {
+    --ground: #0d0d0f;
+    --pane: rgb(30 30 34 / 0.78);
+    --loose: rgb(255 255 255 / 0.06);
+    --loose-edge: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+    --graphite: linear-gradient(180deg, #fafafa, #d4d4d8);
+    --graphite-shadow: 0 6px 14px -6px rgb(0 0 0 / 0.6);
+    --accent: #e4e4e7;
+    --accent-hover: #ffffff;
+    --accent-ink: #f4f4f5;
+    --on-accent: #18181b;
+    --accent-soft: rgb(255 255 255 / 0.08);
+    --ring: 0 0 0 3px rgb(255 255 255 / 0.2);
+    --sheet-shadow: 0 0 0 1px rgb(255 255 255 / 0.05), 0 18px 44px -22px rgb(0 0 0 / 0.7);
+    --soft: #1b1b1f;
+    --ground-light: radial-gradient(900px 640px at 0% 0%, rgb(255 255 255 / 0.04), transparent 62%);
+    --pane-edge: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+    --row-hover: rgb(255 255 255 / 0.06);
+    --dock: rgb(30 30 34 / 0.92);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light'], [data-theme='dark']) {
+      --ground: #0d0d0f;
+      --pane: rgb(30 30 34 / 0.78);
+      --loose: rgb(255 255 255 / 0.06);
+      --loose-edge: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+      --graphite: linear-gradient(180deg, #fafafa, #d4d4d8);
+      --graphite-shadow: 0 6px 14px -6px rgb(0 0 0 / 0.6);
+      --accent: #e4e4e7;
+      --accent-hover: #ffffff;
+      --accent-ink: #f4f4f5;
+      --on-accent: #18181b;
+      --accent-soft: rgb(255 255 255 / 0.08);
+      --ring: 0 0 0 3px rgb(255 255 255 / 0.2);
+      --sheet-shadow: 0 0 0 1px rgb(255 255 255 / 0.05), 0 18px 44px -22px rgb(0 0 0 / 0.7);
+      --soft: #1b1b1f;
+      --ground-light: radial-gradient(
+        900px 640px at 0% 0%,
+        rgb(255 255 255 / 0.04),
+        transparent 62%
+      );
+      --pane-edge: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+      --row-hover: rgb(255 255 255 / 0.06);
+      --dock: rgb(30 30 34 / 0.92);
+    }
+  }
+
+  /* ---------- the ground ---------- */
+  .app-shell {
+    background-color: var(--ground);
+    background-image: var(--ground-light);
+  }
+
+  @media (min-width: 701px) {
+    /* The rail sits on the ground; the pages pane floats as glass. */
+    .sidebar-rail {
+      background: transparent;
+      border-right: 0;
+    }
+    .sidebar-panel {
+      margin: 8px 0;
+      border-radius: 16px;
+      background: var(--pane);
+      backdrop-filter: blur(22px) saturate(1.5);
+      box-shadow: var(--pane-edge);
+    }
+
+    /* The work area is no longer one white box: the bar sits on the ground, the sheet floats. */
+    .workspace-main,
+    .app-shell.sidebar-collapsed .workspace-main {
+      margin: 8px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .topbar {
+      height: 42px;
+      min-height: 42px;
+      padding: 0 2px 0 4px;
+      border-bottom: 0;
+      background: transparent;
+    }
+    .workspace-content {
+      border-radius: 16px;
+      background: var(--canvas);
+      box-shadow: var(--sheet-shadow);
+    }
+    .workspace-main:has(.workbench-tab.active:first-child) .workspace-content {
+      border-top-left-radius: 0;
+    }
+  }
+
+  /* ---------- real tabs: loose ones rest on the ground, the open one joins the sheet ---------- */
+  .topbar .workbench-strip {
+    align-self: stretch;
+    height: auto;
+    padding: 0;
+    border-bottom: 0;
+    background: transparent;
+  }
+  .topbar .workbench-tabs {
+    align-items: flex-end;
+    gap: 4px;
+    padding: 0 12px 0 0;
+  }
+  .workbench-tab {
+    height: 32px;
+    margin-bottom: 4px;
+    border: 0;
+    border-radius: 10px 10px 6px 6px;
+    background: var(--loose);
+    box-shadow: var(--loose-edge);
+    color: var(--text2);
+    font-weight: 600;
+    transition:
+      background-color 160ms var(--ease),
+      transform 160ms var(--ease);
+  }
+  .workbench-tab:hover:not(.active) {
+    background: color-mix(in oklab, var(--loose) 60%, var(--canvas));
+    transform: translateY(-1px);
+  }
+  .workbench-tab.active,
+  .topbar .workbench-tab.active {
+    height: 38px;
+    margin-bottom: 0;
+    border-radius: 10px 10px 0 0;
+    background: var(--canvas);
+    box-shadow: none;
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .workbench-tab.active::before,
+  .workbench-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+  }
+  .workbench-tab.active::before {
+    left: -10px;
+    background: radial-gradient(circle at 0 0, transparent 9.5px, var(--canvas) 10px);
+  }
+  .workbench-tab.active::after {
+    right: -10px;
+    background: radial-gradient(circle at 100% 0, transparent 9.5px, var(--canvas) 10px);
+  }
+  .workbench-tab.active:first-child::before {
+    display: none;
+  }
+
+  /* ---------- the pages pane: the current page is a graphite pill ---------- */
+  .sidebar .tree-row.selected,
+  .sidebar-panel .tree-row.selected {
+    background: var(--graphite);
+    box-shadow: var(--graphite-shadow);
+  }
+  .sidebar-panel .tree-row.selected :is(.tree-page, .tree-toggle, .tree-more, svg) {
+    color: var(--on-accent);
+  }
+  .sidebar-panel .tree-row:not(.selected):hover {
+    background: var(--row-hover);
+  }
+
+  /* ---------- the rail: loose tabs, the open place on glass ---------- */
+  .sidebar-rail :is(.search-trigger, .rail-pages, .workspace-destinations > button, .icon-button) {
+    border-radius: 10px;
+  }
+  .sidebar-rail :is(.search-trigger, .rail-pages, .workspace-destinations > button):hover {
+    background: var(--loose);
+    box-shadow: var(--loose-edge);
+  }
+  .sidebar-rail .workspace-destinations > button[aria-current='page'],
+  .sidebar-rail .rail-pages[aria-pressed='true'] {
+    background: var(--pane);
+    box-shadow: var(--loose-edge);
+    color: var(--ink);
+  }
+  .rail-brand .brand-mark {
+    filter: drop-shadow(0 4px 8px rgb(24 24 27 / 0.25));
+  }
+  .sidebar-footer .avatar {
+    background: var(--graphite);
+    color: var(--on-accent);
+  }
+
+  /* ---------- primary actions and the capture dock ---------- */
+  .button.primary,
+  .button.primary:hover:not(:disabled) {
+    background: var(--graphite);
+    color: var(--on-accent);
+    box-shadow: var(--graphite-shadow);
+  }
+  .button.primary:hover:not(:disabled) {
+    filter: brightness(1.12);
+  }
+  .button.primary:active:not(:disabled) {
+    transform: translateY(1px) scale(0.99);
+  }
+  .capture-dock {
+    border-radius: 14px;
+    background: var(--dock);
+    backdrop-filter: blur(18px) saturate(1.6);
+    box-shadow:
+      inset 0 0 0 1px rgb(24 24 27 / 0.08),
+      0 14px 32px -14px rgb(24 24 27 / 0.32);
+  }
+}

@@ -39,13 +39,13 @@ export function SignIn() {
   }
   return (
     <main className="auth-screen">
-      <section className="auth-hero" aria-label={t('About Mosaic')}>
+      <section className="auth-hero" aria-label={t('About Sinapta')}>
         <div className="auth-watermark" aria-hidden="true">
           <BrandMark size={620} />
         </div>
         <div className="auth-brand">
           <BrandMark size={28} />
-          <span>Mosaic</span>
+          <span>Sinapta</span>
         </div>
         <div className="auth-pitch">
           <h2>{t('Documents, data and ideas in one connected workspace.')}</h2>
@@ -117,7 +117,7 @@ export function SignIn() {
           </>
         )}
         <p className="auth-switch">
-          {signup ? t('Already have an account?') : t('New to Mosaic?')}{' '}
+          {signup ? t('Already have an account?') : t('New to Sinapta?')}{' '}
           <button
             type="button"
             className="text-button"

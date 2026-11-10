@@ -1,6 +1,6 @@
 @import '@fontsource-variable/geist';
 @import '@fontsource-variable/geist-mono';
-@layer tokens, base, layout, components, editor, responsive, variants, workbench, mosaic, finish, nexo, atelier;
+@layer tokens, base, layout, components, editor, responsive, variants, workbench, mosaic, finish, nexo, atelier, sinapta;
 
 @layer components {
   /* Status floats over the control: a save must never move the rows around it mid-click. */

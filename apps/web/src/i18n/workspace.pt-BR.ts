@@ -15,7 +15,7 @@ const messages: Record<string, string> = {
 
   '1 page edited today': '1 página editada hoje',
   'A little space to think.': 'Um espaço para pensar.',
-  'About Mosaic': 'Sobre o Mosaic',
+  'About Sinapta': 'Sobre a Sinapta',
   Accent: 'Destaque',
   'Accept invitation': 'Aceitar convite',
   Account: 'Conta',
@@ -190,7 +190,7 @@ const messages: Record<string, string> = {
   'New page with options': 'Nova página com opções',
   'New subpage': 'Nova subpágina',
   'New tab': 'Nova aba',
-  'New to Mosaic?': 'Novo no Mosaic?',
+  'New to Sinapta?': 'Nova na Sinapta?',
   'New document': 'Novo documento',
   'New workspace': 'Novo espaço de trabalho',
   Next: 'Próxima',

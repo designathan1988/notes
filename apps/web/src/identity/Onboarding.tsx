@@ -10,7 +10,7 @@ export function WorkspaceSetup() {
     <main className="onboarding">
       <div className="auth-brand">
         <BrandMark size={30} />
-        Mosaic
+        Sinapta
       </div>
       <section>
         <h1>{t('Make room for your ideas.')}</h1>
@@ -71,7 +71,7 @@ export function InvitationAccept({ id }: { id: string }) {
     <main className="onboarding">
       <div className="auth-brand">
         <BrandMark size={30} />
-        Mosaic
+        Sinapta
       </div>
       <section>
         <h1>{t('You’ve been invited.')}</h1>

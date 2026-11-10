@@ -243,7 +243,7 @@ export function Sidebar() {
         <div className="sidebar-pane">
           {/* The rail: icons only, always present. The page list beside it opens on demand. */}
           <div className="sidebar-rail">
-            <span className="rail-brand" title="Mosaic">
+            <span className="rail-brand" title="Sinapta">
               <BrandMark size={22} />
             </span>
             <button

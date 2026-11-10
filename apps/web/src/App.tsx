@@ -48,7 +48,7 @@ export default function App() {
       <main className="loading-screen">
         <span className="brand">
           <BrandMark size={28} />
-          Mosaic
+          Sinapta
         </span>
         <p>{t('Opening your workspace…')}</p>
       </main>
@@ -58,7 +58,7 @@ export default function App() {
       <main className="loading-screen">
         <span className="brand">
           <BrandMark size={28} />
-          Mosaic
+          Sinapta
         </span>
         <p>{t('We couldn’t reach your workspace.')}</p>
         <button
