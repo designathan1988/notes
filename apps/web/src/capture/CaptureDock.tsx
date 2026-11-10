@@ -38,7 +38,11 @@ export function CaptureDock() {
   // Ctrl/⌘ + . jots from anywhere.
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === '.') {
+      // Ctrl/⌘ + Shift + Space (the shortcut on the button) or Ctrl/⌘ + . opens capture.
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        (event.key === '.' || (event.shiftKey && event.code === 'Space'))
+      ) {
         event.preventDefault();
         focusOnOpen.current = true;
         setOpen(true);
@@ -107,13 +111,15 @@ export function CaptureDock() {
           type="button"
           className="capture-trigger"
           aria-label={t('Capture a thought')}
-          title={`${t('Jot something down…')} (Ctrl .)`}
+          title={t('Jot something down…')}
           onClick={() => {
             focusOnOpen.current = true;
             show();
           }}
         >
           <Feather size={16} aria-hidden="true" />
+          <span>{t('Jot down')}</span>
+          <kbd>{t('Ctrl ⇧ Space')}</kbd>
         </button>
       )}
       <form

@@ -272,8 +272,9 @@ export function Sidebar() {
         <div className="sidebar-pane">
           <div className="sidebar-panel">
             <header className="sidebar-head">
-              <span className="sidebar-brand" title="Sinapta">
-                <BrandMark size={20} />
+              <span className="sidebar-brand">
+                <BrandMark size={18} />
+                <span className="brand-word">Sinapta</span>
               </span>
               <span className="sidebar-head-space" />
               <nav className="workspace-destinations" aria-label={t('Workspace tools')}>

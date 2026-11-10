@@ -247,18 +247,18 @@ test('media inserted into a website goes inside the body of its entry page', asy
   await context.close();
 });
 
-test('a database header never shows the connection count left over from the previous document', async ({
+test('a database header never shows the page chips left over from the previous document', async ({
   browser,
 }) => {
   const { context, page } = await open(browser);
   await page.goto('/#/all');
   await page.getByRole('button', { name: 'Product direction', exact: true }).first().click();
-  await expect(page.locator('.page-meta')).toContainText(/\d+ connections?/);
+  await expect(page.locator('.page-meta')).toContainText(/\d+backlinks?/);
   await page.locator('.sidebar').getByText('Research', { exact: true }).first().click();
   await expect(
     page.getByRole('heading', { name: 'Research' }).or(page.locator('.page-title')),
   ).toBeVisible();
-  await expect(page.locator('.page-meta')).not.toContainText('connection');
+  await expect(page.locator('.page-meta')).not.toContainText('backlink');
   await context.close();
 });
 

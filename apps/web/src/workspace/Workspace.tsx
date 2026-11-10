@@ -15,6 +15,10 @@ import {
   Command,
   MessageSquare,
   Link2,
+  Folder,
+  House,
+  Network,
+  Shapes,
   UserPlus,
 } from 'lucide-react';
 import { useEffect, lazy, Suspense } from 'react';
@@ -143,12 +147,26 @@ export function Workspace() {
             {parent && !globalView && (
               <>
                 <button className="breadcrumb-parent" onClick={() => state.navigate(parent.id)}>
+                  <Folder size={15} aria-hidden="true" />
                   {parent.title}
                 </button>
                 <span>/</span>
               </>
             )}
             <strong>
+              {(() => {
+                const CrumbIcon =
+                  state.view === 'home'
+                    ? House
+                    : state.view === 'graph'
+                      ? Network
+                      : page?.kind === 'database' || databaseIndex
+                        ? Database
+                        : page?.kind === 'canvas' || canvasIndex
+                          ? Shapes
+                          : FileText;
+                return <CrumbIcon size={15} aria-hidden="true" />;
+              })()}
               {state.view === 'home'
                 ? t('Home')
                 : state.view === 'templates'

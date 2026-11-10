@@ -1266,78 +1266,116 @@
   }
 
   /* ==========================================================================
-     Notion's palette and rhythm: warm greys built on #37352f, a cream sidebar, 28px rows,
-     a 6% hover and an 8% current row, quiet 12px section titles.
+     The design session's palette (sinapta-ui.css): warm neutrals on #1f1e1c, a #f6f6f4 sidebar,
+     a 5.5% hover and a 7.5% current row; dark on #18181a with a #1f1f22 sidebar.
      ========================================================================== */
   :root[data-theme='light'] {
-    --ink: #37352f;
-    --text2: #5f5e5b;
-    --muted: #787774;
-    --faint: #9b9a97;
-    --icon: #91918e;
+    --ink: #1f1e1c;
+    --text: #2f2e2b;
+    --text2: #5d5c58;
+    --muted: #6f6e69;
+    --faint: #a3a29d;
+    --icon: #8a8984;
     --canvas: #ffffff;
-    --side: #f7f6f3;
-    --soft: #f7f6f3;
-    --hairline: rgb(55 53 47 / 0.09);
-    --rule: rgb(55 53 47 / 0.09);
-    --rule-strong: rgb(55 53 47 / 0.16);
-    --row-hover: rgb(55 53 47 / 0.06);
-    --row-selected: rgb(55 53 47 / 0.08);
-    --selected: rgb(55 53 47 / 0.08);
-    --graphite: #37352f;
-    --accent: #37352f;
-    --accent-ink: #37352f;
+    --side: #f6f6f4;
+    --soft: #f6f6f4;
+    --hairline: rgb(31 30 28 / 0.08);
+    --rule: rgb(31 30 28 / 0.08);
+    --rule-strong: rgb(31 30 28 / 0.13);
+    --row-hover: rgb(31 30 28 / 0.055);
+    --row-selected: rgb(31 30 28 / 0.075);
+    --selected: rgb(31 30 28 / 0.075);
+    --graphite: #1f1e1c;
+    --accent: #1f1e1c;
+    --accent-ink: #1f1e1c;
+    --blue: #3b6fd4;
+    --blue-bg: rgb(59 111 212 / 0.1);
+    --rose: #c2456f;
+    --rose-bg: rgb(194 69 111 / 0.1);
+    --raise: #ffffff;
+    --dots: rgb(31 30 28 / 0.1);
   }
   @media (prefers-color-scheme: light) {
     :root:not([data-theme='dark']) {
-      --ink: #37352f;
-      --text2: #5f5e5b;
-      --muted: #787774;
-      --faint: #9b9a97;
-      --icon: #91918e;
+      --ink: #1f1e1c;
+      --text: #2f2e2b;
+      --text2: #5d5c58;
+      --muted: #6f6e69;
+      --faint: #a3a29d;
+      --icon: #8a8984;
       --canvas: #ffffff;
-      --side: #f7f6f3;
-      --soft: #f7f6f3;
-      --hairline: rgb(55 53 47 / 0.09);
-      --rule: rgb(55 53 47 / 0.09);
-      --rule-strong: rgb(55 53 47 / 0.16);
-      --row-hover: rgb(55 53 47 / 0.06);
-      --row-selected: rgb(55 53 47 / 0.08);
-      --selected: rgb(55 53 47 / 0.08);
-      --graphite: #37352f;
-      --accent: #37352f;
-      --accent-ink: #37352f;
+      --side: #f6f6f4;
+      --soft: #f6f6f4;
+      --hairline: rgb(31 30 28 / 0.08);
+      --rule: rgb(31 30 28 / 0.08);
+      --rule-strong: rgb(31 30 28 / 0.13);
+      --row-hover: rgb(31 30 28 / 0.055);
+      --row-selected: rgb(31 30 28 / 0.075);
+      --selected: rgb(31 30 28 / 0.075);
+      --graphite: #1f1e1c;
+      --accent: #1f1e1c;
+      --accent-ink: #1f1e1c;
+      --blue: #3b6fd4;
+      --blue-bg: rgb(59 111 212 / 0.1);
+      --rose: #c2456f;
+      --rose-bg: rgb(194 69 111 / 0.1);
+      --raise: #ffffff;
+      --dots: rgb(31 30 28 / 0.1);
     }
   }
 
   :root[data-theme='dark'] {
-    --ink: #d4d4d4;
-    --text2: #ababab;
-    --muted: #8c8c8c;
-    --faint: #6f6f6f;
-    --icon: #7f7f7f;
-    --canvas: #191919;
-    --side: #202020;
-    --soft: #252525;
-    --hairline: rgb(255 255 255 / 0.08);
-    --rule: rgb(255 255 255 / 0.08);
-    --row-hover: rgb(255 255 255 / 0.055);
-    --row-selected: rgb(255 255 255 / 0.08);
+    --ink: #f2f1ee;
+    --text: #dddcd8;
+    --text2: #b3b2ad;
+    --muted: #9e9d98;
+    --faint: #6d6c68;
+    --icon: #8b8a86;
+    --canvas: #18181a;
+    --side: #1f1f22;
+    --soft: #1f1f22;
+    --hairline: rgb(255 255 255 / 0.07);
+    --rule: rgb(255 255 255 / 0.07);
+    --rule-strong: rgb(255 255 255 / 0.12);
+    --row-hover: rgb(255 255 255 / 0.05);
+    --row-selected: rgb(255 255 255 / 0.075);
+    --selected: rgb(255 255 255 / 0.075);
+    --graphite: #f2f1ee;
+    --accent: #f2f1ee;
+    --accent-ink: #f2f1ee;
+    --blue: #7ea3f0;
+    --blue-bg: rgb(126 163 240 / 0.14);
+    --rose: #f08bb0;
+    --rose-bg: rgb(240 139 176 / 0.13);
+    --raise: #222226;
+    --dots: rgb(255 255 255 / 0.07);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme='light'], [data-theme='dark']) {
-      --ink: #d4d4d4;
-      --text2: #ababab;
-      --muted: #8c8c8c;
-      --faint: #6f6f6f;
-      --icon: #7f7f7f;
-      --canvas: #191919;
-      --side: #202020;
-      --soft: #252525;
-      --hairline: rgb(255 255 255 / 0.08);
-      --rule: rgb(255 255 255 / 0.08);
-      --row-hover: rgb(255 255 255 / 0.055);
-      --row-selected: rgb(255 255 255 / 0.08);
+      --ink: #f2f1ee;
+      --text: #dddcd8;
+      --text2: #b3b2ad;
+      --muted: #9e9d98;
+      --faint: #6d6c68;
+      --icon: #8b8a86;
+      --canvas: #18181a;
+      --side: #1f1f22;
+      --soft: #1f1f22;
+      --hairline: rgb(255 255 255 / 0.07);
+      --rule: rgb(255 255 255 / 0.07);
+      --rule-strong: rgb(255 255 255 / 0.12);
+      --row-hover: rgb(255 255 255 / 0.05);
+      --row-selected: rgb(255 255 255 / 0.075);
+      --selected: rgb(255 255 255 / 0.075);
+      --graphite: #f2f1ee;
+      --accent: #f2f1ee;
+      --accent-ink: #f2f1ee;
+      --blue: #7ea3f0;
+      --blue-bg: rgb(126 163 240 / 0.14);
+      --rose: #f08bb0;
+      --rose-bg: rgb(240 139 176 / 0.13);
+      --raise: #222226;
+      --dots: rgb(255 255 255 / 0.07);
     }
   }
   :root {
@@ -2410,7 +2448,7 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    left: calc(17px + (var(--depth) - 1) * 13px);
+    left: calc(32px + (var(--depth) - 1) * 20px);
     z-index: 1;
     width: 1px;
     background: var(--hair2);
@@ -2429,6 +2467,378 @@
     :root:not([data-theme='light'], [data-theme='dark']) .sidebar-footer .account-trigger .avatar {
       background: linear-gradient(140deg, #e9e8e4, #bdbcb7);
       color: #18181a;
+    }
+  }
+
+  /* ==========================================================================
+     Spec: the design session's shell, exactly (sinapta-ui.css .sb / .row / .top).
+     ========================================================================== */
+  @media (min-width: 701px) {
+    .sidebar-panel {
+      padding: 0;
+      background: var(--side);
+      box-shadow: inset -1px 0 0 var(--hairline);
+    }
+    .sidebar-panel .sidebar-head {
+      height: 52px;
+      padding: 0 10px 0 16px;
+    }
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--ink);
+    }
+    .sidebar-brand .brand-mark {
+      width: 24px;
+      height: 18px;
+    }
+    .sidebar-brand .brand-word {
+      font-size: 15px;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    .sidebar-head .icon-button,
+    .sidebar-head .workspace-destinations > button {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      color: var(--icon);
+    }
+    .sidebar-head .workspace-destinations > button[aria-current='page'] {
+      background: var(--row-selected);
+      color: var(--ink);
+    }
+    .sidebar-actions {
+      padding: 0;
+    }
+    .sidebar-actions .search-trigger {
+      width: calc(100% - 20px);
+      margin: 2px 10px 6px;
+    }
+    .sidebar-scroll {
+      padding: 0 10px;
+    }
+
+    /* Section titles align with the row text, past the 24px chevron gutter. */
+    .sidebar-scroll .section-label {
+      height: 30px;
+      margin-top: 14px;
+      padding: 0 8px 0 24px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    /* Rows: 30px, a 24px gutter for the chevron, 20px per level. */
+    .sidebar-scroll :is(.page-tree .tree-row, .favorites > button) {
+      position: relative;
+      height: 30px;
+      min-height: 30px;
+      border-radius: 6px;
+      color: var(--text2);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .sidebar-scroll .favorites > button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 0 8px 0 24px;
+    }
+    .sidebar-scroll .page-tree .tree-row {
+      display: flex;
+      align-items: center;
+      padding: 0 0 0 calc(var(--depth, 0) * 20px);
+    }
+    .sidebar-scroll .page-tree .tree-row > .tree-page {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      height: 30px;
+      padding: 0 8px 0 24px;
+      color: inherit;
+      font: inherit;
+    }
+    .sidebar-scroll
+      .page-tree
+      .tree-row
+      > .tree-page
+      > span:not(.tree-count, .page-reference-icon) {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .sidebar-scroll :is(.page-tree .tree-row > .tree-page, .favorites > button) > svg {
+      width: 16px;
+      height: 16px;
+      flex: none;
+      color: var(--icon);
+      opacity: 1;
+    }
+    .sidebar-scroll .page-tree .tree-row > .tree-toggle {
+      position: absolute;
+      top: 8px;
+      left: calc(var(--depth, 0) * 20px + 6px);
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      width: 14px;
+      min-width: 14px;
+      height: 14px;
+      padding: 0;
+      color: var(--faint);
+    }
+    .sidebar-scroll .page-tree .tree-row > button.tree-toggle > svg {
+      position: static;
+      width: 14px;
+      height: 14px;
+      opacity: 1;
+    }
+    .sidebar-scroll .page-tree .tree-row:hover > .tree-page > svg,
+    .sidebar-scroll .page-tree .tree-row > .tree-page > svg {
+      opacity: 1;
+    }
+    .sidebar-scroll :is(.page-tree .tree-row, .favorites > button):hover {
+      background: var(--row-hover);
+    }
+    .sidebar-scroll :is(.page-tree .tree-row.selected, .favorites > button[aria-current='page']) {
+      background: var(--row-selected);
+      color: var(--ink);
+      font-weight: 600;
+    }
+    .sidebar-scroll .page-tree .tree-row.selected > .tree-page > svg {
+      color: var(--ink);
+    }
+    .sidebar-scroll .page-tree .tree-drafts {
+      color: var(--muted);
+    }
+
+    .sidebar-footer {
+      padding: 8px 10px 12px;
+      border-top: 1px solid var(--hairline);
+    }
+
+    /* The bar: 48px, path on the left with kind icons, quiet 30px icon buttons. */
+    .topbar {
+      padding: 0 14px 0 18px;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .topbar .breadcrumb {
+      gap: 4px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .topbar .breadcrumb strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+    .topbar .topbar-actions > .icon-button {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      color: var(--icon);
+    }
+    .topbar .topbar-actions > .icon-button:hover,
+    .topbar .topbar-actions > .icon-button[aria-pressed='true'] {
+      background: var(--row-selected);
+      box-shadow: none;
+      color: var(--ink);
+    }
+    .topbar .save-status {
+      margin-right: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+  }
+
+  /* Capture: the dark "Anotar" pill with its shortcut, bottom right. */
+  .capture-trigger {
+    right: 24px;
+    bottom: 22px;
+    gap: 9px;
+    width: auto;
+    height: 40px;
+    padding: 0 10px 0 14px;
+    border-radius: 20px;
+    background: var(--ink);
+    box-shadow:
+      0 1px 2px rgb(15 15 14 / 0.06),
+      0 4px 14px rgb(15 15 14 / 0.07);
+    color: var(--canvas);
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+  .capture-trigger:hover {
+    background: color-mix(in srgb, var(--ink) 88%, var(--canvas));
+    color: var(--canvas);
+  }
+  .capture-trigger {
+    display: flex;
+    align-items: center;
+  }
+  .capture-trigger kbd {
+    padding: 3px 5px;
+    border-radius: 4px;
+    background: transparent;
+    box-shadow: inset 0 0 0 1px rgb(127 127 127 / 0.55);
+    color: inherit;
+    font: 500 11px/1 var(--ui);
+    opacity: 0.7;
+  }
+  @media (max-width: 700px) {
+    .capture-trigger > :is(span, kbd) {
+      display: none;
+    }
+    .capture-trigger {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      justify-content: center;
+    }
+  }
+
+  /* Spec: breadcrumb items carry their kind icon; the account row has its padding and rule. */
+  .topbar .breadcrumb :is(.breadcrumb-parent, strong) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border-radius: 6px;
+  }
+  .topbar .breadcrumb :is(.breadcrumb-parent, strong) > svg {
+    flex: none;
+    color: var(--icon);
+  }
+  .topbar .breadcrumb .breadcrumb-parent:hover {
+    background: var(--row-hover);
+    color: var(--ink);
+  }
+  @media (min-width: 701px) {
+    .sidebar-panel footer.sidebar-footer {
+      padding: 8px 10px 12px;
+      border-top: 1px solid var(--hairline);
+    }
+    .sidebar-panel footer.sidebar-footer .account-trigger {
+      padding: 0 8px;
+    }
+  }
+
+  /* Spec: the document (sinapta-ui.css .doc / .ed / .todo / .lk). */
+  .document-canvas:not(.database-page, :has(.web-authoring-page)) {
+    width: min(calc(100% - 96px), 720px);
+  }
+  .document-canvas .page-heading .page-kind {
+    margin-bottom: 12px;
+  }
+  .document-canvas .page-heading:not(.page-heading-compact) .page-title {
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.028em;
+    color: var(--ink);
+  }
+  .document-canvas .page-heading .page-description {
+    margin-top: 12px;
+    color: var(--text2);
+    font-size: 18px;
+    line-height: 1.5;
+    letter-spacing: -0.012em;
+  }
+  .document-canvas .page-metadata-row {
+    margin-top: 18px;
+    padding-bottom: 26px;
+    border-bottom: 1px solid var(--hairline);
+    margin-bottom: 22px;
+  }
+  .page-metadata-row .page-meta > .chip-link {
+    color: var(--ink);
+  }
+  .page-metadata-row .page-meta > .chip-link > b {
+    font-weight: 650;
+  }
+  .note-editor {
+    color: var(--text);
+    font-size: var(--body-size, 16px);
+    line-height: 1.7;
+  }
+  .note-editor > p {
+    margin: 0 0 10px;
+    padding: 0;
+  }
+  .note-editor > h2 {
+    margin: 34px 0 10px;
+    color: var(--ink);
+    font-size: 22px;
+    font-weight: 650;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+  }
+  .note-editor > h1 {
+    color: var(--ink);
+    font-weight: 700;
+    letter-spacing: -0.024em;
+  }
+  .note-editor > h3 {
+    color: var(--ink);
+    font-weight: 650;
+  }
+  .note-editor ul[data-type='taskList'] > li {
+    min-height: 34px;
+    align-items: center;
+    gap: 12px;
+  }
+  .note-editor li[data-checked] > label > input[type='checkbox'] {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    border: 0;
+    border-radius: 5px;
+    background-color: var(--canvas);
+    box-shadow: inset 0 0 0 1.5px var(--rule-strong);
+  }
+  .note-editor li[data-checked] > label > input[type='checkbox']:checked {
+    box-shadow: none;
+  }
+  .note-editor > a.page-link {
+    min-height: 52px;
+    padding: 0 6px;
+  }
+  .note-editor > a.page-link > svg:first-child {
+    padding: 6px;
+    border-radius: 8px;
+    color: var(--text2);
+  }
+  .note-editor > a.page-link > svg:last-child {
+    color: var(--faint);
+  }
+
+  /* Phones: the same page, scaled the way the phone board scales it. */
+  @media (max-width: 700px) {
+    .document-canvas .page-heading:not(.page-heading-compact) .page-title {
+      font-size: 28px;
+    }
+    .document-canvas .page-heading .page-description {
+      margin-top: 6px;
+      font-size: 15px;
+    }
+    .document-canvas .page-metadata-row {
+      margin-top: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+    .page-metadata-row .page-meta > span {
+      height: 24px;
+      padding: 0 8px;
+      font-size: 12px;
     }
   }
 }

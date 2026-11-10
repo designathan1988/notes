@@ -43,6 +43,7 @@ import { RemoteSelection } from './remoteSelection.js';
 import { BlockControls } from './BlockControls.js';
 import { BlockMarquee } from './BlockMarquee.js';
 import { TableTools } from './TableTools.js';
+import { publishStatistics } from './statistics.js';
 import { DatabasePicker } from './DatabasePicker.js';
 import { blockAt } from '@note/editor/blocks';
 import { SelectionToolbar } from './SelectionToolbar.js';
@@ -261,6 +262,9 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
     });
   }, [editor, locale]);
   const statistics = useDocumentProjection(editor, session.page.id);
+  useEffect(() => {
+    publishStatistics(session.page.id, { words: statistics.words, minutes: statistics.minutes });
+  }, [session.page.id, statistics.words, statistics.minutes]);
   useEffect(() => {
     if (!editor || request?.pageId !== session.page.id) return;
     if (typeof request.command === 'object') {

@@ -466,18 +466,20 @@ test('pages can be favorited, renamed, duplicated, trashed and restored', async 
   try {
     await expect(page.locator('.save-status')).toHaveText('Saved');
     const title = page.getByRole('textbox', { name: 'Page title', exact: true });
-    await title.fill('Sweep renamed page');
+    // Unique per run: the warm test servers keep earlier runs' pages.
+    const renamed = `Sweep renamed page ${Date.now()}`;
+    await title.fill(renamed);
     await title.press('Enter');
-    await expect(page.locator('.tree-row.selected')).toContainText('Sweep renamed page');
+    await expect(page.locator('.tree-row.selected')).toContainText(renamed);
     // Favorites live in the page actions menu.
     await page.getByRole('button', { name: 'Page actions', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Add to favorites', exact: true }).click();
-    await expect(page.locator('.favorites')).toContainText('Sweep renamed page');
+    await expect(page.locator('.favorites')).toContainText(renamed);
     await page.getByRole('button', { name: 'Page actions', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Remove favorite', exact: true }).click();
     await page.getByRole('button', { name: 'Page actions', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Duplicate page', exact: true }).click();
-    await expect(page.locator('.tree-page', { hasText: 'Sweep renamed page' })).toHaveCount(2, {
+    await expect(page.locator('.tree-page', { hasText: renamed })).toHaveCount(2, {
       timeout: 8000,
     });
     expect(errors, errors.join('\n')).toEqual([]);

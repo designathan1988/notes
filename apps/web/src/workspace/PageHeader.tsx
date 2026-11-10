@@ -1,8 +1,9 @@
 import { t, formatDate, formatNumber } from '../i18n/index.js';
-import { Clock3, FileText, Database, Network, Shapes, ChevronDown } from 'lucide-react';
+import { AlignLeft, Clock3, FileText, Database, Shapes, ChevronDown, Undo2 } from 'lucide-react';
+import { usePageStatistics } from '../documents/statistics.js';
 import type { Page } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
-import { useLayoutEffect, useRef, useState, useEffectEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useEffectEvent } from 'react';
 import { PagePresentation, PageTags } from '../pages/PagePresentation.js';
 import { PageProperties } from '../pages/PageProperties.js';
 import { MosaicPattern } from '../ui/MosaicPattern.js';
@@ -19,6 +20,19 @@ function fit(element: HTMLTextAreaElement) {
   element.style.height = 'auto';
   element.style.height = element.scrollHeight + 'px';
 }
+/** "hoje, 09:42", "ontem, 18:10" or a short date, the way the design writes edits. */
+function edited(iso: string) {
+  const date = new Date(iso),
+    today = new Date();
+  const time = formatDate(date, { hour: '2-digit', minute: '2-digit' });
+  const days = Math.round(
+    (new Date(today.toDateString()).getTime() - new Date(date.toDateString()).getTime()) / 86400000,
+  );
+  if (days === 0) return t('today, {{time}}', { time });
+  if (days === 1) return t('yesterday, {{time}}', { time });
+  return formatDate(date, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 const kindNames: Record<string, string> = {
   document: 'Page',
   database: 'Database',
@@ -74,6 +88,16 @@ export function PageHeader({
     return () => observer.disconnect();
   }, [page.id, page.title, page.description]);
   const parent = useWorkspace((state) => state.pages.find((item) => item.id === page.parentId));
+  const backlinks = useWorkspace((state) => state.mentions[page.id]?.length);
+  const statistics = usePageStatistics(page.id);
+  const chips = connections !== undefined;
+  useEffect(() => {
+    if (!chips) return;
+    void useWorkspace
+      .getState()
+      .loadMentions(page.id)
+      .catch(() => {});
+  }, [page.id, chips]);
   const Icon = page.kind === 'canvas' ? Shapes : page.kind === 'database' ? Database : FileText;
   const readOnly = useWorkspace(
     (state) => state.workspaces.find((item) => item.id === state.workspaceId)?.role === 'viewer',
@@ -182,18 +206,30 @@ export function PageHeader({
           />
           <div className="page-metadata-row">
             <div className="page-meta">
-              <span>
-                <Clock3 />
-                {formatDate(page.updatedAt, { month: 'short', day: 'numeric', year: 'numeric' })}
-              </span>
-              {/* Only a document knows its outgoing links; other kinds would show a stale count. */}
+              {/* A page's chips: when it was edited, who cites it, how long it is. Other kinds of
+                  page show none of them (they would carry a stale count). */}
               {connections !== undefined && (
-                <span>
-                  <Network />
-                  {t(connections === 1 ? '{{count}} connection' : '{{count}} connections', {
-                    count: formatNumber(connections),
-                  })}
-                </span>
+                <>
+                  <span>
+                    <Clock3 />
+                    {t('Edited {{when}}', { when: edited(page.updatedAt) })}
+                  </span>
+                  <span className="chip-link">
+                    <Undo2 />
+                    <b>{formatNumber(backlinks ?? 0)}</b>
+                    {t(backlinks === 1 ? 'backlink' : 'backlinks')}
+                  </span>
+                  {statistics && (
+                    <span>
+                      <AlignLeft />
+                      {t(statistics.words === 1 ? '{{count}} word' : '{{count}} words', {
+                        count: formatNumber(statistics.words),
+                      })}
+                      {' · '}
+                      {t('{{count}} min', { count: formatNumber(statistics.minutes) })}
+                    </span>
+                  )}
+                </>
               )}
             </div>
             <details
