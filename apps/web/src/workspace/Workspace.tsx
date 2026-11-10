@@ -227,7 +227,7 @@ export function Workspace() {
                 <MessageSquare size={17} />
               </IconButton>
             )}
-            {['document', 'canvas'].includes(state.view) && (
+            {['document', 'canvas', 'database'].includes(state.view) && (
               <IconButton
                 label={state.contextOpen ? t('Close page details') : t('Open page details')}
                 aria-pressed={state.contextOpen}

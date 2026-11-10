@@ -1,7 +1,44 @@
 import { t, getLocale } from '../i18n/index.js';
 import { useMemo } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
-import { FileText, PanelRightOpen } from 'lucide-react';
+import {
+  Calendar,
+  CircleDot,
+  Clock3,
+  FileText,
+  Hash,
+  Link2,
+  ListChecks,
+  MousePointerClick,
+  PanelRightOpen,
+  Sigma,
+  SquareCheck,
+  Tags,
+  Type,
+  type LucideIcon,
+} from 'lucide-react';
+
+/** Each column says its kind of value with an icon, as the Dados board does. */
+const fieldIcons: Record<RecordField['type'], LucideIcon> = {
+  text: Type,
+  number: Hash,
+  checkbox: SquareCheck,
+  select: CircleDot,
+  'multi-select': Tags,
+  date: Calendar,
+  url: Link2,
+  relation: ListChecks,
+  formula: Sigma,
+  button: MousePointerClick,
+};
+function Head({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+  return (
+    <span className="th-label">
+      <Icon size={13} aria-hidden />
+      {label}
+    </span>
+  );
+}
 import type { DatabaseRecord, RecordField } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { IconButton } from '../ui/IconButton.js';
@@ -29,7 +66,7 @@ export function RecordTable({
     () => [
       {
         id: 'title',
-        header: t('Name'),
+        header: () => <Head icon={Type} label={t('Name')} />,
         cell: ({ row }) => (
           <div className="record-name">
             <IconButton
@@ -60,7 +97,7 @@ export function RecordTable({
       },
       ...fields.map((field) => ({
         id: field.id,
-        header: field.name,
+        header: () => <Head icon={fieldIcons[field.type] ?? Type} label={field.name} />,
         cell: ({ row }: { row: { original: DatabaseRecord } }) => (
           <RecordProperty
             databaseId={id}
@@ -75,7 +112,7 @@ export function RecordTable({
         ? [
             {
               id: 'updated',
-              header: t('Updated'),
+              header: () => <Head icon={Clock3} label={t('Updated')} />,
               cell: ({ row }: { row: { original: DatabaseRecord } }) => (
                 <span className="table-date">
                   {new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(

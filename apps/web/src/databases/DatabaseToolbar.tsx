@@ -10,6 +10,8 @@ import {
   Settings2,
   SlidersHorizontal,
   LayoutTemplate,
+  Table2,
+  Eye,
 } from 'lucide-react';
 import type { TableDefinition, TableOptions } from './state.js';
 import { IconButton } from '../ui/IconButton.js';
@@ -45,6 +47,7 @@ export function DatabaseToolbar({
     <div className="table-toolbar">
       <div className="view-tabs">
         <button className={selected === 'all' ? 'active' : ''} onClick={() => selectView('all')}>
+          <Table2 />
           {t('All records')}
         </button>
         {definition?.views.map((item) => (
@@ -53,6 +56,7 @@ export function DatabaseToolbar({
             className={selected === item.id ? 'active' : ''}
             onClick={() => selectView(item.id)}
           >
+            <Eye />
             {item.name}
           </button>
         ))}
