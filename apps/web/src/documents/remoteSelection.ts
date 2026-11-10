@@ -55,6 +55,33 @@ export const RemoteSelection = Extension.create({
             binding.doc.on('beforeTransaction', listener);
           };
           attach();
+          // A collaborator's caret moving redraws decorations, which also rewrites the browser
+          // caret from the editor's (possibly stale) selection. Read the pending caret first.
+          const observed = view as ObservedView;
+          const dispatch = view.dispatch.bind(view);
+          view.dispatch = (transaction) => {
+            const range = observed.domSelectionRange?.();
+            if (
+              !transaction.docChanged &&
+              !transaction.selectionSet &&
+              view.hasFocus() &&
+              observed.domObserver &&
+              range &&
+              !observed.domObserver.currentSelection.eq(range)
+            ) {
+              const before = view.state;
+              observed.domObserver.flush();
+              if (view.state !== before) {
+                // The flush moved the selection: replay the same intent on the new state.
+                const replay = view.state.tr;
+                const meta = (transaction as unknown as { meta: Record<string, unknown> }).meta;
+                for (const [key, value] of Object.entries(meta)) replay.setMeta(key, value);
+                dispatch(replay);
+                return;
+              }
+            }
+            dispatch(transaction);
+          };
           return {
             update: attach,
             destroy: () => attached?.doc.off('beforeTransaction', listener),
