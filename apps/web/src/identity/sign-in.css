@@ -1,0 +1,914 @@
+/* Sign-in: the returning person first (remembered account, where they will land), and the
+   product explaining itself on the right. Unlayered and scoped to .sign-in on purpose, so the
+   older layered .auth-* rules never reach it. */
+.sign-in {
+  --si-page: #fff;
+  --si-side: #f6f6f4;
+  --si-raise: #fff;
+  --si-ink: #1f1e1c;
+  --si-text: #2f2e2b;
+  --si-soft: #5d5c58;
+  --si-mute: #6f6e69;
+  --si-faint: #a3a29d;
+  --si-hair: rgb(31 30 28 / 0.08);
+  --si-hair2: rgb(31 30 28 / 0.13);
+  --si-tint: rgb(31 30 28 / 0.055);
+  --si-dots: rgb(31 30 28 / 0.1);
+  --si-signal: #d99a1e;
+  --si-hl: rgb(242 193 78 / 0.3);
+  --si-amber-bg: rgb(217 154 30 / 0.13);
+  --si-blue: #3b6fd4;
+  --si-green: #2f8a5b;
+  --si-green-bg: rgb(47 138 91 / 0.1);
+  --si-rose: #c2456f;
+  --si-shadow: 0 1px 2px rgb(15 15 14 / 0.06), 0 4px 14px rgb(15 15 14 / 0.07);
+  --si-lift: 0 10px 26px rgb(15 15 14 / 0.08);
+}
+:root[data-theme='dark'] .sign-in {
+  --si-page: #18181a;
+  --si-side: #1f1f22;
+  --si-raise: #232327;
+  --si-ink: #f2f1ee;
+  --si-text: #dddcd8;
+  --si-soft: #b3b2ad;
+  --si-mute: #9e9d98;
+  --si-faint: #6d6c68;
+  --si-hair: rgb(255 255 255 / 0.07);
+  --si-hair2: rgb(255 255 255 / 0.12);
+  --si-tint: rgb(255 255 255 / 0.05);
+  --si-dots: rgb(255 255 255 / 0.07);
+  --si-signal: #f2c14e;
+  --si-hl: rgb(242 193 78 / 0.24);
+  --si-amber-bg: rgb(242 193 78 / 0.13);
+  --si-blue: #7ea3f0;
+  --si-green: #6cc496;
+  --si-green-bg: rgb(108 196 150 / 0.13);
+  --si-rose: #f08bb0;
+  --si-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 18px rgb(0 0 0 / 0.35);
+  --si-lift: 0 10px 26px rgb(0 0 0 / 0.3);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light'], [data-theme='dark']) .sign-in {
+    --si-page: #18181a;
+    --si-side: #1f1f22;
+    --si-raise: #232327;
+    --si-ink: #f2f1ee;
+    --si-text: #dddcd8;
+    --si-soft: #b3b2ad;
+    --si-mute: #9e9d98;
+    --si-faint: #6d6c68;
+    --si-hair: rgb(255 255 255 / 0.07);
+    --si-hair2: rgb(255 255 255 / 0.12);
+    --si-tint: rgb(255 255 255 / 0.05);
+    --si-dots: rgb(255 255 255 / 0.07);
+    --si-signal: #f2c14e;
+    --si-hl: rgb(242 193 78 / 0.24);
+    --si-amber-bg: rgb(242 193 78 / 0.13);
+    --si-blue: #7ea3f0;
+    --si-green: #6cc496;
+    --si-green-bg: rgb(108 196 150 / 0.13);
+    --si-rose: #f08bb0;
+    --si-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 18px rgb(0 0 0 / 0.35);
+    --si-lift: 0 10px 26px rgb(0 0 0 / 0.3);
+  }
+}
+
+.sign-in {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(420px, 560px) minmax(0, 1fr);
+  background: var(--si-page);
+  color: var(--si-text);
+  letter-spacing: -0.006em;
+}
+.sign-in *,
+.sign-in *::before,
+.sign-in *::after {
+  box-sizing: border-box;
+}
+.sign-in button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  letter-spacing: inherit;
+}
+.sign-in kbd {
+  display: inline-block;
+  min-width: 0;
+  height: auto;
+  background: transparent !important;
+  border: 0;
+  font-family: inherit;
+  font: 500 11px/1 inherit;
+  padding: 3px 5px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgb(127 127 127 / 0.55);
+  color: inherit;
+  opacity: 0.65;
+}
+
+/* ---------- the form side ---------- */
+.sign-in-side {
+  display: flex;
+  flex-direction: column;
+  padding: 36px 72px 32px;
+  min-width: 0;
+}
+.sign-in-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.sign-in-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--si-ink);
+}
+.sign-in-top .select-trigger {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--si-soft);
+  box-shadow: inset 0 0 0 1px var(--si-hair2);
+}
+.sign-in-top .field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--si-mute);
+}
+.sign-in-top .field > span:first-child {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.sign-in-body {
+  margin: auto 0;
+  padding: 40px 0;
+  display: flex;
+  flex-direction: column;
+  max-width: 420px;
+  width: 100%;
+}
+.sign-in-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--si-mute);
+}
+.sign-in-kicker i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--si-signal);
+  box-shadow: 0 0 0 4px var(--si-amber-bg);
+}
+.sign-in h1 {
+  margin: 12px 0 0;
+  font-size: 34px;
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--si-ink);
+}
+.sign-in-lede {
+  margin: 10px 0 26px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--si-soft);
+}
+.sign-in form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sign-in-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--si-raise);
+  box-shadow: inset 0 0 0 1px var(--si-hair2);
+}
+.sign-in-account .avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--si-page);
+  background: var(--si-ink);
+}
+.sign-in-account .who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+.sign-in-account .who b {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--si-ink);
+}
+.sign-in-account .who small {
+  font-size: 13px;
+  color: var(--si-mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sign-in-account .switch {
+  margin-left: auto;
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--si-soft);
+  box-shadow: inset 0 0 0 1px var(--si-hair2);
+}
+.sign-in-account .switch:hover {
+  color: var(--si-ink);
+  background: var(--si-tint);
+}
+.sign-in-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--si-ink);
+}
+.sign-in-field .control {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px 0 12px;
+  border-radius: 9px;
+  background: var(--si-raise);
+  box-shadow: inset 0 0 0 1px var(--si-hair2);
+  color: var(--si-mute);
+  transition: box-shadow 140ms ease;
+}
+.sign-in-field .control:focus-within {
+  box-shadow:
+    inset 0 0 0 1.5px var(--si-ink),
+    0 0 0 4px var(--si-tint);
+}
+.sign-in-field input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: 400 14.5px/1 inherit;
+  color: var(--si-ink);
+}
+.sign-in-field input::placeholder {
+  color: var(--si-faint);
+}
+.sign-in-field .reveal {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  color: var(--si-mute);
+}
+.sign-in-field .reveal:hover {
+  background: var(--si-tint);
+  color: var(--si-ink);
+}
+.sign-in-keep {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  text-align: left;
+  margin: 0;
+  font-weight: 400;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--si-soft);
+  cursor: pointer;
+}
+.sign-in-keep input {
+  position: absolute;
+  opacity: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+.sign-in-keep .box {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 1.5px var(--si-hair2);
+  color: transparent;
+  transition: background 120ms ease;
+}
+.sign-in-keep input:checked + .box {
+  background: var(--si-ink);
+  box-shadow: none;
+  color: var(--si-page);
+}
+.sign-in-keep input:focus-visible + .box {
+  outline: 2px solid var(--si-signal);
+  outline-offset: 2px;
+}
+.sign-in .form-error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--si-rose);
+}
+.sign-in-submit {
+  height: 48px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 10px;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  background: var(--si-ink) !important;
+  color: var(--si-page) !important;
+  transition:
+    transform 120ms ease,
+    opacity 120ms ease;
+}
+.sign-in-submit:hover {
+  opacity: 0.92;
+}
+.sign-in-submit:active {
+  transform: scale(0.99);
+}
+.sign-in-submit:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+.sign-in-resume {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--si-side);
+  box-shadow: inset 0 0 0 1px var(--si-hair);
+}
+.sign-in-resume .icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: var(--si-raise);
+  box-shadow: inset 0 0 0 1px var(--si-hair2);
+  color: var(--si-ink);
+}
+.sign-in-resume .text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+  min-width: 0;
+}
+.sign-in-resume small {
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--si-mute);
+}
+.sign-in-resume b {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--si-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sign-in-resume b span {
+  font-weight: 500;
+  color: var(--si-mute);
+}
+.sign-in-resume button {
+  margin-left: auto;
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--si-soft);
+}
+.sign-in-resume button:hover {
+  color: var(--si-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.sign-in-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 12px;
+  font-size: 12.5px;
+  color: var(--si-faint);
+}
+.sign-in-or::before,
+.sign-in-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--si-hair2);
+}
+.sign-in-demo {
+  height: 44px;
+  border-radius: 10px;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--si-ink) !important;
+  box-shadow: inset 0 0 0 1px var(--si-hair2);
+}
+.sign-in-demo:hover {
+  background: var(--si-tint) !important;
+}
+.sign-in-switch {
+  margin: 22px 0 0;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--si-mute);
+}
+.sign-in-switch button {
+  font-weight: 600;
+  color: var(--si-ink);
+}
+.sign-in-switch button:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.sign-in-foot {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--si-faint);
+}
+.sign-in-foot span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sign-in-foot i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--si-green);
+}
+
+/* ---------- the illustration ---------- */
+.sign-in-art {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--si-side);
+  background-image: radial-gradient(var(--si-dots) 1.1px, transparent 1.1px);
+  background-size: 22px 22px;
+  box-shadow: inset 1px 0 0 var(--si-hair);
+}
+.sign-in-stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 880px;
+  height: 900px;
+  transform: translate(-50%, -50%);
+}
+.sign-in-stage::before {
+  content: '';
+  position: absolute;
+  left: 300px;
+  top: 150px;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--si-amber-bg) 0%, transparent 62%);
+}
+.sign-in-wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.sign-in-wires .wire {
+  fill: none;
+  stroke: var(--si-ink);
+  stroke-opacity: 0.35;
+  stroke-width: 1.5;
+}
+.sign-in-wires .wire.signal {
+  stroke: var(--si-signal);
+  stroke-opacity: 1;
+  stroke-width: 2;
+}
+.sign-in-wires .wire.dashed {
+  stroke-opacity: 0.3;
+  stroke-dasharray: 4 5;
+}
+.sign-in-wires circle.signal,
+.sign-in-hub .signal {
+  fill: var(--si-signal);
+}
+.sign-in-wires .ink {
+  fill: var(--si-ink);
+}
+.sign-in-wires .ink.soft {
+  opacity: 0.7;
+}
+.sign-in-wires .blue {
+  fill: var(--si-blue);
+}
+.sign-in-wires .rose {
+  fill: var(--si-rose);
+}
+.sign-in-wires .faint {
+  fill: var(--si-faint);
+}
+.sign-in-wires .halo {
+  fill: var(--si-signal);
+  opacity: 0.2;
+}
+.sign-in-graph .edge {
+  fill: none;
+  stroke: var(--si-hair2);
+  stroke-width: 1.3;
+}
+.sign-in-capture {
+  position: absolute;
+  right: 28px;
+  top: 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px 7px 12px;
+  border-radius: 20px;
+  background: var(--si-ink);
+  color: var(--si-page);
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: var(--si-shadow);
+}
+.sign-in-sheet {
+  position: absolute;
+  left: 84px;
+  top: 118px;
+  width: 372px;
+  padding: 22px 24px 20px;
+  border-radius: 14px;
+  background: var(--si-raise);
+  box-shadow:
+    0 0 0 1px var(--si-hair2),
+    0 18px 40px rgb(15 15 14 / 0.1),
+    0 2px 6px rgb(15 15 14 / 0.05);
+  transform: rotate(-2.2deg);
+}
+.sign-in-sheet .kind {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--si-mute);
+}
+.sign-in-sheet .kind i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--si-signal);
+}
+.sign-in-sheet h3 {
+  margin: 8px 0 12px;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--si-ink);
+}
+.sign-in-sheet p {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--si-text);
+}
+.sign-in-sheet mark {
+  background: var(--si-hl);
+  color: inherit;
+  padding: 1px 2px;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1.5px var(--si-signal);
+}
+.sign-in-sheet .cite {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 4px;
+  padding: 0 4px;
+  border-radius: 5px;
+  background: var(--si-tint);
+  color: var(--si-soft);
+  font-size: 11px;
+  font-weight: 650;
+  vertical-align: 1px;
+}
+.sign-in-sheet .bars {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 4px 0 14px;
+}
+.sign-in-sheet .bars i {
+  display: block;
+  height: 7px;
+  border-radius: 4px;
+  background: var(--si-tint);
+}
+.sign-in-sheet .todo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 26px;
+  font-size: 13px;
+  color: var(--si-text);
+}
+.sign-in-sheet .todo .box {
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 1.5px var(--si-hair2);
+}
+.sign-in-sheet .todo.done .box {
+  background: var(--si-ink);
+  box-shadow: none;
+  color: var(--si-page);
+}
+.sign-in-sheet .todo s {
+  color: var(--si-mute);
+}
+.sign-in-hub {
+  position: absolute;
+  left: 462px;
+  top: 300px;
+  width: 112px;
+  height: 112px;
+  border-radius: 30px;
+  display: grid;
+  place-items: center;
+  color: var(--si-ink);
+  background: var(--si-raise);
+  box-shadow:
+    0 0 0 1px var(--si-hair2),
+    0 20px 44px rgb(15 15 14 / 0.14),
+    0 0 0 10px var(--si-amber-bg);
+}
+.sign-in-hub svg {
+  width: 70px;
+  height: 52px;
+}
+.sign-in-node {
+  position: absolute;
+  border-radius: 12px;
+  background: var(--si-raise);
+  box-shadow:
+    0 0 0 1px var(--si-hair2),
+    var(--si-lift);
+}
+.sign-in-node.database {
+  left: 612px;
+  top: 116px;
+  width: 226px;
+}
+.sign-in-node.source {
+  left: 640px;
+  top: 410px;
+  width: 212px;
+}
+.sign-in-node .head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 6px;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--si-ink);
+}
+.sign-in-node .head svg {
+  color: var(--si-soft);
+}
+.sign-in-node .head small {
+  margin-left: auto;
+  font-size: 11.5px;
+  font-weight: 550;
+  color: var(--si-mute);
+}
+.sign-in-node.source .head {
+  gap: 10px;
+  padding-bottom: 8px;
+}
+.sign-in-node.source .head b {
+  display: block;
+  white-space: nowrap;
+}
+.sign-in-node.source .head small {
+  display: block;
+  margin: 0;
+}
+.sign-in-node .pdf {
+  width: 30px;
+  height: 36px;
+  flex: none;
+  display: grid;
+  place-items: end center;
+  padding-bottom: 5px;
+  border-radius: 5px;
+  background: var(--si-side);
+  box-shadow: inset 0 0 0 1px var(--si-hair2);
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--si-rose);
+}
+.sign-in-node .rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 14px 12px;
+}
+.sign-in-node .rows div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--si-soft);
+}
+.sign-in-node .rows i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.sign-in-node .rows em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--si-faint);
+}
+.sign-in-node p {
+  margin: 0;
+  padding: 0 14px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--si-mute);
+}
+.sign-in-art i.blue {
+  background: var(--si-blue);
+}
+.sign-in-art i.green {
+  background: var(--si-green);
+}
+.sign-in-art i.signal {
+  background: var(--si-signal);
+}
+.sign-in-art i.ink {
+  background: var(--si-ink);
+}
+.sign-in-verified {
+  position: absolute;
+  left: 540px;
+  top: 586px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 10px 12px;
+  border-radius: 12px;
+  background: var(--si-raise);
+  box-shadow:
+    0 0 0 1px var(--si-hair2),
+    var(--si-lift);
+}
+.sign-in-verified .seal {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--si-green-bg);
+  color: var(--si-green);
+}
+.sign-in-verified > span:last-child {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.sign-in-verified b {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--si-ink);
+}
+.sign-in-verified small {
+  font-size: 12px;
+  color: var(--si-mute);
+}
+.sign-in-caption {
+  position: absolute;
+  left: 84px;
+  right: 84px;
+  bottom: 56px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+}
+.sign-in-caption b {
+  display: block;
+  max-width: 470px;
+  font-size: 24px;
+  line-height: 1.28;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  color: var(--si-ink);
+}
+.sign-in-caption small {
+  display: block;
+  margin-top: 10px;
+  font-size: 13.5px;
+  color: var(--si-soft);
+}
+.sign-in-caption .steps {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+.sign-in-caption .steps span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--si-soft);
+  background: var(--si-raise);
+  box-shadow: inset 0 0 0 1px var(--si-hair2);
+}
+.sign-in-caption .steps i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* The illustration needs room; on narrow windows and phones the form stands alone. */
+@media (max-width: 1100px) {
+  .sign-in {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sign-in-art {
+    display: none;
+  }
+  .sign-in-side {
+    max-width: 560px;
+    width: 100%;
+    margin: 0 auto;
+  }
+}
+@media (max-width: 560px) {
+  .sign-in-side {
+    padding: 20px 20px 24px;
+  }
+  .sign-in h1 {
+    font-size: 28px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sign-in * {
+    transition: none !important;
+  }
+}
