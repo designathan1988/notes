@@ -7,6 +7,15 @@ import { PagePresentation, PageTags } from '../pages/PagePresentation.js';
 import { PageProperties } from '../pages/PageProperties.js';
 import { MosaicPattern } from '../ui/MosaicPattern.js';
 function fit(element: HTMLTextAreaElement) {
+  // An empty description that is not being written takes no room (see sinapta-system.css).
+  if (
+    !element.value &&
+    document.activeElement !== element &&
+    element.classList.contains('page-description')
+  ) {
+    element.style.height = '';
+    return;
+  }
   element.style.height = 'auto';
   element.style.height = element.scrollHeight + 'px';
 }
@@ -149,6 +158,7 @@ export function PageHeader({
             maxLength={2000}
             onBlur={(event) => {
               setEditingDescription(false);
+              fit(event.currentTarget);
               if (event.target.value !== page.description)
                 void useWorkspace
                   .getState()

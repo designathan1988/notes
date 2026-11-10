@@ -1254,4 +1254,18 @@
     border-radius: 4px;
     font-size: var(--fs-meta);
   }
+
+  /* ---------- the page heading never moves under the pointer ----------
+     An empty description used to appear when the title got focus and pushed the page down.
+     It now takes no room until it is itself focused (Tab from the title still reaches it) or
+     has text. */
+  .page-heading:not(.description-visible) .page-description:placeholder-shown:not(:focus) {
+    display: block;
+    height: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    opacity: 0;
+  }
 }
