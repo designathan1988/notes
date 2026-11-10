@@ -226,7 +226,13 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
           position + value.nodeSize - 1,
           editor.schema.nodes.webAsset.create({ id: logicalId, attachmentId: asset.id }),
         );
-        transaction.insertText(snippet, position + 1 + offset + entry.nodeSize - 1);
+        // Media belongs inside the page: before </body> when the entry has one, else at the end.
+        const start = position + 1 + offset + 1,
+          body = entry.textContent.toLowerCase().lastIndexOf('</body>');
+        transaction.insertText(
+          snippet,
+          body >= 0 ? start + body : position + 1 + offset + entry.nodeSize - 1,
+        );
         editor.view.dispatch(transaction);
         setActive(entry.attrs.id ?? entry.attrs.path);
       });

@@ -6,6 +6,8 @@ import { useWorkspace } from '../state/store.js';
 import { api } from '../state/api.js';
 import { pageView } from '../workbench/route.js';
 import { PageGlyph } from '../ui/PageGlyph.js';
+import { WorkspaceMap } from './WorkspaceMap.js';
+import { MosaicPattern } from '../ui/MosaicPattern.js';
 
 const kindPlural: Record<PageKind, string> = {
   document: 'Pages',
@@ -141,37 +143,83 @@ export function Home() {
         </header>
 
         <div className="home-grid">
-          <section className="home-section" aria-labelledby="home-recent">
-            <div className="home-section-head">
-              <h2 id="home-recent">{t('Recent')}</h2>
-              <button className="text-button" onClick={() => state.navigate(null, 'all')}>
-                {t('View all')}
-              </button>
-            </div>
-            {recent.length ? (
-              <ul className="home-recent">
-                {recent.map((page) => (
-                  <li key={page.id}>
-                    <button type="button" data-kind={page.kind} onClick={() => open(page)}>
-                      <PageGlyph page={page} size={15} />
-                      <span className="home-recent-text">
-                        <strong>{page.title || t('Untitled')}</strong>
-                        <small>
-                          {titleOf(page.parentId) ?? workspace?.name ?? t('Workspace')}
-                          {page.description ? ` · ${page.description}` : ''}
-                        </small>
-                      </span>
-                      <time dateTime={page.updatedAt}>{edited(page.updatedAt)}</time>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="home-empty">{t('Pages you edit will appear here.')}</p>
+          <div className="home-main">
+            {recent.length > 0 && (
+              <section className="home-section" aria-labelledby="home-continue">
+                <h2 id="home-continue">{t('Continue where you left off')}</h2>
+                <ul className="home-continue">
+                  {recent.slice(0, 3).map((page) => (
+                    <li key={page.id}>
+                      <button type="button" data-kind={page.kind} onClick={() => open(page)}>
+                        <MosaicPattern className="home-continue-band" />
+                        <span className="home-continue-body">
+                          <strong>
+                            <PageGlyph page={page} size={13} />
+                            <span>{page.title || t('Untitled')}</span>
+                          </strong>
+                          <span className="home-continue-text">
+                            {page.description ||
+                              t(
+                                page.kind === 'database'
+                                  ? 'Database'
+                                  : page.kind === 'canvas'
+                                    ? 'Canvas'
+                                    : 'Page',
+                              )}
+                          </span>
+                          <small>
+                            {titleOf(page.parentId) ?? workspace?.name ?? t('Workspace')}
+                            {' · '}
+                            {edited(page.updatedAt)}
+                          </small>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             )}
-          </section>
+            <section className="home-section" aria-labelledby="home-recent">
+              <div className="home-section-head">
+                <h2 id="home-recent">{t('Recent')}</h2>
+                <button className="text-button" onClick={() => state.navigate(null, 'all')}>
+                  {t('View all')}
+                </button>
+              </div>
+              {recent.length ? (
+                <ul className="home-recent">
+                  {recent.slice(recent.length > 3 ? 3 : 0).map((page) => (
+                    <li key={page.id}>
+                      <button type="button" data-kind={page.kind} onClick={() => open(page)}>
+                        <PageGlyph page={page} size={15} />
+                        <span className="home-recent-text">
+                          <strong>{page.title || t('Untitled')}</strong>
+                          <small>
+                            {titleOf(page.parentId) ?? workspace?.name ?? t('Workspace')}
+                            {page.description ? ` · ${page.description}` : ''}
+                          </small>
+                        </span>
+                        <time dateTime={page.updatedAt}>{edited(page.updatedAt)}</time>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="home-empty">{t('Pages you edit will appear here.')}</p>
+              )}
+            </section>
+          </div>
 
           <aside className="home-aside">
+            <section className="home-section" aria-labelledby="home-map">
+              <div className="home-section-head">
+                <h2 id="home-map">{t('Workspace map')}</h2>
+                <button className="text-button" onClick={() => state.navigate(null, 'graph')}>
+                  {t('Open graph')}
+                </button>
+              </div>
+              <WorkspaceMap />
+            </section>
             <section className="home-section" aria-labelledby="home-favorites">
               <h2 id="home-favorites">{t('Favorites')}</h2>
               {favorites.length ? (
@@ -192,37 +240,16 @@ export function Home() {
                 </p>
               )}
             </section>
-
-            <section className="home-section" aria-labelledby="home-overview">
-              <h2 id="home-overview">{t('Workspace')}</h2>
-              <dl className="home-stats">
-                {(['document', 'database', 'canvas', 'record'] as const).map((kind) => (
-                  <div key={kind}>
-                    <dd>{overview ? formatNumber(overview.counts[kind]) : '—'}</dd>
-                    <dt>{t(kindPlural[kind])}</dt>
-                  </div>
-                ))}
-              </dl>
-            </section>
-
-            <section className="home-section" aria-labelledby="home-keys">
-              <h2 id="home-keys">{t('Shortcuts')}</h2>
-              <div className="home-keys">
-                <button type="button" onClick={() => state.openDialog('search')}>
-                  {t('Search')} <kbd>Ctrl K</kbd>
-                </button>
-                <button type="button" onClick={state.showCommands}>
-                  {t('Commands')} <kbd>Ctrl Shift P</kbd>
-                </button>
-                <button
-                  type="button"
-                  disabled={!canWrite}
-                  onClick={() => void state.createQuickPage().catch(state.setError)}
-                >
-                  {t('New page')} <kbd>Ctrl Alt N</kbd>
-                </button>
-              </div>
-            </section>
+            {overview && (
+              <p className="home-counts">
+                {(['document', 'database', 'canvas', 'record'] as const)
+                  .map(
+                    (kind) =>
+                      `${formatNumber(overview.counts[kind])} ${t(kindPlural[kind]).toLowerCase()}`,
+                  )
+                  .join(' · ')}
+              </p>
+            )}
           </aside>
         </div>
       </section>

@@ -43,7 +43,7 @@ export class Invitations {
       [workspace],
     );
     const url = `${process.env.APP_ORIGIN ?? 'http://127.0.0.1:5173'}/?invite=${id}`;
-    await this.mail.send({ to: email, subject: `Join ${organization.name} in Note`, url });
+    await this.mail.send({ to: email, subject: `Join ${organization.name} in Mosaic`, url });
     return { id };
   }
   async peek(actor: Actor, id: string) {

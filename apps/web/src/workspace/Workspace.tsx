@@ -37,6 +37,7 @@ import { TemplateBanner } from '../templates/TemplateBanner.js';
 import { TemplateDialog } from '../templates/TemplateDialog.js';
 import { LazyBoundary } from '../ui/LazyBoundary.js';
 import { Home } from '../home/Home.js';
+import { StatusBar } from './StatusBar.js';
 const Library = lazy(() => import('../templates/Library.js'));
 const Graph = lazy(() => import('../knowledge/Graph.js'));
 const DatabaseView = lazy(() =>
@@ -297,7 +298,10 @@ export function Workspace() {
                     id={page.id}
                     appearance={state.pageAppearanceDrafts[page.id]?.overrides ?? page.appearance}
                   />
-                  <PageHeader page={page} connections={state.linkedPageIds.length} />
+                  <PageHeader
+                    page={page}
+                    connections={state.view === 'document' ? state.linkedPageIds.length : undefined}
+                  />
                   {state.view === 'database' ? (
                     page.kind === 'database' ? (
                       <LazyBoundary key={page.id} name="Database">
@@ -356,6 +360,7 @@ export function Workspace() {
           )}
           {state.appearanceScope && <AppearancePanel />}
         </div>
+        <StatusBar editing={!!page && !globalView && ['document', 'canvas'].includes(state.view)} />
       </main>
       {state.dialog === 'new-page' && <NewPage />}
       {state.commandOpen && <CommandPalette />}

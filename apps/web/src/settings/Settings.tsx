@@ -252,8 +252,8 @@ export function Settings() {
       {tab === 'account' && (
         <section className="settings-section">
           <h3>{state.user?.name}</h3>
-          <LanguagePicker />
           <p className="muted-text">{state.user?.email}</p>
+          <LanguagePicker />
           <p className="info-note">
             {t('Collaborative web beta. Billing and production sales are not enabled.')}
           </p>

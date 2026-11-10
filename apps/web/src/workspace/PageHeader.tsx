@@ -5,13 +5,14 @@ import { useWorkspace } from '../state/store.js';
 import { useLayoutEffect, useRef, useState, useEffectEvent } from 'react';
 import { PagePresentation, PageTags } from '../pages/PagePresentation.js';
 import { PageProperties } from '../pages/PageProperties.js';
+import { MosaicPattern } from '../ui/MosaicPattern.js';
 function fit(element: HTMLTextAreaElement) {
   element.style.height = 'auto';
   element.style.height = element.scrollHeight + 'px';
 }
 export function PageHeader({
   page,
-  connections = 0,
+  connections,
   compact = false,
 }: {
   page: Page;
@@ -63,7 +64,7 @@ export function PageHeader({
   );
   return (
     <header
-      className={`page-heading${compact ? ' page-heading-compact' : ''}${editingDescription ? ' description-visible' : ''}`}
+      className={`page-heading${compact ? ' page-heading-compact' : ''}${!compact && !page.cover && page.kind === 'document' ? ' has-band' : ''}${page.cover ? ' has-cover' : ''}${editingDescription ? ' description-visible' : ''}`}
     >
       {!compact && (
         <PagePresentation
@@ -81,6 +82,9 @@ export function PageHeader({
             }
           }}
         />
+      )}
+      {!compact && !page.cover && page.kind === 'document' && (
+        <MosaicPattern className="page-band" mark />
       )}
       {parent && !compact && (
         <nav className="page-ancestry" aria-label={t('Page ancestry')}>
@@ -158,10 +162,15 @@ export function PageHeader({
                 <Clock3 />
                 {formatDate(page.updatedAt, { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
-              <span>
-                <Network />
-                {t('{{count}} connections', { count: formatNumber(connections) })}
-              </span>
+              {/* Only a document knows its outgoing links; other kinds would show a stale count. */}
+              {connections !== undefined && (
+                <span>
+                  <Network />
+                  {t(connections === 1 ? '{{count}} connection' : '{{count}} connections', {
+                    count: formatNumber(connections),
+                  })}
+                </span>
+              )}
             </div>
             <details
               ref={metadata}

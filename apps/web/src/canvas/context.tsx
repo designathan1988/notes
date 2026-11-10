@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import {
   createContext,
   useContext,
@@ -370,7 +371,7 @@ export function CanvasProvider({
   }
   function group() {
     const id = crypto.randomUUID();
-    run((tr) => groupCanvas(tr, selected, id, 'Untitled group'));
+    run((tr) => groupCanvas(tr, selected, id, t('Untitled group')));
     select(id);
   }
   function currentTextSelection() {

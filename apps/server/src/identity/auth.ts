@@ -29,7 +29,7 @@ export function createAuth(
       async sendVerificationEmail({ user, url }) {
         if (production && !options.mail)
           throw new Error('A production email transport is required.');
-        await mail.send({ to: user.email, subject: 'Verify your email for Note', url });
+        await mail.send({ to: user.email, subject: 'Verify your email for Mosaic', url });
       },
     },
     plugins: [organization()],

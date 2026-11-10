@@ -193,7 +193,11 @@ export const Preview = forwardRef<
         </p>
       )}
       <details className="web-console">
-        <summary>{t('Console ({{count}} errors)', { count: messages.length })}</summary>
+        <summary>
+          {messages.length === 1
+            ? t('Console (1 error)')
+            : t('Console ({{count}} errors)', { count: messages.length })}
+        </summary>
         {messages.length ? (
           messages.map((message, index) => <pre key={index}>{message}</pre>)
         ) : (

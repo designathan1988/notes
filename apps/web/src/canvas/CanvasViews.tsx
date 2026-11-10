@@ -373,6 +373,7 @@ export function CanvasEdgeView({ node }: NodeViewProps) {
   return (
     <NodeViewWrapper
       data-canvas-edge={node.attrs.id}
+      data-empty={node.textContent ? undefined : ''}
       className={`canvas-edge-label${c.selected.includes(node.attrs.id) ? ' selected' : ''}`}
       style={{ left: label.x, top: label.y }}
     >

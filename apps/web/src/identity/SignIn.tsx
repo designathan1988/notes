@@ -3,12 +3,16 @@ import { t } from '../i18n/index.js';
 import { useState, type FormEvent } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import { BrandMark } from '../ui/BrandMark.js';
+import { AuthIllustration } from './AuthIllustration.js';
 import { api, json } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
 export function SignIn() {
   const [signup, setSignup] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // Someone following an invitation link is told why they are asked to sign in first.
+  const invited =
+    typeof location !== 'undefined' && new URLSearchParams(location.search).has('invite');
   async function authenticate(email: string, password: string, name?: string) {
     setBusy(true);
     setError('');
@@ -50,41 +54,7 @@ export function SignIn() {
               'Write freely, organize records in real views, and see how every piece fits — with your team, in real time.',
             )}
           </p>
-          <div className="auth-preview" aria-hidden="true">
-            <div className="auth-preview-nav">
-              <i />
-              <i className="wide" />
-              <i />
-              <i />
-              <i data-kind="document" />
-              <i />
-              <i data-kind="database" />
-            </div>
-            <div className="auth-preview-doc">
-              <i className="title" />
-              <i className="sub" />
-              <i />
-              <i />
-              <i className="short" />
-              <div className="auth-preview-table">
-                <span>
-                  <i />
-                  <b data-kind="record" />
-                  <b data-kind="canvas" />
-                </span>
-                <span>
-                  <i />
-                  <b data-kind="document" />
-                  <b data-kind="database" />
-                </span>
-                <span>
-                  <i />
-                  <b data-kind="record" />
-                  <b />
-                </span>
-              </div>
-            </div>
-          </div>
+          <AuthIllustration />
         </div>
         <footer>{t('Capture what matters. Connect what comes next.')}</footer>
       </section>
@@ -92,7 +62,11 @@ export function SignIn() {
         <LanguagePicker />
         <h1>{signup ? t('Create your account') : t('Welcome back')}</h1>
         <p>
-          {signup ? t('Start a workspace in under a minute.') : t('Sign in to your workspace.')}
+          {invited
+            ? t('Sign in or create an account to accept your invitation.')
+            : signup
+              ? t('Start a workspace in under a minute.')
+              : t('Sign in to your workspace.')}
         </p>
         <form onSubmit={submit}>
           {signup && (

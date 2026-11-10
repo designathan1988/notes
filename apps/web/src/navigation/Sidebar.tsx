@@ -254,7 +254,6 @@ export function Sidebar() {
                   ))}
                 </Select>
               </span>
-              <ChevronDown size={14} />
             </label>
             <IconButton
               label={t('New page')}

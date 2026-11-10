@@ -87,6 +87,7 @@ const messages: Record<string, string> = {
   'Connecting…': 'Conectando…',
   'Connection label': 'Rótulo da conexão',
   'Console ({{count}} errors)': 'Console ({{count}} erros)',
+  'Console (1 error)': 'Console (1 erro)',
   'Could not insert': 'Não foi possível inserir',
   'Could not load page': 'Não foi possível carregar a página',
   'Create a new database': 'Criar um banco de dados',

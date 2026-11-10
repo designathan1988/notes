@@ -1,4 +1,4 @@
-import { t } from '../i18n/index.js';
+import { formatNumber, t } from '../i18n/index.js';
 import { Crosshair, ExternalLink, PinOff, FileText, Database, X } from 'lucide-react';
 import type { GraphData } from '@note/contracts';
 export function GraphInspector({
@@ -31,8 +31,9 @@ export function GraphInspector({
       <header>
         <strong>{node.title}</strong>
         <span>
-          {related.size}
-          {t('connections')}
+          {related.size === 1
+            ? t('{{count}} connection', { count: formatNumber(related.size) })
+            : t('{{count}} connections', { count: formatNumber(related.size) })}
         </span>
         <button
           aria-label={t('Close graph connections')}

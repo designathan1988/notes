@@ -146,6 +146,9 @@ const messages: Record<string, string> = {
   'No linked mentions yet.': 'Ainda não há menções vinculadas.',
   'No links yet. Link this page from another note to connect it.':
     'Ainda não há links. Vincule esta página a partir de outra nota para conectá-la.',
+  'No matching blocks.': 'Nenhum bloco encontrado.',
+  'Sign in or create an account to accept your invitation.':
+    'Entre ou crie uma conta para aceitar o convite.',
   'No matching pages.': 'Nenhuma página encontrada.',
   'No matching pages. Try a different phrase.': 'Nenhuma página encontrada. Tente outra expressão.',
   'No matching records.': 'Nenhum registro encontrado.',
@@ -159,7 +162,7 @@ const messages: Record<string, string> = {
   'Older versions': 'Versões anteriores',
   'On this page': 'Nesta página',
   'Only you': 'Somente você',
-  Open: 'Abrir',
+  Open: 'Aberta',
   'Open database': 'Abrir banco de dados',
   'Open page': 'Abrir página',
   'Open record in tab': 'Abrir registro em uma aba',

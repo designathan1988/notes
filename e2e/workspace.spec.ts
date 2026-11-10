@@ -308,7 +308,7 @@ test('recipient verifies an invitation and loses access when membership is revok
   const page = await recipient.newPage();
   await page.goto(`/?invite=${invitation.id}`);
   await page.getByRole('button', { name: 'Verify email', exact: true }).click();
-  await page.getByRole('link', { name: 'Verify your email for Note', exact: true }).click();
+  await page.getByRole('link', { name: 'Verify your email for Mosaic', exact: true }).click();
   await page.getByRole('button', { name: 'Accept invitation', exact: true }).click();
   await expect(page.locator('.save-status')).toHaveText('Read only');
   await expect(page.getByRole('textbox', { name: 'Page content' })).toHaveAttribute(

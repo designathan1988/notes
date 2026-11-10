@@ -38,6 +38,7 @@ import { captureClipboard, fileNode } from './capture.js';
 import { safeEmbedSource } from '@note/editor/embeds';
 import { LinkPicker } from './LinkPicker.js';
 import { BlockSurface } from './BlockSurface.js';
+import { RemoteSelection } from './remoteSelection.js';
 import { BlockControls } from './BlockControls.js';
 import { BlockMarquee } from './BlockMarquee.js';
 import { TableTools } from './TableTools.js';
@@ -142,6 +143,7 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
         BlockSurface,
         DocumentFind,
         Collaboration.configure({ document: session.doc, ySyncOptions: { mapping } }),
+        RemoteSelection,
         CollaborationCaret.configure({
           provider: session.provider,
           user: { name: useWorkspace.getState().user?.name, color: '#5865e8' },

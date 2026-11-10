@@ -1,0 +1,547 @@
+/* ==========================================================================
+   Nexo — approved canvas "Mosaic — Nova interface".
+   Floating panes on a tinted ground, kind-colored glyph tiles, accessible kind
+   colors (at least 4.5:1 on white), a dark stage only where things glow.
+   The layer is declared last in styles.css, so it wins over earlier layers.
+   ========================================================================== */
+@layer nexo {
+  :root {
+    --ground: #e9e7f2;
+    --sidebar: #f5f4fa;
+    --canvas: #ffffff;
+    --soft: #f6f5fa;
+    --ink: #17161f;
+    --text2: #3b3948;
+    --muted: #5f5c6e;
+    --faint: #8e8ba0;
+    --rule: #e1deec;
+    --rule-strong: #cdc9de;
+    --accent: #5b4be8;
+    --accent-hover: #4a3bd6;
+    --accent-ink: #4b3bd8;
+    --on-accent: #ffffff;
+    --selected: #ebe9f5;
+    --hover: rgb(40 30 90 / 0.05);
+    --press: rgb(40 30 90 / 0.09);
+    --kind-document: #5b4be8;
+    --kind-database: #946000;
+    --kind-canvas: #c21d6b;
+    --kind-record: #0c7a43;
+    --tint: 13%;
+    --stage: #12111b;
+    --stage-ink: #edecf5;
+    --stage-muted: #a5a2b8;
+    --stage-rule: #2b2939;
+    --map-document: #a297ff;
+    --map-database: #f5b83d;
+    --map-canvas: #f47fb1;
+    --map-record: #4fd69a;
+    --sidebar-width: 256px;
+    --shadow-sm: 0 1px 2px rgb(23 22 31 / 0.05), 0 8px 24px rgb(23 22 31 / 0.06);
+  }
+  :root[data-theme='dark'] {
+    --ground: #0c0b12;
+    --sidebar: #14131c;
+    --canvas: #191822;
+    --soft: #1f1e29;
+    --ink: #eeedf4;
+    --text2: #cfcddb;
+    --muted: #a09db3;
+    --faint: #77748a;
+    --rule: #2c2a39;
+    --rule-strong: #3a3850;
+    --accent: #8b7dff;
+    --accent-hover: #a297ff;
+    --accent-ink: #b3aaff;
+    --on-accent: #100e1f;
+    --selected: #262531;
+    --hover: rgb(255 255 255 / 0.05);
+    --press: rgb(255 255 255 / 0.09);
+    --kind-document: #a297ff;
+    --kind-database: #f5b83d;
+    --kind-canvas: #f47fb1;
+    --kind-record: #4fd69a;
+    --tint: 17%;
+    --stage: #0a0911;
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.35);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --ground: #0c0b12;
+      --sidebar: #14131c;
+      --canvas: #191822;
+      --soft: #1f1e29;
+      --ink: #eeedf4;
+      --text2: #cfcddb;
+      --muted: #a09db3;
+      --faint: #77748a;
+      --rule: #2c2a39;
+      --rule-strong: #3a3850;
+      --accent: #8b7dff;
+      --accent-hover: #a297ff;
+      --accent-ink: #b3aaff;
+      --on-accent: #100e1f;
+      --selected: #262531;
+      --hover: rgb(255 255 255 / 0.05);
+      --press: rgb(255 255 255 / 0.09);
+      --kind-document: #a297ff;
+      --kind-database: #f5b83d;
+      --kind-canvas: #f47fb1;
+      --kind-record: #4fd69a;
+      --tint: 17%;
+      --stage: #0a0911;
+      --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.35);
+    }
+  }
+
+  /* ---------- shell: floating panes on the ground ---------- */
+  .app-shell {
+    background: var(--ground);
+  }
+  @media (min-width: 701px) {
+    .sidebar {
+      margin: 8px 0 8px 8px;
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      background: var(--sidebar);
+      overflow: hidden;
+    }
+    .workspace-main {
+      margin: 8px;
+      border-color: var(--rule);
+      box-shadow: var(--shadow-sm);
+    }
+    .context-panel {
+      margin: 8px 8px 8px 0;
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      background: var(--sidebar);
+    }
+  }
+
+  /* ---------- top bar: tabs on a soft strip ---------- */
+  .topbar {
+    background: var(--soft);
+    border-bottom-color: var(--rule);
+  }
+  .workbench-tab,
+  .workbench-tab.active {
+    border-radius: 8px;
+  }
+  .workbench-tab.active {
+    background: var(--canvas);
+    color: var(--ink);
+    font-weight: 600;
+    box-shadow: 0 0 0 1px var(--rule);
+  }
+  .workbench-tab [role='tab'] svg {
+    box-sizing: content-box;
+    width: 12px;
+    height: 12px;
+    padding: 4px;
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--k, var(--muted)) var(--tint), transparent);
+  }
+  .share-button svg {
+    display: inline;
+  }
+
+  /* ---------- sidebar ---------- */
+  .search-trigger {
+    background: var(--canvas);
+    box-shadow: 0 0 0 1px var(--rule);
+  }
+  .workspace-destinations button[aria-current='page'],
+  .tree-row.selected {
+    background: var(--canvas);
+    box-shadow: 0 0 0 1px var(--rule);
+  }
+  .workspace-destinations button[aria-current='page'],
+  .tree-row.selected .tree-page {
+    font-weight: 600;
+  }
+  .workspace-destinations button[aria-current='page'] svg {
+    color: var(--accent);
+  }
+  .section-label {
+    margin-top: 16px;
+    font: 600 0.79rem/1 var(--ui);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  /* A page glyph is a tile tinted with its kind, in the tree, favorites and tabs alike. */
+  .tree-page > svg,
+  .tree-row.selected .tree-page > svg,
+  .favorites > button > svg {
+    box-sizing: content-box;
+    flex: none;
+    width: 12px;
+    height: 12px;
+    padding: 4px;
+    border-radius: 6px;
+    color: var(--k, var(--kind-document));
+    background: color-mix(in oklab, var(--k, var(--kind-document)) var(--tint), transparent);
+  }
+
+  /* ---------- document header: mosaic band, glyph tile, live metadata ---------- */
+  .document-scroll {
+    container-type: inline-size;
+  }
+  .page-band {
+    display: block;
+    width: 100cqw;
+    height: 132px;
+    margin: -40px 0 0 calc(50% - 50cqw);
+    color: var(--k, var(--kind-document));
+    background: color-mix(in oklab, var(--k, var(--kind-document)) 8%, var(--canvas));
+  }
+  .page-ancestry {
+    display: none;
+  }
+  .page-heading.has-band .title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .page-heading.has-band .default-page-icon,
+  .page-heading.has-band .page-icon.page-emoji {
+    display: grid;
+    place-items: center;
+    box-sizing: content-box;
+    width: 28px;
+    height: 28px;
+    margin-top: -32px;
+    padding: 14px;
+    border: 3px solid var(--canvas);
+    border-radius: 16px;
+    color: var(--k, var(--kind-document));
+    background: color-mix(in oklab, var(--k, var(--kind-document)) var(--tint), var(--canvas));
+    stroke-width: 1.6;
+    font-size: 28px;
+    line-height: 1;
+  }
+  .page-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 0.86rem;
+  }
+
+  /* ---------- home ---------- */
+  .home-grid {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+  .home-main {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    min-width: 0;
+  }
+  .home-section h2 {
+    font: 600 0.79rem/1 var(--ui);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .home-continue {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .home-continue button {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    background: var(--canvas);
+    text-align: left;
+    color: var(--ink);
+  }
+  .home-continue button:hover {
+    border-color: var(--rule-strong);
+    box-shadow: var(--shadow-sm);
+  }
+  .home-continue-band {
+    display: block;
+    flex: none;
+    width: 100%;
+    height: 54px;
+    color: var(--k);
+    background: color-mix(in oklab, var(--k) 8%, var(--canvas));
+  }
+  .home-continue-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px 12px;
+    min-width: 0;
+  }
+  .home-continue-body strong {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    min-width: 0;
+  }
+  .home-continue-body strong > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .home-continue-body .kind-tile {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+  }
+  .home-continue-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.9em;
+    color: var(--muted);
+    font-size: 0.86rem;
+    line-height: 1.45;
+  }
+  .home-continue-body small {
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  .home-counts {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.86rem;
+  }
+  .workspace-map {
+    position: relative;
+    overflow: hidden;
+    margin-top: 10px;
+    border-radius: 12px;
+    background: var(--stage);
+    color: var(--stage-muted);
+  }
+  .workspace-map svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .map-edge {
+    stroke: #4a4763;
+    stroke-width: 1;
+  }
+  .map-loose {
+    fill: #4d4a63;
+  }
+  .map-hub-label {
+    fill: var(--stage-ink);
+    font: 600 10px var(--ui);
+  }
+  .workspace-map footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--stage-rule);
+    font-size: 0.82rem;
+  }
+  .workspace-map-empty {
+    margin: 0;
+    padding: 48px 20px;
+    text-align: center;
+    font-size: 0.86rem;
+  }
+  .workspace-map-open {
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+  }
+  .workspace-map-open:hover {
+    background: rgb(255 255 255 / 0.03);
+  }
+
+  /* ---------- graph: the dark stage, where glow belongs ---------- */
+  .graph-screen {
+    color-scheme: dark;
+    --canvas: var(--stage);
+    --soft: #1a1926;
+    --sidebar: #1a1926;
+    --ink: #edecf5;
+    --text2: #cfcddb;
+    --muted: #a5a2b8;
+    --faint: #77748a;
+    --rule: #2b2939;
+    --rule-strong: #3a3850;
+    --hover: rgb(255 255 255 / 0.06);
+    --selected: #262531;
+    --press: rgb(255 255 255 / 0.1);
+    --accent: #8b7dff;
+    --accent-ink: #b3aaff;
+    --on-accent: #100e1f;
+    --kind-document: #a297ff;
+    --kind-database: #f5b83d;
+    --kind-canvas: #f47fb1;
+    --kind-record: #4fd69a;
+    --tint: 18%;
+    background: var(--canvas);
+    color: var(--ink);
+  }
+  .graph-point text {
+    paint-order: stroke;
+    stroke: var(--canvas);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+  }
+  .graph-inspector {
+    left: auto;
+    right: 16px;
+    top: 16px;
+    bottom: auto;
+    width: 300px;
+    max-height: calc(100% - 96px);
+    border-color: var(--rule);
+    background: color-mix(in oklab, var(--soft) 92%, transparent);
+    backdrop-filter: blur(6px);
+  }
+
+  /* ---------- databases: an empty date reads as empty, not as a date mask ---------- */
+  input[type='date'][data-empty]:not(:focus):not(:hover)::-webkit-datetime-edit {
+    color: transparent;
+  }
+  td input[type='date']:not(:focus):not(:hover)::-webkit-calendar-picker-indicator {
+    opacity: 0;
+  }
+
+  /* ---------- status bar ---------- */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 30px;
+    flex: none;
+    padding: 0 14px;
+    border-top: 1px solid var(--rule);
+    background: var(--soft);
+    color: var(--muted);
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .status-bar > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .status-bar .status-spacer {
+    flex: 1;
+  }
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--kind-record);
+  }
+  .status-dot[data-state='local'],
+  .status-dot[data-state='error'] {
+    background: var(--danger);
+  }
+  .status-dot[data-state='saving'],
+  .status-dot[data-state='connecting'] {
+    background: var(--kind-database);
+  }
+  .status-bar kbd {
+    padding: 2px 5px;
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    background: var(--canvas);
+    font: 500 0.75rem/1 var(--code);
+    color: var(--muted);
+  }
+
+  /* ---------- sign in: the product's graph as the hero ---------- */
+  .auth-hero {
+    background: var(--stage);
+  }
+  .auth-watermark {
+    display: none;
+  }
+  .auth-illustration {
+    display: block;
+    width: 100%;
+    max-width: 540px;
+    height: auto;
+    margin: 28px 0 0;
+  }
+
+  @media (max-width: 1100px) {
+    .home-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 900px) {
+    .home-continue {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .home-continue-band {
+      height: 36px;
+    }
+    .auth-illustration {
+      display: none;
+    }
+  }
+  @media (max-width: 700px) {
+    .status-bar {
+      display: none;
+    }
+    /* On a phone reading comes first: no band, no oversized glyph above the title. */
+    .page-band,
+    .page-heading.has-band .default-page-icon {
+      display: none;
+    }
+    .page-heading.has-band .page-icon.page-emoji {
+      margin-top: 0;
+      padding: 8px;
+      width: 24px;
+      height: 24px;
+      font-size: 22px;
+    }
+    .page-meta {
+      display: none;
+    }
+    .graph-inspector {
+      left: 12px;
+      right: 12px;
+      top: auto;
+      bottom: 58px;
+      width: auto;
+    }
+  }
+}
+
+/*
+ * Home follows the width it actually has, not the window: with the appearance or details
+ * panel open, cards stay readable instead of shrinking into three slivers.
+ */
+@layer nexo {
+  .home-scroll {
+    container: home / inline-size;
+  }
+  .home-continue {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+  @container home (max-width: 960px) {
+    .home-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { t } from '../i18n/index.js';
+import { formatNumber, t } from '../i18n/index.js';
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { ZoomIn, ZoomOut, Focus, Search, RotateCcw } from 'lucide-react';
 import type { GraphData } from '@note/contracts';
@@ -434,9 +434,13 @@ function GraphSurface({
       </div>
       <footer>
         <span>
-          {nodes.length}
-          {t('pages ·')} {edges.length}
-          {t('connections')}
+          {nodes.length === 1
+            ? t('{{count}} page', { count: formatNumber(nodes.length) })
+            : t('{{count}} pages', { count: formatNumber(nodes.length) })}
+          {' · '}
+          {edges.length === 1
+            ? t('{{count}} connection', { count: formatNumber(edges.length) })
+            : t('{{count}} connections', { count: formatNumber(edges.length) })}
           {data?.truncated ? t(' · Limited view') : ''}
         </span>
         <span id="graph-help">

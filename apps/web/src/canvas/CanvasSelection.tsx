@@ -75,7 +75,7 @@ export function CanvasSelection() {
               ] as const
             ).map(([key, label, options]) => (
               <label key={key}>
-                {label}
+                {t(label)}
                 <Select
                   aria-label={t(label)}
                   value={edgeValue(key)}

@@ -325,6 +325,7 @@ const messages: Record<string, string> = {
   Typography: 'Tipografia',
   Untitled: 'Sem título',
   'Untitled canvas': 'Quadro sem título',
+  'Untitled group': 'Grupo sem título',
   'Untitled database': 'Banco de dados sem título',
   'Untitled site': 'Site sem título',
   'Use another account': 'Usar outra conta',
@@ -389,6 +390,9 @@ const messages: Record<string, string> = {
   'writing distraction sidebar': 'escrita distração barra lateral',
   'you@company.com': 'voce@empresa.com',
   '{{count}} connections': '{{count}} conexões',
+  '{{count}} connection': '{{count}} conexão',
+  '{{count}} page': '{{count}} página',
+  '{{count}} pages': '{{count}} páginas',
   '{{count}} deleted page · Most recently deleted first':
     '{{count}} página excluída · Excluídas recentemente primeiro',
   '{{count}} deleted pages · Most recently deleted first':

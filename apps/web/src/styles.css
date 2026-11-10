@@ -1,6 +1,6 @@
 @import '@fontsource-variable/geist';
 @import '@fontsource-variable/geist-mono';
-@layer tokens, base, layout, components, editor, responsive, variants, workbench, mosaic, finish;
+@layer tokens, base, layout, components, editor, responsive, variants, workbench, mosaic, finish, nexo;
 
 @layer components {
   /* Status floats over the control: a save must never move the rows around it mid-click. */
@@ -7391,7 +7391,8 @@
   .canvas-edge-options {
     display: grid;
     gap: 12px 10px;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    /* One column: "Automático" and the other option names fit without being cut. */
+    grid-template-columns: minmax(0, 1fr);
     margin: 18px 0 14px;
   }
   .canvas-edge-options label {
@@ -7706,6 +7707,12 @@
       margin-left: 8px;
     }
   }
+  /* On a phone the sheet is the whole screen: no backdrop may show around the page. */
+  @media (max-width: 700px) {
+    .workspace-main {
+      background: var(--canvas);
+    }
+  }
   .topbar {
     flex-shrink: 0;
     align-items: center;
@@ -7789,13 +7796,41 @@
   .workbench-tab,
   .workbench-tab.active {
     height: 30px;
-    min-width: 0;
+    /* Tabs never shrink into unreadable stubs: past this width the strip scrolls instead. */
+    flex: 0 1 auto;
+    min-width: 104px;
     max-width: 200px;
     border: 0;
     border-radius: 8px;
     padding-right: 4px;
     color: var(--muted);
     box-shadow: none;
+  }
+  /* The phone tab list is a full-width column inside its popover, not a strip. */
+  .app-popover:has(> .mobile-tabs-panel) {
+    width: auto;
+  }
+  .mobile-tabs-panel .workbench-tab,
+  .mobile-tabs-panel .workbench-tab.active {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    height: auto;
+  }
+  .workbench-tabs[data-clip-start]:not([data-clip-end]) {
+    mask-image: linear-gradient(to right, transparent, #000 28px);
+  }
+  .workbench-tabs[data-clip-end]:not([data-clip-start]) {
+    mask-image: linear-gradient(to left, transparent, #000 28px);
+  }
+  .workbench-tabs[data-clip-start][data-clip-end] {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 28px,
+      #000 calc(100% - 28px),
+      transparent
+    );
   }
   .workbench-tab:hover {
     background: var(--hover);
@@ -7854,9 +7889,6 @@
     font-weight: 600;
     letter-spacing: -0.01em;
     line-height: 1.2;
-  }
-  .workspace-select > svg:last-child {
-    color: var(--muted);
   }
   .search-trigger {
     display: flex;
@@ -8558,6 +8590,34 @@
     background: transparent;
     box-shadow: none;
   }
+  /* Invitation screen: the secondary action sits on its own line, the notice reads as a notice. */
+  .onboarding section > .text-button {
+    display: flex;
+    margin-top: 18px;
+  }
+  .onboarding section > p.info-note {
+    font: 400 1rem/1.5 var(--ui);
+    margin-bottom: 20px;
+  }
+  /* Account settings: the language field and the beta note are separate blocks. */
+  .settings-section > label.field + .info-note {
+    margin-top: 16px;
+  }
+  /* Language is a quiet preference above the form, never glued to the heading. */
+  .auth-form > label.field {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin: 0 0 32px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .auth-form > label.field .select-control {
+    width: auto;
+    min-width: 168px;
+  }
   .auth-form h1 {
     margin: 0;
     font: 600 1.86rem/1.2 var(--ui);
@@ -8766,6 +8826,12 @@
   .block-action-list button.danger svg {
     color: var(--danger);
   }
+  .block-menu-empty {
+    margin: 0;
+    padding: 6px 8px 12px;
+    color: var(--muted);
+    font-size: 0.86rem;
+  }
   .block-menu-caption {
     padding: 10px 8px 6px;
     font: 500 0.79rem/1 var(--ui);
@@ -8880,6 +8946,22 @@
   :is(button, a, input, textarea, select, summary, [tabindex]):focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 3px;
+  }
+  /*
+   * Text fields and writing surfaces always match :focus-visible, even on a mouse click.
+   * They show focus with the caret and a tint, never a frame.
+   */
+  :is(
+    input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']),
+    textarea,
+    .ProseMirror,
+    [contenteditable='true']
+  ):focus-visible {
+    outline: none;
+  }
+  /* Scrolling menus clip an outside ring: draw it inside the row instead. */
+  :is(.block-popover, .select-menu, .menu-list, .command-results) :is(button, [role='option']):focus-visible {
+    outline-offset: -2px;
   }
   :is(
     input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']),
@@ -9085,6 +9167,21 @@
   .settings-tabs .settings-elsewhere:hover {
     color: var(--ink);
   }
+  /* On a phone the four sections fill the row and the Appearance link moves above them. */
+  @media (max-width: 480px) {
+    .settings-tabs {
+      flex-wrap: wrap;
+    }
+    .settings-tabs > [role='tablist'] {
+      gap: 4px;
+    }
+    .settings-tabs .settings-elsewhere {
+      order: -1;
+      flex-basis: 100%;
+      justify-content: flex-end;
+      padding-block: 0 4px;
+    }
+  }
   /*
    * Wide dialogs (settings, search) hold their top edge while their content changes height,
    * instead of re-centering and jumping on every tab or keystroke.
@@ -9236,6 +9333,10 @@
   }
   .canvas-edge-label.selected {
     background: color-mix(in oklab, var(--accent) 10%, var(--canvas));
+  }
+  /* An unlabeled connection is one unbroken line: the empty label never masks it. */
+  .canvas-edge-label[data-empty]:not(.selected, :focus-within) {
+    background: transparent;
   }
   /* Page details lists (outline, connections, mentions) share one quiet row style. */
   .connected-list > button {

@@ -99,5 +99,21 @@ const messages: Record<string, string> = {
     'Revise suas cópias não confirmadas antes de criar outra.',
   'The copy was created, but could not be opened. Refresh the workspace to find it.':
     'A cópia foi criada, mas não pôde ser aberta. Atualize o espaço de trabalho para encontrá-la.',
+  Synced: 'Sincronizado',
+  Offline: 'Sem conexão',
+  Blocks: 'Blocos',
+  Status: 'Status',
+  'Workspace map': 'Mapa do espaço',
+  'Open graph': 'Abrir grafo',
+  'Continue where you left off': 'Continue de onde parou',
+  '{{count}} links': '{{count}} conexões',
+  '{{count}} unlinked': '{{count}} soltas',
+  '{{title}} and {{count}} connected pages': '{{title}} e {{count}} páginas conectadas',
+  'Link pages with @ or [[ to see how they connect.':
+    'Vincule páginas com @ ou [[ para ver como se conectam.',
+  'Write in blocks': 'Escreva em blocos',
+  'Organize in tables, boards and calendars': 'Organize em tabelas, quadros e calendários',
+  'Think on free-form canvases': 'Pense em quadros livres',
+  'See how everything connects': 'Veja como tudo se conecta',
 };
 export default messages;

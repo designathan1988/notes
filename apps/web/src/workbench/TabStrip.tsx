@@ -22,6 +22,7 @@ import { Popover } from '../ui/Popover.js';
 export function TabStrip() {
   const state = useWorkspace(),
     active = tabKey(state.selectedId, state.view),
+    tabCount = state.tabs.length,
     root = useRef<HTMLDivElement>(null);
   const [menu, setMenu] = useState<{ id: string; anchor: HTMLElement } | null>(null),
     [dragged, setDragged] = useState<string | null>(null),
@@ -38,10 +39,36 @@ export function TabStrip() {
     return () => desktop.removeEventListener('change', resize);
   }, []);
   useEffect(() => {
-    root.current
-      ?.querySelector<HTMLElement>('[aria-selected=true]')
-      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  }, [active]);
+    const strip = root.current;
+    if (!strip) return;
+    // Reveal the whole tab, close button included, and again whenever the strip is resized
+    // (the page toolbar beside it appears after the tab is activated).
+    const reveal = () =>
+      strip
+        .querySelector<HTMLElement>('[aria-selected=true]')
+        ?.closest<HTMLElement>('.workbench-tab')
+        ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    // Tabs scrolled out of view fade at the edge instead of ending in a cut-off letter.
+    const edges = () => {
+      strip.toggleAttribute('data-clip-start', strip.scrollLeft > 1);
+      strip.toggleAttribute(
+        'data-clip-end',
+        strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 1,
+      );
+    };
+    const settle = () => {
+      reveal();
+      edges();
+    };
+    settle();
+    strip.addEventListener('scroll', edges, { passive: true });
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(settle);
+    observer?.observe(strip);
+    return () => {
+      strip.removeEventListener('scroll', edges);
+      observer?.disconnect();
+    };
+  }, [active, tabCount]);
   function drag(id: string, event: React.PointerEvent<HTMLButtonElement>) {
     if (event.button !== 0) return;
     event.preventDefault();

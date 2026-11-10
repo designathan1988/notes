@@ -97,6 +97,8 @@ const choices = [
     Icon: Code2,
   },
 ] as const;
+/** Accent- and case-insensitive match, so "titulo" finds "Título". */
+const fold = (text: string) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLocaleLowerCase();
 export function insertBlock(editor: Editor, position: number, type: string, level = 2) {
   const paragraph = { type: 'paragraph' };
   const node =
@@ -178,6 +180,8 @@ export function BlockMenu({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState('');
+  const search = useRef<HTMLInputElement>(null);
+  const matches = (label: string) => fold(t(label)).includes(fold(query.trim()));
   const selected = blockAt(editor.state.doc, editor.state.selection.from);
   const count = blocksInRange(editor.state.selection).length;
   const box = anchor?.getBoundingClientRect();
@@ -203,6 +207,18 @@ export function BlockMenu({
   const apply = (transaction: ReturnType<typeof moveBlock>) => {
     if (transaction) editor.view.dispatch(transaction);
   };
+  const insertOnly = [
+    'Divider',
+    'Table',
+    'File or media',
+    'Web component',
+    'Database view',
+    'Video embed',
+    'Page connection',
+  ];
+  const empty =
+    !choices.some((item) => matches(item.label)) &&
+    !(mode === 'insert' && insertOnly.some(matches));
   return createPortal(
     <div
       className="block-popover"
@@ -222,6 +238,16 @@ export function BlockMenu({
           close();
           editor.view.focus();
         }
+        // Typing while a row has focus keeps filtering: the keystroke lands in the search field.
+        if (
+          !(event.target instanceof HTMLInputElement) &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.altKey &&
+          (event.key.length === 1 || event.key === 'Backspace') &&
+          event.key !== ' '
+        )
+          search.current?.focus();
         if (['ArrowDown', 'ArrowUp'].includes(event.key)) {
           event.preventDefault();
           const items = [
@@ -240,6 +266,7 @@ export function BlockMenu({
         <Search size={15} />
         <input
           autoFocus
+          ref={search}
           aria-label={t('Find block type')}
           placeholder={mode === 'insert' ? t('Search blocks…') : t('Turn into…')}
           value={query}
@@ -291,8 +318,9 @@ export function BlockMenu({
             : t('Turn into')}
       </div>
       <div className="block-type-list">
+        {empty && <p className="block-menu-empty">{t('No matching blocks.')}</p>}
         {choices
-          .filter((item) => t(item.label).toLocaleLowerCase().includes(query.toLowerCase()))
+          .filter((item) => matches(item.label))
           .map(({ type, label, description, Icon, ...rest }) => (
             <button
               role="menuitem"
@@ -364,7 +392,7 @@ export function BlockMenu({
             { label: 'Video embed', Icon: Video, action: embed },
             { label: 'Page connection', Icon: Link, action: link },
           ]
-            .filter((item) => t(item.label).toLocaleLowerCase().includes(query.toLowerCase()))
+            .filter((item) => matches(item.label))
             .map(({ label, Icon, action }) => (
               <button key={label} role="menuitem" aria-label={t(label)} onClick={() => run(action)}>
                 <span className="block-type-icon">

@@ -19,12 +19,20 @@ export const messages: Record<string, string> = {
   'Retry connection': 'Tentar conexão novamente',
 };
 const listeners = new Set<() => void>();
+/** Before anyone chooses a language, a Portuguese browser opens the app in Portuguese. */
+function deviceLocale(): Locale {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return 'en-US';
+  const preferred = navigator.languages?.[0] ?? navigator.language ?? '';
+  return preferred.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en-US';
+}
 function storedLocale(): Locale {
   try {
-    return globalThis.localStorage?.getItem(localeStorageKey) === 'pt-BR' ? 'pt-BR' : 'en-US';
+    const stored = globalThis.localStorage?.getItem(localeStorageKey);
+    if (stored === 'pt-BR' || stored === 'en-US') return stored;
   } catch {
-    return 'en-US';
+    // Storage can be blocked; the device language still applies.
   }
+  return deviceLocale();
 }
 let locale: Locale = storedLocale();
 export function getLocale(): Locale {
