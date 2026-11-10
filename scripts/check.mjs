@@ -14,6 +14,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { cpus } from 'node:os';
 
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
@@ -178,11 +179,16 @@ if (full) {
         (direct.get(b) ?? 0) - (direct.get(a) ?? 0) ||
         (map[a]?.files.length ?? 0) - (map[b]?.files.length ?? 0),
     );
+    // Specs spread over one isolated server per worker (see e2e/servers.ts).
+    const parallel = Math.max(
+      1,
+      Number(process.env.E2E_WORKERS) || Math.min(4, Math.floor(cpus().length / 5)),
+    );
     const chosen = [];
-    let spent = 20000; // starting the test server
+    let spent = 25000; // starting the test servers
     for (const spec of ordered) {
       // Recorded test time plus what each spec costs in setup around it.
-      const cost = (map[spec]?.ms ?? 15000) * 1.3 + 1500;
+      const cost = ((map[spec]?.ms ?? 15000) * 1.3 + 1500) / parallel;
       if (chosen.length && spent + cost > budget) continue;
       chosen.push(spec);
       spent += cost;
