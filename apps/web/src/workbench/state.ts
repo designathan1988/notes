@@ -423,6 +423,7 @@ export function workbenchSlice(
       const user = get().user?.id,
         workspace = get().workspaceId;
       const { newWebContent } = await import('@note/editor/web');
+      const { localizeVisual, newVisualDocument } = await import('@note/editor/visual');
       if (get().user?.id !== user || get().workspaceId !== workspace) return;
       const page = await get().createPage(
         {
@@ -430,7 +431,10 @@ export function workbenchSlice(
           parentId: parentId ?? undefined,
           visibility: options.visibility,
           kind: 'document',
-          content: newWebContent(),
+          content: newWebContent(
+            false,
+            localizeVisual(newVisualDocument(), (text) => t(text)),
+          ),
           requestId: crypto.randomUUID(),
         },
         { navigate: false },

@@ -17,6 +17,8 @@ import { useWorkspace } from '../state/store.js';
 import { IconButton } from '../ui/IconButton.js';
 import { Popover } from '../ui/Popover.js';
 import { PageHeader } from '../workspace/PageHeader.js';
+import { VISUAL_FILE, parseVisual, renderVisual, type VisualDocument } from '@note/editor/visual';
+import { VisualBuilder } from '../builder/VisualBuilder.js';
 import { isolatedDocumentEdit } from '../documents/history.js';
 import { useUploads, FailedFile } from '../documents/useUploads.js';
 import { validWebPath } from '@note/editor/web';
@@ -46,8 +48,16 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
     );
     return result;
   }, [node]);
-  const [mode, setMode] = useState<'code' | 'split' | 'preview'>(
-      canEdit ? (fullPage ? 'split' : 'preview') : 'preview',
+  // A Document made in the visual editor keeps its model in one file; the HTML and CSS
+  // beside it are generated from that model on every change.
+  const visualFile = fullPage ? files.find((file) => file.path === VISUAL_FILE) : undefined;
+  const visualText = visualFile?.node.textContent;
+  const visual = useMemo(
+    () => (visualText === undefined ? null : parseVisual(visualText)),
+    [visualText],
+  );
+  const [mode, setMode] = useState<'visual' | 'code' | 'split' | 'preview'>(
+      visual ? 'visual' : canEdit ? (fullPage ? 'split' : 'preview') : 'preview',
     ),
     [active, setActive] = useState(
       () => files.find((file) => file.path === node.attrs.entry)?.id ?? files[0]?.id,
@@ -73,7 +83,8 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
     const apply = () => {
       const elements = parent.querySelectorAll<HTMLElement>('.web-file-node');
       for (const element of elements) {
-        const visible = mode !== 'preview' && element.dataset.sourceFile === selected?.id;
+        const visible =
+          mode !== 'preview' && mode !== 'visual' && element.dataset.sourceFile === selected?.id;
         const opening = element.hidden;
         element.hidden = !visible;
         if (visible && opening) element.dispatchEvent(new Event('note-source-reveal'));
@@ -123,6 +134,32 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
     } catch (error) {
       setError((error as Error).message);
     }
+  }
+  /** Writes the visual model and the page generated from it, as one undoable change. */
+  function saveVisual(next: VisualDocument) {
+    edit(() => {
+      const { position, value } = current();
+      const { html, css } = renderVisual(next, page?.title ?? '');
+      const texts: Record<string, string> = {
+        [VISUAL_FILE]: JSON.stringify(next),
+        [String(value.attrs.entry)]: html,
+        'styles.css': css,
+      };
+      const targets: { offset: number; size: number; text: string }[] = [];
+      value.forEach((file, offset) => {
+        if (file.type.name === 'webFile' && file.attrs.path in texts)
+          targets.push({ offset, size: file.nodeSize, text: texts[file.attrs.path] });
+      });
+      const transaction = editor.state.tr;
+      // Last file first, so earlier positions stay valid.
+      for (const target of targets.sort((a, b) => b.offset - a.offset)) {
+        const from = position + 1 + target.offset + 1,
+          to = position + 1 + target.offset + target.size - 1;
+        if (target.text) transaction.replaceWith(from, to, editor.schema.text(target.text));
+        else transaction.delete(from, to);
+      }
+      editor.view.dispatch(transaction);
+    });
   }
   function saveFile() {
     if (!operation) return;
@@ -259,11 +296,13 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
           </span>
         )}
         <div className="web-mode-control" role="group" aria-label={t('Document view')}>
-          {(['code', 'split', 'preview'] as const).map((view) => (
-            <button key={view} aria-pressed={mode === view} onClick={() => setMode(view)}>
-              {t(view[0].toUpperCase() + view.slice(1))}
-            </button>
-          ))}
+          {([...(visual ? (['visual'] as const) : []), 'code', 'split', 'preview'] as const).map(
+            (view) => (
+              <button key={view} aria-pressed={mode === view} onClick={() => setMode(view)}>
+                {t(view[0].toUpperCase() + view.slice(1))}
+              </button>
+            ),
+          )}
         </div>
         <span className="web-run-state">
           {runNode && node !== runNode ? t('Source changed') : ''}
@@ -312,8 +351,12 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
           <Download size={14} />
         </IconButton>
       </div>
+      {visual && mode === 'visual' && (
+        <VisualBuilder document={visual} onChange={saveVisual} readOnly={!canEdit} />
+      )}
       <div
         className="web-workspace"
+        hidden={mode === 'visual'}
         style={!fullPage ? { height: `${node.attrs.height}px` } : undefined}
       >
         <section

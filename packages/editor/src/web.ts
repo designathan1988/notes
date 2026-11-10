@@ -1,3 +1,4 @@
+import { VISUAL_FILE, newVisualDocument, renderVisual, type VisualDocument } from './visual.js';
 import { Node, type JSONContent } from '@tiptap/core';
 
 /** A source file is text in the existing collaborative body, never a second document. */
@@ -164,7 +165,10 @@ export function validateWeb(content: JSONContent) {
   if (count > 128 || bytes > 2 * 1024 * 1024)
     throw new Error('Use up to 128 source files and 2 MiB of source text per document.');
 }
-export function newWebContent(component = false): JSONContent {
+export function newWebContent(
+  component = false,
+  visual: VisualDocument = newVisualDocument(),
+): JSONContent {
   const source = (path: string, text: string): JSONContent => ({
     type: 'webFile',
     attrs: { path, id: crypto.randomUUID() },
@@ -182,5 +186,14 @@ export function newWebContent(component = false): JSONContent {
       source('main.js', ''),
     ],
   };
-  return component ? root : { type: 'doc', content: [root] };
+  if (component) return root;
+  // A new Document opens in the visual editor: its model, and the page generated from it.
+  const { html, css } = renderVisual(visual);
+  root.content = [
+    source('index.html', html),
+    source('styles.css', css),
+    source('main.js', ''),
+    source(VISUAL_FILE, JSON.stringify(visual)),
+  ];
+  return { type: 'doc', content: [root] };
 }

@@ -31,7 +31,12 @@ test('creates a web page directly from commands and inserts a website component 
     created = page.url().split('#')[1].split('/')[0];
     expect(created).not.toBe('ea293f81-c7fa-4551-9da5-58b8af0510a9');
     const site = page.locator('.web-authoring-page');
+    // A new Document opens in the visual editor; its generated files stay one click away.
+    await expect(site.getByLabel('Document canvas')).toBeVisible();
+    await expect(site.locator('.vb-page h1')).toBeVisible();
+    await site.getByRole('button', { name: 'Code', exact: true }).click();
     await expect(site.getByRole('tab', { name: 'index.html', exact: true })).toBeVisible();
+    await expect(site.getByRole('tab', { name: 'document.json', exact: true })).toBeVisible();
     const title = site.getByRole('textbox', { name: 'Page title', exact: true });
     await title.fill('My own website');
     await title.press('Tab');

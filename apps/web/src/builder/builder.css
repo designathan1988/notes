@@ -1,0 +1,473 @@
+/*
+ * The visual Document editor. The page is the hero: chrome stays quiet and arrives only when
+ * the pointer shows intent. Controls appear fast and leave slowly, so they never flicker.
+ */
+@layer atelier {
+  .visual-builder {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 288px;
+    min-height: 0;
+    height: 100%;
+    background: var(--soft);
+  }
+  .visual-builder[data-readonly] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .vb-stage {
+    position: relative;
+    overflow: auto;
+    padding: 28px 28px 120px;
+  }
+  .vb-page {
+    position: relative;
+    max-width: 1180px;
+    margin: 0 auto;
+    border-radius: 14px;
+    box-shadow: var(--sheet-shadow);
+    overflow: clip;
+    animation: settle 320ms var(--ease-out);
+  }
+  .vb-history {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    gap: 2px;
+    width: max-content;
+    margin: -8px 0 10px auto;
+    padding: 3px;
+    border-radius: 10px;
+    background: var(--canvas);
+    box-shadow: var(--sheet-shadow);
+  }
+
+  /* Running and stopping belong to the code view; the visual editor is always live. */
+  .web-authoring[data-web-mode='visual'] :is(.web-run, .web-run-state) {
+    display: none;
+  }
+
+  /* The canvas uses the Document's own typeface, not the app's. */
+  .vb-page :is(h1, h2, h3, p, blockquote, ul, li) {
+    font-family: inherit;
+  }
+
+  /* ---------- sections ---------- */
+  .vb-section {
+    position: relative;
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+    transition: outline-color var(--t-out) var(--ease-out);
+  }
+  .vb-section:hover {
+    outline-color: color-mix(in oklab, var(--accent) 22%, transparent);
+    transition-duration: var(--t-in);
+  }
+  .vb-section.selected {
+    outline-color: var(--accent);
+  }
+  .vb-add-section {
+    position: absolute;
+    left: 50%;
+    bottom: 10px;
+    z-index: 4;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 26px;
+    padding: 0 11px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font: 600 12px/1 var(--ui);
+    box-shadow: var(--float-shadow);
+    opacity: 0;
+    transform: translate(-50%, 4px) scale(0.94);
+    pointer-events: none;
+    /* Leaves late and slowly: reaching for it never makes it vanish. */
+    transition:
+      opacity var(--t-out) var(--ease-out) 320ms,
+      transform var(--t-move) var(--spring) 320ms;
+  }
+  .vb-section:hover > .vb-add-section,
+  .vb-add-section:hover,
+  .vb-add-section:focus-visible {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+    pointer-events: auto;
+    transition-delay: 90ms;
+  }
+
+  /* ---------- blocks ---------- */
+  .vb-block {
+    position: relative;
+    border-radius: 6px;
+    outline: 1.5px solid transparent;
+    outline-offset: 5px;
+    transition: outline-color var(--t-out) var(--ease-out);
+  }
+  .vb-block:hover {
+    outline-color: color-mix(in oklab, var(--accent) 34%, transparent);
+    transition-duration: var(--t-in);
+  }
+  .vb-block.selected {
+    outline-color: var(--accent);
+  }
+  .vb-block.dragging {
+    opacity: 0.35;
+  }
+  .vb-block [contenteditable='true'] {
+    outline: none;
+    cursor: text;
+  }
+  .vb-block [contenteditable='true']:empty::before {
+    content: '…';
+    opacity: 0.4;
+  }
+  .vb-spacer {
+    border-radius: 6px;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent 0 6px,
+      color-mix(in srgb, currentColor 7%, transparent) 6px 7px
+    );
+  }
+  .vb-media-hint {
+    display: grid;
+    place-items: center;
+    gap: 8px;
+    height: 100%;
+    color: color-mix(in srgb, currentColor 55%, transparent);
+    font: 500 13px/1.3 var(--ui);
+    text-align: center;
+  }
+  .vb-drop {
+    height: 3px;
+    margin-block: 6px;
+    border-radius: 3px;
+    background: var(--accent);
+    animation: arrive 120ms var(--ease-out);
+  }
+
+  /* The selected block's tools float above it and grow from the corner. */
+  .vb-toolbar {
+    position: absolute;
+    top: -40px;
+    left: -6px;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    padding: 3px;
+    border-radius: 10px;
+    background: var(--canvas);
+    color: var(--ink);
+    box-shadow: var(--float-shadow);
+    font: 400 13px/1 var(--ui);
+    animation: float-in 200ms var(--spring);
+    transform-origin: bottom left;
+  }
+  .vb-toolbar .icon-button,
+  .vb-grip {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    color: var(--muted);
+  }
+  .vb-toolbar .icon-button:hover,
+  .vb-grip:hover {
+    background: var(--hover);
+    color: var(--ink);
+  }
+  .vb-grip {
+    cursor: grab;
+    touch-action: none;
+  }
+  .vb-grip:active {
+    cursor: grabbing;
+  }
+
+  /* The insert affordance sits on the seam below a block. */
+  .vb-add-line {
+    position: absolute;
+    left: 50%;
+    bottom: -19px;
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--canvas);
+    color: var(--accent);
+    box-shadow: var(--float-shadow);
+    opacity: 0;
+    transform: translateX(-50%) scale(0.7);
+    pointer-events: none;
+    transition:
+      opacity var(--t-out) var(--ease-out) 260ms,
+      transform var(--t-move) var(--spring) 260ms;
+  }
+  .vb-block:hover > .vb-add-line,
+  .vb-block.selected > .vb-add-line,
+  .vb-add-line:hover,
+  .vb-add-line.open,
+  .vb-add-line:focus-visible {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+    pointer-events: auto;
+    transition-delay: 70ms;
+  }
+  .vb-add-line:hover,
+  .vb-add-line.open {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .vb-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 88px;
+    border: 1.5px dashed color-mix(in srgb, currentColor 22%, transparent);
+    border-radius: 12px;
+    color: inherit;
+    font: 500 14px/1 var(--ui);
+    opacity: 0.7;
+  }
+  .vb-empty:hover {
+    opacity: 1;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .vb-empty-page {
+    min-height: 240px;
+    background: var(--canvas);
+  }
+
+  /* ---------- palette ---------- */
+  .vb-palette {
+    position: fixed;
+    left: 50%;
+    bottom: 56px;
+    z-index: 40;
+    width: min(560px, calc(100vw - 32px));
+    padding: 14px;
+    border-radius: 16px;
+    background: var(--canvas);
+    color: var(--ink);
+    box-shadow: var(--float-shadow);
+    transform: translateX(-50%);
+    animation: palette-in 260ms var(--spring);
+    font: 400 13px/1.3 var(--ui);
+  }
+  .vb-palette > strong {
+    display: block;
+    margin: 0 4px 10px;
+    font-weight: 600;
+  }
+  .vb-palette-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 6px;
+  }
+  .vb-palette-grid button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 8px 12px;
+    border-radius: 10px;
+    color: var(--text2);
+  }
+  .vb-palette-grid button:hover {
+    background: var(--hover);
+    color: var(--ink);
+    transform: translateY(-1px);
+  }
+  .vb-palette-grid svg {
+    color: var(--accent);
+  }
+  .vb-preset {
+    width: 76px;
+    height: 46px;
+    border-radius: 6px;
+    background:
+      linear-gradient(var(--rule-strong), var(--rule-strong)) 50% 34% / 54% 5px no-repeat,
+      linear-gradient(var(--rule), var(--rule)) 50% 54% / 38% 3px no-repeat,
+      var(--soft);
+    box-shadow: 0 0 0 1px var(--rule);
+  }
+  .vb-preset-hero {
+    background:
+      linear-gradient(var(--ink), var(--ink)) 50% 30% / 58% 6px no-repeat,
+      linear-gradient(var(--rule-strong), var(--rule-strong)) 50% 50% / 40% 3px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) 50% 74% / 22% 7px no-repeat,
+      var(--soft);
+  }
+  .vb-preset-features {
+    background:
+      linear-gradient(var(--rule-strong), var(--rule-strong)) 14% 60% / 24% 16px no-repeat,
+      linear-gradient(var(--rule-strong), var(--rule-strong)) 50% 60% / 24% 16px no-repeat,
+      linear-gradient(var(--rule-strong), var(--rule-strong)) 86% 60% / 24% 16px no-repeat,
+      linear-gradient(var(--ink), var(--ink)) 50% 22% / 36% 5px no-repeat,
+      var(--soft);
+  }
+  .vb-preset-text {
+    background:
+      linear-gradient(var(--ink), var(--ink)) 14% 36% / 34% 5px no-repeat,
+      linear-gradient(var(--rule-strong), var(--rule-strong)) 14% 58% / 34% 3px no-repeat,
+      linear-gradient(var(--rule-strong), var(--rule-strong)) 88% 50% / 40% 28px no-repeat,
+      var(--soft);
+  }
+  .vb-preset-call {
+    background:
+      linear-gradient(#f4f3f8, #f4f3f8) 50% 36% / 46% 5px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) 50% 68% / 24% 8px no-repeat,
+      #16151d;
+  }
+  .vb-preset-quote {
+    background:
+      linear-gradient(var(--ink), var(--ink)) 50% 40% / 62% 4px no-repeat,
+      linear-gradient(var(--ink), var(--ink)) 50% 60% / 44% 4px no-repeat,
+      var(--soft);
+  }
+  .vb-preset-blank {
+    background: var(--soft);
+  }
+
+  /* ---------- inspector ---------- */
+  .vb-inspector {
+    overflow: auto;
+    padding: 18px 16px 40px;
+    border-left: 1px solid var(--rule);
+    background: var(--canvas);
+    font: 400 13px/1.4 var(--ui);
+  }
+  .vb-inspector h3 {
+    margin: 0 0 14px;
+    font: 600 14px/1.2 var(--ui);
+    letter-spacing: -0.01em;
+  }
+  .vb-hint {
+    margin: -6px 0 16px;
+    color: var(--muted);
+  }
+  .vb-field {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 14px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .vb-field > span:first-child {
+    font-weight: 500;
+  }
+  .vb-field :is(input:not([type='range'], [type='color']), textarea) {
+    width: 100%;
+    min-height: 32px;
+    padding: 6px 9px;
+    border-radius: 8px;
+    background-color: var(--soft);
+    color: var(--ink);
+    font: 400 13px/1.4 var(--ui);
+  }
+  .vb-range {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 48px;
+    align-items: center;
+    gap: 10px;
+  }
+  .vb-range input {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+  .vb-range output {
+    color: var(--text2);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .vb-color {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .vb-color input {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    cursor: pointer;
+  }
+  .vb-color input[data-empty] {
+    opacity: 0.35;
+  }
+  .vb-color code {
+    flex: 1;
+    padding: 0;
+    background: none;
+    color: var(--text2);
+    font: 400 12px/1 var(--code);
+  }
+  .vb-segments {
+    display: inline-flex;
+    padding: 2px;
+    border-radius: 9px;
+    background: var(--soft);
+    width: max-content;
+  }
+  .vb-segments button {
+    display: grid;
+    place-items: center;
+    min-width: 34px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 7px;
+    color: var(--muted);
+    font: 500 13px/1 var(--ui);
+  }
+  .vb-segments button[aria-pressed='true'] {
+    background: var(--canvas);
+    color: var(--ink);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+  }
+  .vb-actions {
+    display: grid;
+    gap: 6px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+  }
+  .vb-actions .button {
+    justify-content: flex-start;
+    gap: 8px;
+  }
+  .vb-actions .danger {
+    color: var(--danger);
+  }
+
+  @keyframes palette-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, 12px) scale(0.97);
+    }
+  }
+  @media (max-width: 900px) {
+    .visual-builder {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto;
+    }
+    .vb-inspector {
+      max-height: 42dvh;
+      border-left: 0;
+      border-top: 1px solid var(--rule);
+    }
+    .vb-stage {
+      padding: 12px 12px 96px;
+    }
+  }
+}
