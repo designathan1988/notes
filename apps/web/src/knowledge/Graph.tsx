@@ -1,6 +1,7 @@
 import { formatNumber, t } from '../i18n/index.js';
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
-import { ZoomIn, ZoomOut, Focus, Search, RotateCcw } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { ZoomIn, ZoomOut, Focus, Search, RotateCcw, ListFilter } from 'lucide-react';
 import type { GraphData } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { IconButton } from '../ui/IconButton.js';
@@ -17,6 +18,8 @@ export default function Graph() {
   const version = useWorkspace((state) => state.knowledgeVersion);
   const [local, setLocal] = useState(false);
   const [localId, setLocalId] = useState<string | null>(null);
+  // Held here so the filters stay open when the local graph swaps the surface.
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const center = local ? (localId ?? selected ?? undefined) : undefined;
   const data = useWorkspace((state) => state.graphs[`${workspace}:${center ?? 'all'}`]);
   useEffect(() => {
@@ -44,6 +47,8 @@ export default function Graph() {
         setLocal(value);
       }}
       local={local}
+      filtersOpen={filtersOpen}
+      setFiltersOpen={setFiltersOpen}
       onFocusNode={(id) => {
         setLocalId(id);
         setLocal(true);
@@ -59,6 +64,8 @@ function GraphSurface({
   local,
   onLocal,
   onFocusNode,
+  filtersOpen,
+  setFiltersOpen,
 }: {
   data?: GraphData;
   center?: string;
@@ -66,12 +73,33 @@ function GraphSurface({
   local: boolean;
   onLocal(value: boolean): void;
   onFocusNode(id: string): void;
+  filtersOpen: boolean;
+  setFiltersOpen(open: boolean): void;
 }) {
   const placements = useWorkspace((state) => state.graphPlacements);
   const viewKey = center ?? 'all';
   const saved = useWorkspace((state) => state.graphCameras[viewKey]);
   const [filter, setFilter] = useState(''),
-    [hideUnlinked, setHideUnlinked] = useState(false);
+    [hideUnlinked, setHideUnlinked] = useState(false),
+    [kind, setKind] = useState<'all' | GraphData['nodes'][number]['kind']>('all'),
+    [slot, setSlot] = useState<HTMLElement | null>(null);
+  // The bar's place for this screen: the counts and the filters, as the Grafo board puts them.
+  useEffect(() => setSlot(document.getElementById('graph-bar-slot')), []);
+  useEffect(() => {
+    if (!filtersOpen) return;
+    const press = (event: PointerEvent) => {
+      if (!(event.target as Element).closest('.graph-filters')) setFiltersOpen(false);
+    };
+    const key = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') setFiltersOpen(false);
+    };
+    document.addEventListener('pointerdown', press);
+    document.addEventListener('keydown', key);
+    return () => {
+      document.removeEventListener('pointerdown', press);
+      document.removeEventListener('keydown', key);
+    };
+  }, [filtersOpen, setFiltersOpen]);
   const [focused, setFocused] = useState<string | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const layout = useGraphLayout(data),
@@ -89,6 +117,7 @@ function GraphSurface({
   const nodes = (data?.nodes ?? []).filter(
     (node) =>
       node.title.toLocaleLowerCase().includes(filter.toLocaleLowerCase()) &&
+      (kind === 'all' || node.kind === kind) &&
       (!hideUnlinked || links.has(node.id)),
   );
   const positions = Object.fromEntries(
@@ -157,37 +186,54 @@ function GraphSurface({
   };
   return (
     <section className="graph-screen" aria-label={t('Knowledge graph')}>
-      <header className="graph-toolbar">
-        <h1>{t('Knowledge graph')}</h1>
-        <label className="graph-search">
-          <Search />
-          <input
-            aria-label={t('Filter graph')}
-            placeholder={t('Find a page…')}
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-          />
-        </label>
-        <div className="graph-filters">
-          <label className="graph-mode">
-            <input
-              type="checkbox"
-              disabled={!selected && !local}
-              checked={local}
-              onChange={(event) => onLocal(event.target.checked)}
-            />
-            {t('Local graph')}
-          </label>
-          <label className="graph-mode">
-            <input
-              type="checkbox"
-              checked={hideUnlinked}
-              onChange={(event) => setHideUnlinked(event.target.checked)}
-            />
-            {t('Hide unlinked')}
-          </label>
-        </div>
-      </header>
+      <h1 className="graph-title">{t('Knowledge graph')}</h1>
+      {slot &&
+        createPortal(
+          <>
+            <span className="bar-hint">
+              {nodes.length === 1
+                ? t('{{count}} page', { count: formatNumber(nodes.length) })
+                : t('{{count}} pages', { count: formatNumber(nodes.length) })}
+              {' · '}
+              {edges.length === 1
+                ? t('{{count}} connection', { count: formatNumber(edges.length) })
+                : t('{{count}} connections', { count: formatNumber(edges.length) })}
+              {data?.truncated ? t(' · Limited view') : ''}
+            </span>
+            <div className="graph-filters">
+              <button
+                className="button"
+                aria-expanded={filtersOpen}
+                onClick={() => setFiltersOpen(!filtersOpen)}
+              >
+                <ListFilter />
+                {t('Filters')}
+              </button>
+              {filtersOpen && (
+                <div className="graph-filters-menu" role="group" aria-label={t('Filters')}>
+                  <label className="graph-mode">
+                    <input
+                      type="checkbox"
+                      disabled={!selected && !local}
+                      checked={local}
+                      onChange={(event) => onLocal(event.target.checked)}
+                    />
+                    {t('Local graph')}
+                  </label>
+                  <label className="graph-mode">
+                    <input
+                      type="checkbox"
+                      checked={hideUnlinked}
+                      onChange={(event) => setHideUnlinked(event.target.checked)}
+                    />
+                    {t('Hide unlinked')}
+                  </label>
+                </div>
+              )}
+            </div>
+          </>,
+          slot,
+        )}
       <div
         className="graph-canvas"
         ref={spatial.ref}
@@ -200,6 +246,39 @@ function GraphSurface({
           }
         }}
       >
+        <div className="graph-tools" data-spatial-control>
+          <label className="graph-search">
+            <Search />
+            <input
+              aria-label={t('Filter graph')}
+              placeholder={t('Find in the graph')}
+              value={filter}
+              onChange={(event) => setFilter(event.target.value)}
+            />
+          </label>
+          <div className="graph-kinds" role="group" aria-label={t('Kind of page')}>
+            {(
+              [
+                ['all', 'All'],
+                ['document', 'Documents'],
+                ['database', 'Databases'],
+                ['record', 'Records'],
+                ['canvas', 'Canvases'],
+              ] as const
+            ).map(([value, label]) => (
+              <button key={value} aria-pressed={kind === value} onClick={() => setKind(value)}>
+                {t(label)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="graph-legend" data-spatial-control aria-hidden="true">
+          <span data-kind="document">{t('Document')}</span>
+          <span data-kind="database">{t('Database')}</span>
+          <span data-kind="record">{t('Record')}</span>
+          <span data-kind="canvas">{t('Canvas')}</span>
+          <span data-kind="loose">{t('No connections')}</span>
+        </div>
         <svg
           viewBox={`0 0 ${Math.max(1, size.width)} ${Math.max(1, size.height)}`}
           role="group"
@@ -240,18 +319,6 @@ function GraphSurface({
             }
           }}
         >
-          <defs>
-            <marker
-              id="graph-arrow"
-              viewBox="0 -4 8 8"
-              refX="8"
-              markerWidth="7"
-              markerHeight="7"
-              orient="auto"
-            >
-              <path d="M0,-3L7,0L0,3" />
-            </marker>
-          </defs>
           <g
             transform={`translate(${size.width / 2} ${size.height / 2}) scale(${camera.zoom}) translate(${-camera.x} ${-camera.y})`}
           >
@@ -276,7 +343,6 @@ function GraphSurface({
                     undefined
                   }
                   d={d}
-                  markerEnd="url(#graph-arrow)"
                   vectorEffect="non-scaling-stroke"
                 />
               );
@@ -302,6 +368,7 @@ function GraphSurface({
                   data-related={neighbors.has(node.id) || undefined}
                   data-muted={(!!active && !chosen && !neighbors.has(node.id)) || undefined}
                   data-label={labelIds.has(node.id) || undefined}
+                  data-loose={degree === 0 || undefined}
                   onPointerEnter={() => {
                     if (!spatial.dragging) {
                       if (focused !== node.id) setInspectorOpen(true);
@@ -347,10 +414,31 @@ function GraphSurface({
                       vectorEffect="non-scaling-stroke"
                     />
                   )}
+                  {chosen && (
+                    <>
+                      <circle
+                        className="graph-glow"
+                        cx={point.x}
+                        cy={point.y}
+                        r={26 / camera.zoom}
+                      />
+                      <circle
+                        className="graph-ring"
+                        cx={point.x}
+                        cy={point.y}
+                        r={17 / camera.zoom}
+                        vectorEffect="non-scaling-stroke"
+                      />
+                    </>
+                  )}
                   <circle
+                    className="graph-dot"
                     cx={point.x}
                     cy={point.y}
-                    r={(chosen ? 10 : 6 + Math.min(4, Math.sqrt(degree))) / camera.zoom}
+                    r={
+                      (chosen ? 9 : degree === 0 ? 3 : 4 + Math.min(3, Math.sqrt(degree))) /
+                      camera.zoom
+                    }
                     vectorEffect="non-scaling-stroke"
                   />
                   {labelIds.has(node.id) && (
@@ -432,21 +520,9 @@ function GraphSurface({
           )}
         </div>
       </div>
-      <footer>
-        <span>
-          {nodes.length === 1
-            ? t('{{count}} page', { count: formatNumber(nodes.length) })
-            : t('{{count}} pages', { count: formatNumber(nodes.length) })}
-          {' · '}
-          {edges.length === 1
-            ? t('{{count}} connection', { count: formatNumber(edges.length) })
-            : t('{{count}} connections', { count: formatNumber(edges.length) })}
-          {data?.truncated ? t(' · Limited view') : ''}
-        </span>
-        <span id="graph-help">
-          {t('Drag nodes or background · Scroll to zoom · Enter to open · Arrow keys to move')}
-        </span>
-      </footer>
+      <p id="graph-help" className="graph-help">
+        {t('Drag nodes or background · Scroll to zoom · Enter to open · Arrow keys to move')}
+      </p>
     </section>
   );
 }

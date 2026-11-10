@@ -186,6 +186,7 @@ export function Workspace() {
             )}
           </div>
           <div className="topbar-actions">
+            {state.view === 'graph' && <div className="bar-slot" id="graph-bar-slot" />}
             <IconButton
               label={t('Command palette')}
               data-command-palette

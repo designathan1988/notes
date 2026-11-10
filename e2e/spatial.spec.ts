@@ -70,20 +70,20 @@ test('graph node dragging persists visual placement without changing canonical p
     const node = page.getByRole('link', { name: `Open ${source.title}`, exact: true });
     await expect(node).toBeVisible();
     await page.getByRole('button', { name: 'Reset graph view', exact: true }).click();
-    const before = await node.locator('circle').evaluate((circle) => ({
+    const before = await node.locator('circle.graph-dot').evaluate((circle) => ({
       x: Number(circle.getAttribute('cx')),
       y: Number(circle.getAttribute('cy')),
     }));
-    const box = (await node.locator('circle').boundingBox())!;
+    const box = (await node.locator('circle.graph-dot').boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
     await page.mouse.move(box.x + box.width / 2 + 95, box.y + box.height / 2 + 55, { steps: 9 });
     await page.mouse.up();
     await expect(page).toHaveURL(/\/graph$/);
     await expect
-      .poll(async () => Number(await node.locator('circle').getAttribute('cx')))
+      .poll(async () => Number(await node.locator('circle.graph-dot').getAttribute('cx')))
       .not.toBe(before.x);
-    const moved = await node.locator('circle').evaluate((circle) => ({
+    const moved = await node.locator('circle.graph-dot').evaluate((circle) => ({
       x: Number(circle.getAttribute('cx')),
       y: Number(circle.getAttribute('cy')),
     }));
@@ -101,7 +101,7 @@ test('graph node dragging persists visual placement without changing canonical p
     await filter.fill(source.title);
     await expect(node).toBeVisible();
     await expect
-      .poll(async () => Number(await node.locator('circle').getAttribute('cx')))
+      .poll(async () => Number(await node.locator('circle.graph-dot').getAttribute('cx')))
       .toBeCloseTo(moved.x, 4);
     await node.focus();
     await expect(
@@ -109,7 +109,7 @@ test('graph node dragging persists visual placement without changing canonical p
     ).toBeVisible();
     await page.keyboard.press('ArrowRight');
     await expect
-      .poll(async () => Number(await node.locator('circle').getAttribute('cx')))
+      .poll(async () => Number(await node.locator('circle.graph-dot').getAttribute('cx')))
       .toBeCloseTo(moved.x + 20, 4);
     await page.keyboard.press('Enter');
     await expect(page.getByRole('textbox', { name: 'Page title', exact: true })).toHaveValue(
@@ -137,9 +137,10 @@ test('graph toolbar stays compact and background pan uses CSS pixels at differen
       await expect.poll(async () => (await stage.boundingBox())!.width).toBeGreaterThan(200);
       const box = (await stage.boundingBox())!;
       const before = await cameraOf(page);
-      await page.mouse.move(box.x + 24, box.y + 24);
+      // Below the floating search and kind filter, on the open stage.
+      await page.mouse.move(box.x + 24, box.y + 160);
       await page.mouse.down();
-      await page.mouse.move(box.x + 84, box.y + 64, { steps: 6 });
+      await page.mouse.move(box.x + 84, box.y + 200, { steps: 6 });
       await page.mouse.up();
       const after = await cameraOf(page);
       expect(after.x).toBeCloseTo(before.x - 60 / before.zoom, 3);
@@ -223,6 +224,7 @@ test('focus connections uses the inspected page and revoking that local center r
     );
     await page.getByRole('button', { name: 'Focus connections', exact: true }).click();
     expect((await focused).ok()).toBe(true);
+    await page.getByRole('button', { name: 'Filters', exact: true }).click();
     await expect(page.getByRole('checkbox', { name: 'Local graph', exact: true })).toBeChecked();
     await expect(node).toBeVisible();
     const moved = await owner.request.post(`/api/pages/${target.id}/move`, {
@@ -327,19 +329,21 @@ test.describe('native mobile graph gestures', () => {
       points: { x: number; y: number; id: number }[],
     ) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
     try {
-      const box = (await node.locator('circle').boundingBox())!,
+      const box = (await node.locator('circle.graph-dot').boundingBox())!,
         start = { x: box.x + box.width / 2, y: box.y + box.height / 2, id: 1 };
-      const original = await node.locator('circle').getAttribute('cx');
+      const original = await node.locator('circle.graph-dot').getAttribute('cx');
       await touch('touchStart', [start]);
       await touch('touchMove', [{ ...start, x: start.x + 60, y: start.y + 30 }]);
-      await expect.poll(async () => node.locator('circle').getAttribute('cx')).not.toBe(original);
+      await expect
+        .poll(async () => node.locator('circle.graph-dot').getAttribute('cx'))
+        .not.toBe(original);
       await touch('touchCancel', []);
-      await expect(node.locator('circle')).toHaveAttribute('cx', original!);
+      await expect(node.locator('circle.graph-dot')).toHaveAttribute('cx', original!);
       const stage = (await page.locator('.graph-canvas').boundingBox())!;
       const before = await cameraOf(page),
-        a = { x: stage.x + 70, y: stage.y + 65, id: 1 },
-        b = { x: stage.x + 170, y: stage.y + 65, id: 2 };
-      const middle = { x: 120, y: 65 },
+        a = { x: stage.x + 70, y: stage.y + 165, id: 1 },
+        b = { x: stage.x + 170, y: stage.y + 165, id: 2 };
+      const middle = { x: 120, y: 165 },
         anchor = {
           x: before.x + (middle.x - stage.width / 2) / before.zoom,
           y: before.y + (middle.y - stage.height / 2) / before.zoom,
@@ -353,7 +357,7 @@ test.describe('native mobile graph gestures', () => {
       const after = await cameraOf(page);
       expect(after.zoom).toBeCloseTo(Math.min(3, before.zoom * 2), 3);
       expect((anchor.x - after.x) * after.zoom + stage.width / 2).toBeCloseTo(140, 2);
-      expect((anchor.y - after.y) * after.zoom + stage.height / 2).toBeCloseTo(105, 2);
+      expect((anchor.y - after.y) * after.zoom + stage.height / 2).toBeCloseTo(205, 2);
       await expect(page).toHaveURL(/\/graph$/);
       await page.reload();
       await expect(

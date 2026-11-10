@@ -82,9 +82,7 @@ test('the block menu keeps filtering after arrow navigation, ignores accents and
 test('graph counts read as words and a phone page fills the screen', async ({ browser }) => {
   const { context, page } = await open(browser);
   await page.goto('/#/graph');
-  await expect(page.locator('.graph-screen > footer > span').first()).toHaveText(
-    /^\d+ pages? · \d+ connections?/,
-  );
+  await expect(page.locator('.bar-hint')).toHaveText(/^\d+ pages? · \d+ connections?/);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/#/home');
   await expect(page.locator('.workspace-main')).toBeVisible();
