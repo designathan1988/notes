@@ -1,0 +1,464 @@
+/* ==========================================================================
+   Atelier: the feel layer.
+   Pleasure comes from craft, not ornament: warm paper instead of tinted ground, quiet
+   monochrome chrome, color only where it means something, editorial type, and motion
+   with weight. Interactions have hysteresis: things arrive quickly, leave slowly, and
+   never flicker when the pointer overshoots.
+   Declared after `nexo`, so it refines that layer without rewriting it.
+   ========================================================================== */
+@layer atelier {
+  :root {
+    /* Motion: a soft spring for things that arrive, a calm ease for things that leave. */
+    --spring: linear(
+      0,
+      0.009,
+      0.035 2.1%,
+      0.141 4.4%,
+      0.723 12.9%,
+      0.938 16.7%,
+      1.017 19.4%,
+      1.051 22.2%,
+      1.055 25.4%,
+      1.035 30.9%,
+      1.006 38.6%,
+      0.996 45.8%,
+      1
+    );
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --t-in: 110ms;
+    --t-out: 280ms;
+    --t-move: 420ms;
+
+    --ground: #ecebe7;
+    --sidebar: transparent;
+    --canvas: #fffefc;
+    --soft: #f6f5f1;
+    --ink: #1c1b18;
+    --text2: #3b3934;
+    --muted: #6d6a62;
+    --faint: #9c988f;
+    --rule: #e6e3dc;
+    --rule-strong: #d5d1c7;
+    --accent: #4f46d8;
+    --accent-hover: #4038c4;
+    --accent-ink: #4038c4;
+    --on-accent: #ffffff;
+    --selected: #e7e5df;
+    --hover: rgb(28 27 24 / 0.045);
+    --press: rgb(28 27 24 / 0.08);
+    --sheet-shadow:
+      0 0 0 1px rgb(28 27 24 / 0.06), 0 1px 1px rgb(28 27 24 / 0.03),
+      0 12px 32px -14px rgb(28 27 24 / 0.16);
+    --float-shadow:
+      0 0 0 1px rgb(28 27 24 / 0.07), 0 2px 4px rgb(28 27 24 / 0.04),
+      0 18px 40px -12px rgb(28 27 24 / 0.22);
+    --shadow-sm: var(--sheet-shadow);
+    --shadow-lg: var(--float-shadow);
+    --selection: color-mix(in oklab, var(--accent) 18%, transparent);
+  }
+  :root[data-theme='dark'] {
+    --ground: #0e0e0f;
+    --canvas: #161618;
+    --soft: #1b1b1e;
+    --ink: #ecebe6;
+    --text2: #c9c7c0;
+    --muted: #96938b;
+    --faint: #6b6963;
+    --rule: #26262a;
+    --rule-strong: #34343a;
+    --accent: #9a93ff;
+    --accent-hover: #b0aaff;
+    --accent-ink: #b8b3ff;
+    --on-accent: #111018;
+    --selected: #232327;
+    --hover: rgb(255 255 255 / 0.045);
+    --press: rgb(255 255 255 / 0.08);
+    --sheet-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 16px 40px -16px rgb(0 0 0 / 0.7);
+    --float-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 22px 48px -12px rgb(0 0 0 / 0.75);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --ground: #0e0e0f;
+      --canvas: #161618;
+      --soft: #1b1b1e;
+      --ink: #ecebe6;
+      --text2: #c9c7c0;
+      --muted: #96938b;
+      --faint: #6b6963;
+      --rule: #26262a;
+      --rule-strong: #34343a;
+      --accent: #9a93ff;
+      --accent-hover: #b0aaff;
+      --accent-ink: #b8b3ff;
+      --on-accent: #111018;
+      --selected: #232327;
+      --hover: rgb(255 255 255 / 0.045);
+      --press: rgb(255 255 255 / 0.08);
+      --sheet-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 16px 40px -16px rgb(0 0 0 / 0.7);
+      --float-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 22px 48px -12px rgb(0 0 0 / 0.75);
+    }
+  }
+
+  ::selection {
+    background: var(--selection);
+  }
+  body {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  /* ---------- shell: the sidebar rests on the ground; only the work floats ---------- */
+  @media (min-width: 701px) {
+    .sidebar {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+    .workspace-main {
+      border: 0;
+      border-radius: 14px;
+      box-shadow: var(--sheet-shadow);
+    }
+    .context-panel {
+      border: 0;
+      border-radius: 12px;
+      background: var(--canvas);
+      box-shadow: var(--sheet-shadow);
+    }
+  }
+  .topbar {
+    background: var(--canvas);
+    border-bottom-color: var(--rule);
+  }
+
+  /* ---------- color means something: glyphs are quiet ink, never toy tiles ---------- */
+  .tree-page > svg,
+  .tree-row.selected .tree-page > svg,
+  .favorites > button > svg,
+  .workbench-tab [role='tab'] svg,
+  .kind-tile {
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--faint);
+  }
+  .tree-row.selected .tree-page > svg,
+  .workbench-tab.active [role='tab'] svg {
+    color: var(--muted);
+  }
+  .workspace-destinations button[aria-current='page'] svg {
+    color: var(--ink);
+  }
+
+  /* ---------- sidebar ---------- */
+  .section-label,
+  .home-section h2 {
+    font: 500 0.8rem/1 var(--ui);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--faint);
+  }
+  .search-trigger {
+    background: var(--hover);
+    box-shadow: none;
+  }
+  .search-trigger:hover {
+    background: var(--press);
+  }
+  .workspace-destinations button[aria-current='page'],
+  .tree-row.selected {
+    background: var(--selected);
+    box-shadow: none;
+  }
+  .workspace-destinations button[aria-current='page'],
+  .tree-row.selected .tree-page {
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  /* ---------- tabs ---------- */
+  .workbench-tab.active {
+    background: var(--selected);
+    box-shadow: none;
+    font-weight: 500;
+  }
+
+  /* ---------- document header: editorial, no banner ---------- */
+  .page-band,
+  .home-continue-band {
+    display: none;
+  }
+  .page-heading.has-band .title-row {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .page-heading.has-band .default-page-icon {
+    display: none;
+  }
+  .page-heading.has-band .page-icon.page-emoji {
+    width: auto;
+    height: auto;
+    margin: 0 0 10px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 44px;
+  }
+  .page-title {
+    letter-spacing: -0.028em;
+    font-weight: 650;
+  }
+  .page-description {
+    color: var(--muted);
+  }
+  .page-meta {
+    gap: 6px 16px;
+    font-size: 0.86rem;
+    color: var(--faint);
+  }
+  .page-meta svg {
+    color: var(--faint);
+  }
+
+  /* ---------- home: calm cards with real content ---------- */
+  .home-continue button {
+    border: 0;
+    border-radius: 12px;
+    background: var(--canvas);
+    box-shadow: 0 0 0 1px var(--rule);
+  }
+  .home-continue-body {
+    gap: 6px;
+    padding: 16px 16px 14px;
+  }
+  .home-continue-body .kind-tile {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* ---------- tables: values read as values; the menu affordance waits for intent ---------- */
+  :is(.cell-control, .board-record, .record-inspector, .page-properties) .select-trigger > svg {
+    opacity: 0;
+    transition: opacity var(--t-out) var(--ease-out);
+  }
+  :is(tr, .board-record, .record-property, .page-property-row, .cell-control):hover
+    .select-trigger
+    > svg,
+  .select-trigger:focus-visible > svg,
+  .select-trigger[aria-expanded='true'] > svg {
+    opacity: 1;
+    transition-duration: var(--t-in);
+  }
+
+  /* ---------- canvas: a working surface, not a blank page ---------- */
+  .canvas-stage {
+    background-color: var(--soft);
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      color-mix(in oklab, var(--ink) 14%, transparent) 1px,
+      transparent 0
+    );
+    background-size: 22px 22px;
+  }
+
+  /* ---------- save state: one place, quiet unless something needs you ---------- */
+  .workspace-main:has(.topbar .save-status) .status-bar > [role='status'] {
+    display: none;
+  }
+  .status-dot {
+    position: relative;
+    transition: background-color var(--t-out) var(--ease-out);
+  }
+  .status-dot[data-state='saved']::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 1.5px solid var(--kind-record);
+    opacity: 0;
+    animation: saved-ring 900ms var(--ease-out) 1;
+  }
+
+  /* ==================== motion with weight, and hysteresis ==================== */
+  /*
+   * Asymmetric timing is the hysteresis: feedback arrives in ~110ms so the interface feels
+   * immediate, and fades over ~280ms so crossing a row or overshooting a button never
+   * flickers.
+   */
+  :is(
+    button,
+    [role='button'],
+    [role='tab'],
+    [role='menuitem'],
+    [role='option'],
+    a,
+    .tree-row,
+    .select-trigger,
+    .search-trigger
+  ) {
+    transition:
+      background-color var(--t-out) var(--ease-out),
+      color var(--t-out) var(--ease-out),
+      box-shadow var(--t-out) var(--ease-out),
+      transform var(--t-move) var(--spring),
+      opacity var(--t-out) var(--ease-out);
+  }
+  :is(
+    button,
+    [role='button'],
+    [role='tab'],
+    [role='menuitem'],
+    [role='option'],
+    a,
+    .tree-row,
+    .select-trigger,
+    .search-trigger
+  ):hover {
+    transition-duration: var(--t-in), var(--t-in), var(--t-in), var(--t-move), var(--t-in);
+  }
+  /* A press gives way under the finger and springs back on release. */
+  :is(button, [role='button'], .select-trigger):not(:disabled):active {
+    transform: scale(0.97);
+    transition-duration: 60ms;
+  }
+  .primary:not(:disabled):active {
+    transform: scale(0.96);
+  }
+
+  /* Sidebar row actions arrive with intent and linger after the pointer leaves. */
+  .tree-row > .tree-row-actions {
+    transition:
+      opacity var(--t-out) var(--ease-out) 260ms,
+      visibility 0s linear 540ms;
+  }
+  .tree-row:hover > .tree-row-actions,
+  .tree-row:focus-within > .tree-row-actions {
+    transition:
+      opacity var(--t-in) var(--ease-out) 60ms,
+      visibility 0s;
+  }
+
+  /* The block handle glides to the next block instead of jumping. */
+  .block-gutter {
+    transition:
+      top 220ms var(--ease-out),
+      left 220ms var(--ease-out);
+    animation: arrive 180ms var(--ease-out);
+  }
+
+  /* Floating surfaces grow from where they were summoned. */
+  .app-popover,
+  .block-popover,
+  .select-menu,
+  .selection-toolbar {
+    box-shadow: var(--float-shadow);
+    border-color: transparent;
+    animation: float-in 220ms var(--spring);
+    transform-origin: top left;
+  }
+  /* A select menu is anchored to its trigger: it fades in place, without moving. */
+  .select-menu {
+    animation: fade-in 140ms var(--ease-out);
+  }
+  dialog[open],
+  [role='dialog'].dialog {
+    animation: dialog-in 260ms var(--spring);
+  }
+  dialog::backdrop {
+    animation: fade-in 200ms var(--ease-out);
+  }
+
+  /* Each place opens with a short settle, so moving around the workspace has continuity. */
+  .home,
+  .document-canvas,
+  .all-pages,
+  .templates-screen,
+  .graph-screen,
+  .canvas-document {
+    animation: settle 320ms var(--ease-out);
+  }
+
+  /* Completing a task is the most satisfying moment in the editor: give it a little ceremony. */
+  .note-editor ul[data-type='taskList'] > li > label input {
+    transition:
+      transform var(--t-move) var(--spring),
+      background-color var(--t-out) var(--ease-out);
+  }
+  .note-editor ul[data-type='taskList'] > li[data-checked='true'] > label input {
+    animation: check-pop 420ms var(--spring);
+  }
+  /* The strike follows the words, not the row, and fades in rather than snapping. */
+  .note-editor ul[data-type='taskList'] > li > div {
+    text-decoration-line: line-through;
+    text-decoration-thickness: 1px;
+    text-decoration-color: transparent;
+    transition:
+      color var(--t-out) var(--ease-out),
+      text-decoration-color 360ms var(--ease-in-out);
+  }
+  .note-editor ul[data-type='taskList'] > li[data-checked='true'] > div {
+    color: var(--faint);
+    text-decoration-color: currentColor;
+  }
+
+  @keyframes settle {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  @keyframes float-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+  }
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.985);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes arrive {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes check-pop {
+    40% {
+      transform: scale(0.82);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+  @keyframes saved-ring {
+    0% {
+      opacity: 0.55;
+      transform: scale(0.6);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.6);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+      transition-delay: 0s !important;
+    }
+  }
+}

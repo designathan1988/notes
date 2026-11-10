@@ -39,6 +39,14 @@ export function BlockGutter({
   const cleanup = useRef<(() => void) | null>(null);
   useEffect(() => {
     const root = editor.view.dom;
+    // Hysteresis: leaving the text does not hide the handle at once. Crossing the margin
+    // toward it, or overshooting by a few pixels, keeps it in place instead of flickering.
+    let linger: ReturnType<typeof setTimeout> | undefined;
+    const keep = () => clearTimeout(linger);
+    const release = () => {
+      clearTimeout(linger);
+      linger = setTimeout(() => setHover(null), 420);
+    };
     const locate = (element: Node) => {
       let found: number | null = null;
       editor.state.doc.forEach((_node, from) => {
@@ -60,11 +68,9 @@ export function BlockGutter({
     const pointer = (event: PointerEvent) => {
       if (gesture.current) return;
       const target = event.target as HTMLElement;
-      if (target.closest('.block-gutter,.block-popover')) return;
-      if (!root.contains(target)) {
-        setHover(null);
-        return;
-      }
+      if (target.closest('.block-gutter,.block-popover')) return keep();
+      if (!root.contains(target)) return release();
+      keep();
       const from = locate(target);
       if (from !== null) show(from);
     };
@@ -75,7 +81,10 @@ export function BlockGutter({
       }
     };
     const scroll = () => {
-      if (!gesture.current) setHover(null);
+      if (!gesture.current) {
+        keep();
+        setHover(null);
+      }
     };
     document.addEventListener('pointermove', pointer);
     document.addEventListener('scroll', scroll, true);
@@ -84,6 +93,7 @@ export function BlockGutter({
       document.removeEventListener('pointermove', pointer);
       document.removeEventListener('scroll', scroll, true);
       editor.off('selectionUpdate', selection);
+      clearTimeout(linger);
       cleanup.current?.();
     };
   }, [editor]);
