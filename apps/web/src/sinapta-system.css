@@ -2419,4 +2419,16 @@
   .page-tree .tree-drafts .tree-page {
     color: var(--muted);
   }
+
+  /* In dark mode the avatar turns light, as in the design. */
+  :root[data-theme='dark'] .sidebar-footer .account-trigger .avatar {
+    background: linear-gradient(140deg, #e9e8e4, #bdbcb7);
+    color: #18181a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light'], [data-theme='dark']) .sidebar-footer .account-trigger .avatar {
+      background: linear-gradient(140deg, #e9e8e4, #bdbcb7);
+      color: #18181a;
+    }
+  }
 }
