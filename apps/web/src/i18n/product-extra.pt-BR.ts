@@ -189,5 +189,12 @@ const messages: Record<string, string> = {
   'Ready when you are': 'Pronto quando você estiver',
   'Start now': 'Começar agora',
   Insert: 'Inserir',
+  Capture: 'Capturar',
+  'Capture as': 'Capturar como',
+  'Capture a thought': 'Capturar uma ideia',
+  'Jot something down…': 'Anotar algo…',
+  'Page thread': 'Fio da página',
+  'Open {{title}}': 'Abrir {{title}}',
+  Close: 'Fechar',
 };
 export default messages;

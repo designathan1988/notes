@@ -1,0 +1,351 @@
+/* ==========================================================================
+   Mosaic signature: what this workspace has that others do not.
+   Studied against AFFiNE, Logseq, Obsidian, Notion and Linear: their conventions are kept
+   where people expect them (a dense, quiet sidebar; one header; a ~720px reading column;
+   no status bar). The difference is where a second brain earns it: capture is always one
+   keystroke away, and every page shows its own shape and connections in the margin.
+   ========================================================================== */
+@layer atelier {
+  /* ---------------- conventions: a quiet, dense sidebar ---------------- */
+  .sidebar-panel .tree-row {
+    min-height: 29px;
+    border-radius: 7px;
+  }
+  .sidebar-panel .tree-toggle {
+    height: 24px;
+  }
+  .sidebar-panel :is(.tree-page, .favorites > button) {
+    padding-block: 5px;
+    font-size: 13.5px;
+    color: color-mix(in oklab, var(--text2) 82%, var(--soft));
+  }
+  .sidebar-panel .favorites > button {
+    min-height: 29px;
+    border-radius: 7px;
+  }
+  .sidebar-panel .tree-row.selected .tree-page,
+  .sidebar-panel .tree-row:hover .tree-page,
+  .sidebar-panel .favorites > button:hover {
+    color: var(--ink);
+  }
+  .sidebar-panel .section-label {
+    min-height: 28px;
+    margin-top: 14px;
+    padding: 0 6px 0 10px;
+    font: 500 11.5px/1 var(--ui);
+    letter-spacing: 0.01em;
+    color: var(--faint);
+  }
+  /* Section actions wait for intent, then stay a moment after the pointer leaves. */
+  .sidebar-panel .section-label .icon-button {
+    opacity: 0;
+    transition: opacity var(--t-out) var(--ease-out) 120ms;
+  }
+  .sidebar-panel .section-label:is(:hover, :focus-within) .icon-button {
+    opacity: 1;
+    transition-duration: var(--t-in);
+    transition-delay: 0ms;
+  }
+
+  /* ---------------- conventions: a reading column ---------------- */
+  .document-canvas:not(.database-page, :has(.web-authoring-page)) {
+    width: min(calc(100% - 112px), 740px);
+  }
+  .document-canvas .note-editor {
+    font-size: 16px;
+    line-height: 1.7;
+  }
+  .document-canvas .page-heading:not(.page-heading-compact) .page-title {
+    font-size: 40px;
+    line-height: 1.12;
+  }
+
+  /* ---------------- signature 1: the capture dock ---------------- */
+  .workspace-main {
+    position: relative;
+  }
+  .capture-dock {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    z-index: 30;
+    display: grid;
+    grid-template-rows: 0fr auto;
+    width: 300px;
+    max-width: calc(100% - 32px);
+    padding: 4px;
+    border-radius: 20px;
+    background: color-mix(in oklab, var(--canvas) 86%, transparent);
+    box-shadow: var(--float-shadow);
+    backdrop-filter: blur(16px) saturate(1.4);
+    transform: translateX(-50%);
+    transition:
+      width var(--t-out) var(--ease-out),
+      grid-template-rows var(--t-out) var(--ease-out),
+      border-radius var(--t-out) var(--ease-out);
+  }
+  .capture-dock[data-open] {
+    width: 560px;
+    grid-template-rows: 1fr auto;
+    border-radius: 16px;
+    transition-timing-function: var(--spring);
+    transition-duration: var(--t-move);
+  }
+  .capture-kinds {
+    display: flex;
+    gap: 4px;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0 4px;
+    opacity: 0;
+    transition: opacity var(--t-out) var(--ease-out);
+  }
+  .capture-dock[data-open] .capture-kinds {
+    padding: 4px 4px 6px;
+    opacity: 1;
+    transition-delay: 80ms;
+  }
+  .capture-kinds button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font: 500 12px/1 var(--ui);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .capture-kinds button:hover {
+    background: var(--hover);
+    color: var(--ink);
+  }
+  .capture-kinds button[aria-checked='true'] {
+    background: var(--selected);
+    color: var(--ink);
+  }
+  .capture-kinds button svg {
+    color: var(--faint);
+  }
+  .capture-kinds button[aria-checked='true'][data-kind='page'] svg {
+    color: var(--kind-document);
+  }
+  .capture-kinds button[aria-checked='true'][data-kind='web'] svg {
+    color: var(--kind-record);
+  }
+  .capture-kinds button[aria-checked='true'][data-kind='database'] svg {
+    color: var(--kind-database);
+  }
+  .capture-kinds button[aria-checked='true'][data-kind='canvas'] svg {
+    color: var(--kind-canvas);
+  }
+  .capture-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 32px;
+    padding: 0 6px 0 12px;
+    border-radius: 14px;
+    color: var(--faint);
+  }
+  .capture-dock[data-open] .capture-field {
+    background: var(--canvas);
+    box-shadow: 0 0 0 1px var(--rule);
+  }
+  .capture-field input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: 400 14px/1 var(--ui);
+    color: var(--ink);
+  }
+  .capture-field input::placeholder {
+    color: var(--muted);
+  }
+  .capture-hint {
+    flex: none;
+    padding: 3px 6px;
+    border-radius: 6px;
+    background: var(--hover);
+    font: 500 11px/1 var(--mono, var(--ui));
+    color: var(--faint);
+  }
+  .capture-saved {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 5px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--kind-record) 12%, transparent);
+    font: 500 12px/1 var(--ui);
+    color: var(--kind-record);
+    animation: capture-saved 420ms var(--spring);
+  }
+  @keyframes capture-saved {
+    from {
+      opacity: 0;
+      transform: scale(0.85);
+    }
+  }
+  /* Content scrolls clear of the dock. */
+  .workspace-main:has(.capture-dock) :is(.document-scroll, .home-scroll, .all-pages, .templates-screen) {
+    scroll-padding-bottom: 80px;
+  }
+  .workspace-main:has(.capture-dock) .document-canvas {
+    margin-bottom: 120px;
+  }
+
+  /* ---------------- signature 2: the page thread ---------------- */
+  .connection-thread {
+    /* The document scroller is a flex column: the thread aligns itself to the right edge and
+       sticks there while the page scrolls under it. */
+    position: sticky;
+    top: 96px;
+    z-index: 4;
+    align-self: flex-end;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 7px;
+    width: 0;
+    height: 0;
+    overflow: visible;
+    margin-right: 22px;
+  }
+  .thread-tick,
+  .thread-knot {
+    position: relative;
+    display: grid;
+    place-items: center end;
+    flex: none;
+    width: 30px;
+    height: 10px;
+    padding: 0;
+  }
+  .thread-tick::after {
+    content: '';
+    width: 18px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--rule-strong);
+    transition:
+      width var(--t-out) var(--ease-out),
+      background-color var(--t-out) var(--ease-out);
+  }
+  .thread-tick[data-level='2']::after {
+    width: 12px;
+  }
+  .thread-tick[data-level='3']::after,
+  .thread-tick[data-level='4']::after {
+    width: 7px;
+  }
+  .thread-tick[data-active]::after {
+    width: 22px;
+    background: var(--ink);
+  }
+  .thread-tick[data-hover]::after {
+    background: var(--accent);
+    transition-duration: var(--t-in);
+  }
+  .thread-gap {
+    flex: none;
+    width: 1px;
+    height: 14px;
+    margin-right: 4px;
+    background: var(--rule-strong);
+  }
+  .thread-knot {
+    height: 12px;
+  }
+  .thread-knot::after {
+    content: '';
+    width: 9px;
+    height: 9px;
+    margin-right: 0;
+    border-radius: 50%;
+    border: 1.5px solid var(--knot, var(--kind-document));
+    background: var(--canvas);
+    transition:
+      background-color var(--t-out) var(--ease-out),
+      transform var(--t-out) var(--ease-out);
+  }
+  .thread-knot[data-kind='database'] {
+    --knot: var(--kind-database);
+  }
+  .thread-knot[data-kind='canvas'] {
+    --knot: var(--kind-canvas);
+  }
+  .thread-knot[data-hover]::after {
+    background: var(--knot, var(--kind-document));
+    transform: scale(1.25);
+    transition-duration: var(--t-in);
+    transition-timing-function: var(--spring);
+  }
+  .thread-label {
+    position: absolute;
+    top: 50%;
+    right: 38px;
+    max-width: 240px;
+    overflow: hidden;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: var(--canvas);
+    box-shadow: var(--float-shadow);
+    font: 500 12.5px/1.2 var(--ui);
+    color: var(--ink);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(6px, -50%);
+    transition:
+      opacity var(--t-out) var(--ease-out),
+      transform var(--t-out) var(--ease-out);
+  }
+  [data-hover] > .thread-label {
+    opacity: 1;
+    transform: translate(0, -50%);
+    transition-duration: var(--t-in);
+  }
+  @media (max-width: 1279px) {
+    .connection-thread {
+      display: none;
+    }
+  }
+
+  /* ---------------- phones ---------------- */
+  @media (max-width: 700px) {
+    .capture-dock {
+      bottom: calc(12px + env(safe-area-inset-bottom));
+      width: calc(100% - 96px);
+    }
+    .capture-dock[data-open] {
+      width: calc(100% - 24px);
+    }
+    .capture-kinds {
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    /* Touch screens have no keyboard shortcut to advertise. */
+    .capture-hint {
+      display: none;
+    }
+    .workspace-main:has(.capture-dock) :is(.home-scroll, .all-pages) {
+      padding-bottom: 88px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .capture-dock,
+    .capture-kinds,
+    .thread-label,
+    .thread-tick::after,
+    .thread-knot::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}

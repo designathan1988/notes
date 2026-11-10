@@ -37,7 +37,8 @@ import { TemplateBanner } from '../templates/TemplateBanner.js';
 import { TemplateDialog } from '../templates/TemplateDialog.js';
 import { LazyBoundary } from '../ui/LazyBoundary.js';
 import { Home } from '../home/Home.js';
-import { StatusBar } from './StatusBar.js';
+import { CaptureDock } from '../capture/CaptureDock.js';
+import { ConnectionThread } from '../knowledge/ConnectionThread.js';
 const Library = lazy(() => import('../templates/Library.js'));
 const Graph = lazy(() => import('../knowledge/Graph.js'));
 const DatabaseView = lazy(() =>
@@ -286,6 +287,7 @@ export function Workspace() {
           ) : page ? (
             <>
               <div className="document-scroll" data-kind={page.kind}>
+                {state.view === 'document' && page.format !== 'web' && <ConnectionThread />}
                 <TemplateBanner page={page} />
                 <article
                   className={`document-canvas ${state.view === 'database' ? 'database-page' : ''}`}
@@ -360,7 +362,13 @@ export function Workspace() {
           )}
           {state.appearanceScope && <AppearancePanel />}
         </div>
-        <StatusBar editing={!!page && !globalView && ['document', 'canvas'].includes(state.view)} />
+        {/* Capture belongs where people read and file; canvases and the visual editor have their own docks. */}
+        {state.workspaces.find((item) => item.id === state.workspaceId)?.role !== 'viewer' &&
+          (globalView
+            ? ['home', 'all', 'templates'].includes(state.view)
+            : !!page && page.format !== 'web' && ['document', 'database'].includes(state.view)) && (
+            <CaptureDock />
+          )}
       </main>
       {state.dialog === 'new-page' && <NewPage />}
       {state.commandOpen && <CommandPalette />}
