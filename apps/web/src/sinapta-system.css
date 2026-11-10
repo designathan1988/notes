@@ -1268,4 +1268,180 @@
     overflow: hidden;
     opacity: 0;
   }
+
+  /* ==========================================================================
+     Notion's palette and rhythm: warm greys built on #37352f, a cream sidebar, 28px rows,
+     a 6% hover and an 8% current row, quiet 12px section titles.
+     ========================================================================== */
+  :root[data-theme='light'] {
+    --ink: #37352f;
+    --text2: #5f5e5b;
+    --muted: #787774;
+    --faint: #9b9a97;
+    --icon: #91918e;
+    --canvas: #ffffff;
+    --side: #f7f6f3;
+    --soft: #f7f6f3;
+    --hairline: rgb(55 53 47 / 0.09);
+    --rule: rgb(55 53 47 / 0.09);
+    --rule-strong: rgb(55 53 47 / 0.16);
+    --row-hover: rgb(55 53 47 / 0.06);
+    --row-selected: rgb(55 53 47 / 0.08);
+    --selected: rgb(55 53 47 / 0.08);
+    --graphite: #37352f;
+    --accent: #37352f;
+    --accent-ink: #37352f;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme='dark']) {
+      --ink: #37352f;
+      --text2: #5f5e5b;
+      --muted: #787774;
+      --faint: #9b9a97;
+      --icon: #91918e;
+      --canvas: #ffffff;
+      --side: #f7f6f3;
+      --soft: #f7f6f3;
+      --hairline: rgb(55 53 47 / 0.09);
+      --rule: rgb(55 53 47 / 0.09);
+      --rule-strong: rgb(55 53 47 / 0.16);
+      --row-hover: rgb(55 53 47 / 0.06);
+      --row-selected: rgb(55 53 47 / 0.08);
+      --selected: rgb(55 53 47 / 0.08);
+      --graphite: #37352f;
+      --accent: #37352f;
+      --accent-ink: #37352f;
+    }
+  }
+
+  :root[data-theme='dark'] {
+    --ink: #d4d4d4;
+    --text2: #ababab;
+    --muted: #8c8c8c;
+    --faint: #6f6f6f;
+    --icon: #7f7f7f;
+    --canvas: #191919;
+    --side: #202020;
+    --soft: #252525;
+    --hairline: rgb(255 255 255 / 0.08);
+    --rule: rgb(255 255 255 / 0.08);
+    --row-hover: rgb(255 255 255 / 0.055);
+    --row-selected: rgb(255 255 255 / 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light'], [data-theme='dark']) {
+      --ink: #d4d4d4;
+      --text2: #ababab;
+      --muted: #8c8c8c;
+      --faint: #6f6f6f;
+      --icon: #7f7f7f;
+      --canvas: #191919;
+      --side: #202020;
+      --soft: #252525;
+      --hairline: rgb(255 255 255 / 0.08);
+      --rule: rgb(255 255 255 / 0.08);
+      --row-hover: rgb(255 255 255 / 0.055);
+      --row-selected: rgb(255 255 255 / 0.08);
+    }
+  }
+  :root {
+    --panel: 248px;
+  }
+
+  /* ---------- the sidebar ---------- */
+  @media (min-width: 701px) {
+    .sidebar-panel {
+      padding: 0 6px 6px;
+      border-right: 0;
+      box-shadow: inset -1px 0 0 var(--hairline);
+    }
+  }
+  .sidebar-head {
+    min-height: 44px;
+    padding-left: 8px;
+  }
+  .sidebar-actions {
+    margin: 0 0 6px;
+  }
+  .sidebar-actions .search-trigger {
+    height: 28px;
+    padding: 0 8px;
+    background: var(--row-hover);
+    color: var(--muted);
+    font-size: var(--fs-ui);
+  }
+  .sidebar-actions .search-trigger:hover {
+    background: var(--row-selected);
+  }
+  .sidebar-panel .section-label {
+    min-height: 24px;
+    margin: 14px 0 2px;
+    padding: 0 2px 0 8px;
+    color: var(--muted);
+    font: 500 12px/1 var(--ui);
+  }
+  .sidebar-panel .section-label .icon-button {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    color: var(--icon);
+  }
+  .sidebar-panel .section-label .icon-button:hover {
+    background: var(--row-hover);
+    color: var(--ink);
+  }
+  .sidebar-panel .section-label .icon-button svg {
+    width: 14px;
+    height: 14px;
+  }
+  .sidebar-panel .tree-row,
+  .sidebar-panel .favorites > button {
+    min-height: 28px;
+    border-radius: 4px;
+  }
+  .sidebar-panel :is(.tree-page, .favorites > button) {
+    gap: 8px;
+    color: var(--text2);
+    font-size: var(--fs-ui);
+    font-weight: 500;
+  }
+  .sidebar-panel :is(.tree-page, .favorites > button) > :is(svg, .page-reference-icon) {
+    width: 18px;
+    height: 18px;
+    color: var(--icon);
+  }
+  .sidebar-panel .tree-row.selected .tree-page {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .sidebar-panel .tree-row:hover .tree-page,
+  .sidebar-panel .favorites > button:hover {
+    color: var(--ink);
+  }
+  .sidebar-panel .tree-row > .tree-row-actions > button {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    color: var(--icon);
+  }
+  .sidebar-panel .tree-row > .tree-row-actions > button:hover {
+    background: var(--row-hover);
+    color: var(--ink);
+  }
+  .sidebar-panel .account-trigger {
+    height: 30px;
+    color: var(--text2);
+    font-weight: 500;
+  }
+  .sidebar-panel .avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    background: var(--ink);
+    color: var(--canvas);
+    font-size: 11px;
+  }
+  .sidebar-brand {
+    color: var(--ink);
+  }
 }
