@@ -16,31 +16,29 @@
   .vb-stage {
     position: relative;
     overflow: auto;
-    padding: 28px 28px 120px;
+    padding: 0;
   }
+  /* The builder fills the window and only its canvas scrolls: every box between the document
+     scroller and the builder takes the height it is given instead of growing with the page. */
+  .document-canvas:has(.visual-builder),
+  .editor-wrap:has(.visual-builder),
+  .editor-wrap:has(.visual-builder) > div:has(.visual-builder),
+  .ProseMirror:has(.visual-builder),
+  .react-renderer:has(> .web-authoring > .visual-builder) {
+    height: 100%;
+    min-height: 0;
+  }
+  .web-authoring > .visual-builder {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+  }
+  /* The canvas is the published page itself: full width, full height, no frame around it. */
   .vb-page {
     position: relative;
-    max-width: 1180px;
-    margin: 0 auto;
-    border-radius: 14px;
-    box-shadow: var(--sheet-shadow);
+    min-height: 100%;
     overflow: clip;
-    animation: settle 320ms var(--ease-out);
   }
-  .vb-history {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    display: flex;
-    gap: 2px;
-    width: max-content;
-    margin: -8px 0 10px auto;
-    padding: 3px;
-    border-radius: 10px;
-    background: var(--canvas);
-    box-shadow: var(--sheet-shadow);
-  }
-
   /* Running and stopping belong to the code view; the visual editor is always live. */
   .web-authoring[data-web-mode='visual'] :is(.web-run, .web-run-state) {
     display: none;
@@ -466,9 +464,6 @@
       border-left: 0;
       border-top: 1px solid var(--rule);
     }
-    .vb-stage {
-      padding: 12px 12px 96px;
-    }
   }
 
   /* ---------- the toolbar: everything a page is made of, one click away ---------- */
@@ -521,9 +516,6 @@
     height: 30px;
     border-radius: 8px;
     color: var(--muted);
-  }
-  .vb-stage {
-    padding-top: 20px;
   }
   @media (max-width: 1100px) {
     .vb-bar > button > span {
