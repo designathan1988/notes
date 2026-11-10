@@ -18,15 +18,18 @@
     --map-record: #93cba3;
     --scroll-thumb: rgb(24 24 27 / 0.22);
     --hairline: rgb(24 24 27 / 0.12);
+    --highlight: #ffec99;
   }
   :root[data-theme='dark'] {
     --scroll-thumb: rgb(255 255 255 / 0.2);
     --hairline: rgb(255 255 255 / 0.1);
+    --highlight: rgb(255 214 102 / 0.3);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme='light'], [data-theme='dark']) {
       --scroll-thumb: rgb(255 255 255 / 0.2);
       --hairline: rgb(255 255 255 / 0.1);
+      --highlight: rgb(255 214 102 / 0.3);
     }
   }
 
@@ -425,70 +428,8 @@
      The mark, the workspace name and the tabs share one centre line (y = 30).
      Inside the pages pane everything starts at the same gutter: 10px pane + 8px row. */
   :root {
-    --rail: 48px;
-    --panel: 244px;
-  }
-  .sidebar-rail {
-    gap: 2px;
-    padding: 19px 0 8px;
-  }
-  .rail-brand {
-    height: 22px;
-    margin-bottom: 12px;
-    color: var(--ink);
-  }
-  .sidebar-rail .rail-brand svg {
-    width: 30px;
-    height: 22.5px;
-  }
-  /* Rail icons: heavier strokes in the text colour, so they read at a glance. */
-  .sidebar-rail svg {
-    width: 18px;
-    height: 18px;
-    stroke-width: 2;
-  }
-  .sidebar-rail .workspace-destinations {
-    gap: 2px;
-  }
-  .sidebar-rail
-    :is(
-      .search-trigger,
-      .workspace-destinations > button,
-      .rail-pages,
-      .icon-button,
-      .account-trigger
-    ) {
-    width: 34px;
-    height: 32px;
-    border-radius: 8px;
-    color: var(--text2);
-    transition: background-color 140ms var(--ease);
-  }
-  .sidebar-rail
-    :is(.search-trigger, .workspace-destinations > button, .rail-pages, .icon-button):hover {
-    background: var(--row-hover);
-    box-shadow: none;
-    color: var(--ink);
-    transition-duration: 0ms;
-  }
-  /* Where you are: the same raised light tile as the current page in the list. */
-  .sidebar-rail .workspace-destinations > button[aria-current='page'],
-  .sidebar-rail .rail-pages[aria-pressed='true'] {
-    background: var(--row-selected);
-    box-shadow: var(--row-selected-edge);
-    color: var(--ink);
-  }
-  .sidebar-rail
-    :is(.workspace-destinations > button[aria-current='page'], .rail-pages[aria-pressed='true'])
-    svg {
-    stroke-width: 2.3;
-  }
-  .sidebar-rail .rail-pages {
-    margin-top: 6px;
-  }
-  .sidebar-rail .avatar {
-    width: 26px;
-    height: 26px;
+    --rail: 0px;
+    --panel: 272px;
   }
   @media (min-width: 701px) {
     .sidebar-panel {
@@ -548,5 +489,269 @@
       align-self: flex-end;
       margin-bottom: 2px;
     }
+  }
+
+  /* ---------- one pane, no rail ----------
+     Brand and workspace, then search with the one dark action (new page), the places, the page
+     tree, and the account at the bottom. Rows are 28px. */
+  @media (min-width: 701px) {
+    .sidebar-panel {
+      margin: 8px 0 8px 8px;
+      padding: 5px 10px 8px;
+    }
+    .app-shell.sidebar-collapsed .workbench-window-tools {
+      display: flex;
+      align-self: flex-end;
+      margin: 0 6px 2px 0;
+    }
+  }
+  .sidebar-head {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    margin-bottom: 6px;
+    padding-left: 8px;
+  }
+  .sidebar-brand {
+    display: grid;
+    flex: none;
+    place-items: center;
+    color: var(--ink);
+  }
+  .sidebar-head .workspace-identity {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+  }
+  .sidebar-head .workspace-select {
+    padding: 0 4px;
+  }
+  .sidebar-collapse {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    color: var(--muted);
+  }
+  .sidebar-collapse:hover {
+    background: var(--row-hover);
+    color: var(--ink);
+  }
+  .sidebar-actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .sidebar-actions .search-trigger {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    height: 32px;
+    margin: 0;
+    padding: 0 6px 0 8px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--canvas);
+    box-shadow: inset 0 0 0 1px var(--hairline);
+    color: var(--muted);
+    font-size: var(--fs-ui);
+    text-align: left;
+  }
+  .sidebar-actions .search-trigger:hover {
+    box-shadow: inset 0 0 0 1px var(--scroll-thumb);
+    color: var(--ink);
+  }
+  .sidebar-actions .search-trigger > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
+  }
+  .sidebar-actions .search-trigger > span {
+    flex: 1;
+  }
+  .sidebar-actions .search-trigger > kbd {
+    padding: 1px 5px;
+    border: 0;
+    border-radius: 5px;
+    background: var(--row-hover);
+    color: var(--muted);
+    font: 600 11px var(--ui);
+  }
+  .sidebar-actions .icon-button {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--graphite);
+    box-shadow: var(--graphite-shadow);
+    color: var(--on-accent);
+  }
+  .sidebar-actions .icon-button:hover:not(:disabled) {
+    filter: brightness(1.15);
+  }
+  .sidebar-actions .icon-button svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
+  }
+  .sidebar-panel .workspace-destinations {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 1px;
+    margin: 0 0 4px;
+    padding: 0;
+  }
+  .sidebar-panel .workspace-destinations > button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 28px;
+    min-height: 0;
+    margin: 0;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink);
+    font-size: var(--fs-ui);
+    font-weight: 500;
+    text-align: left;
+    transition: background-color 140ms var(--ease);
+  }
+  .sidebar-panel .workspace-destinations > button:hover {
+    background: var(--row-hover);
+    transition-duration: 0ms;
+  }
+  .sidebar-panel .workspace-destinations > button[aria-current='page'] {
+    background: var(--row-selected);
+    box-shadow: var(--row-selected-edge);
+    font-weight: 700;
+  }
+  .sidebar-panel .workspace-destinations > button > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
+    color: var(--text2);
+  }
+  .sidebar-panel .workspace-destinations > button[aria-current='page'] > svg {
+    color: var(--ink);
+  }
+  .sidebar-panel .sidebar-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .sidebar-panel .sidebar-footer {
+    flex: none;
+    margin: 6px 0 0;
+    padding: 6px 0 0;
+    border: 0;
+    border-top: 1px solid var(--hairline);
+  }
+  .sidebar-panel .account-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 36px;
+    padding: 0 8px;
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: var(--fs-ui);
+    font-weight: 600;
+    text-align: left;
+  }
+  .sidebar-panel .account-trigger:hover {
+    background: var(--row-hover);
+  }
+  .sidebar-panel .account-trigger > span:not(.avatar) {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sidebar-panel .account-trigger > svg {
+    flex: none;
+    color: var(--muted);
+  }
+  .sidebar-panel .avatar {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+  @media (max-width: 700px) {
+    .sidebar-collapse {
+      display: none;
+    }
+    .sidebar {
+      background: var(--ground);
+    }
+    .sidebar-panel {
+      padding: 10px 12px 10px;
+      background: var(--pane);
+    }
+    .sidebar-head {
+      padding-right: 44px;
+    }
+    .sidebar-panel .tree-row,
+    .sidebar-panel .favorites > button,
+    .sidebar-panel .workspace-destinations > button {
+      min-height: 36px;
+      height: auto;
+    }
+  }
+  .text-highlight {
+    background: var(--highlight);
+  }
+
+  /* ---------- density and contrast in the list ---------- */
+  .sidebar-panel .tree-row,
+  .sidebar-panel .favorites > button {
+    min-height: 28px;
+  }
+  .sidebar-panel .tree-toggle {
+    height: 28px;
+  }
+  .sidebar-panel .tree-page {
+    padding-block: 4px;
+  }
+  .sidebar-panel :is(.tree-page, .favorites > button) {
+    color: var(--ink);
+  }
+  .sidebar-panel .section-label {
+    margin-top: 12px;
+    color: color-mix(in oklab, var(--ink) 62%, transparent);
+  }
+  .sidebar-panel .tree-row.selected .tree-page {
+    font-weight: 700;
+  }
+  /* Where you are: a raised light row with an ink marker on its edge. */
+  .sidebar-panel .tree-row.selected::before {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 7px;
+    bottom: 7px;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--ink);
+  }
+  .workbench-tab {
+    color: var(--text2);
+  }
+  .topbar .icon-button {
+    color: var(--ink);
   }
 }

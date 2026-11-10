@@ -125,9 +125,9 @@ for (const scheme of schemes) {
         await shot(`webdoc-${mode.toLowerCase()}`, async () => {
           await go(`${web.id}/document`);
           await page.locator('.web-authoring').waitFor();
-          const button = page.locator('.web-mode-control button').nth(
-            ['Visual', 'Code', 'Split', 'Preview'].indexOf(mode),
-          );
+          const button = page
+            .locator('.web-mode-control button')
+            .nth(['Visual', 'Code', 'Split', 'Preview'].indexOf(mode));
           if (await button.isVisible()) await button.click();
           await page.waitForTimeout(1200);
         });
@@ -135,7 +135,7 @@ for (const scheme of schemes) {
       await shot('rail-closed', async () => {
         await go('/home');
         await page.locator('.home').waitFor();
-        await page.locator('.rail-pages').click();
+        await page.locator('.sidebar-collapse').click();
       });
     await context.close();
   }

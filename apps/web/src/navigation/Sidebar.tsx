@@ -19,7 +19,7 @@ import {
   SlidersHorizontal,
   MoreHorizontal,
   LayoutTemplate,
-  ListTree,
+  PanelLeft,
   Shapes,
   House,
   Monitor,
@@ -241,20 +241,54 @@ export function Sidebar() {
           <X size={18} />
         </button>
         <div className="sidebar-pane">
-          {/* The rail: icons only, always present. The page list beside it opens on demand. */}
-          <div className="sidebar-rail">
-            <span className="rail-brand" title="Sinapta">
-              <BrandMark size={22.5} />
-            </span>
-            <button
-              className="search-trigger"
-              title={t('Search')}
-              onClick={() => state.openDialog('search')}
-            >
-              <Search size={15} />
-              <span>{t('Search')}</span>
-              <kbd>Ctrl K</kbd>
-            </button>
+          <div className="sidebar-panel">
+            <header className="sidebar-head">
+              <span className="sidebar-brand" title="Sinapta">
+                <BrandMark size={18} />
+              </span>
+              <div className="workspace-identity">
+                <label className="workspace-select">
+                  <span className="workspace-names">
+                    <Select
+                      aria-label={t('Workspace')}
+                      value={state.workspaceId ?? ''}
+                      onChange={(event) => void state.chooseWorkspace(event.target.value)}
+                    >
+                      {state.workspaces.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </span>
+                </label>
+              </div>
+              <IconButton
+                className="sidebar-collapse"
+                label={t('Hide sidebar')}
+                onClick={state.toggleSidebar}
+              >
+                <PanelLeft size={16} />
+              </IconButton>
+            </header>
+            <div className="sidebar-actions">
+              <button
+                className="search-trigger"
+                title={t('Search')}
+                onClick={() => state.openDialog('search')}
+              >
+                <Search size={15} />
+                <span>{t('Search')}</span>
+                <kbd>Ctrl K</kbd>
+              </button>
+              <IconButton
+                label={t('New page')}
+                disabled={workspace?.role === 'viewer'}
+                onClick={() => void state.createQuickPage().catch(state.setError)}
+              >
+                <SquarePen size={17} />
+              </IconButton>
+            </div>
             <nav className="workspace-destinations" aria-label={t('Workspace tools')}>
               {destinations.map(({ view, label, Icon }) => {
                 // Databases and Canvases are indexes: an open database or canvas page is
@@ -281,115 +315,6 @@ export function Sidebar() {
                 );
               })}
             </nav>
-            <button
-              className="rail-pages"
-              aria-label={t('Pages')}
-              title={t('Pages')}
-              aria-pressed={!state.sidebarCollapsed}
-              onClick={state.toggleSidebar}
-            >
-              <ListTree size={17} />
-            </button>
-            <span className="rail-spacer" />
-            <IconButton
-              label={t('New page')}
-              disabled={workspace?.role === 'viewer'}
-              onClick={() => void state.createQuickPage().catch(state.setError)}
-            >
-              <SquarePen size={17} />
-            </IconButton>
-            <footer className="sidebar-footer">
-              <button
-                className="account-trigger"
-                aria-label={t('Account menu')}
-                aria-haspopup="menu"
-                aria-expanded={!!accountMenu}
-                onClick={(event) => setAccountMenu(accountMenu ? null : event.currentTarget)}
-              >
-                <span className="avatar">{state.user?.name[0]}</span>
-                <span>{state.user?.name}</span>
-                <ChevronDown size={13} />
-                {!state.online && <small>{t('Offline')}</small>}
-              </button>
-              {accountMenu && (
-                <Popover
-                  anchor={accountMenu}
-                  label={t('Account')}
-                  close={() => setAccountMenu(null)}
-                >
-                  <div className="theme-switch" role="group" aria-label={t('Theme')}>
-                    {(
-                      [
-                        ['light', 'Light', Sun],
-                        ['dark', 'Dark', Moon],
-                        ['system', 'System', Monitor],
-                      ] as [Theme, string, typeof Sun][]
-                    ).map(([value, label, Icon]) => (
-                      <button
-                        key={value}
-                        role="menuitemradio"
-                        aria-checked={theme === value}
-                        onClick={() => applyTheme(value)}
-                      >
-                        <Icon size={14} />
-                        {t(label)}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="menu-list">
-                    <button
-                      onClick={() => {
-                        setAccountMenu(null);
-                        state.openAppearance('app');
-                      }}
-                    >
-                      <Palette />
-                      {t('Appearance')}
-                    </button>
-                    {utilities.map(({ label, Icon, run }) => (
-                      <button
-                        key={t(label)}
-                        onClick={() => {
-                          setAccountMenu(null);
-                          run();
-                        }}
-                      >
-                        <Icon />
-                        {t(label)}
-                      </button>
-                    ))}
-                    <button
-                      onClick={() => {
-                        setAccountMenu(null);
-                        void state.signOut().catch(state.setError);
-                      }}
-                    >
-                      <LogOut />
-                      {t('Sign out')}
-                    </button>
-                  </div>
-                </Popover>
-              )}
-            </footer>
-          </div>
-          <div className="sidebar-panel">
-            <div className="workspace-identity">
-              <label className="workspace-select">
-                <span className="workspace-names">
-                  <Select
-                    aria-label={t('Workspace')}
-                    value={state.workspaceId ?? ''}
-                    onChange={(event) => void state.chooseWorkspace(event.target.value)}
-                  >
-                    {state.workspaces.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </Select>
-                </span>
-              </label>
-            </div>
             <div className="sidebar-scroll">
               {state.favorites.length > 0 && (
                 <>
@@ -469,6 +394,79 @@ export function Sidebar() {
                 </>
               )}
             </div>
+            <footer className="sidebar-footer">
+              <button
+                className="account-trigger"
+                aria-label={t('Account menu')}
+                aria-haspopup="menu"
+                aria-expanded={!!accountMenu}
+                onClick={(event) => setAccountMenu(accountMenu ? null : event.currentTarget)}
+              >
+                <span className="avatar">{state.user?.name[0]}</span>
+                <span>{state.user?.name}</span>
+                <ChevronDown size={13} />
+                {!state.online && <small>{t('Offline')}</small>}
+              </button>
+              {accountMenu && (
+                <Popover
+                  anchor={accountMenu}
+                  label={t('Account')}
+                  close={() => setAccountMenu(null)}
+                >
+                  <div className="theme-switch" role="group" aria-label={t('Theme')}>
+                    {(
+                      [
+                        ['light', 'Light', Sun],
+                        ['dark', 'Dark', Moon],
+                        ['system', 'System', Monitor],
+                      ] as [Theme, string, typeof Sun][]
+                    ).map(([value, label, Icon]) => (
+                      <button
+                        key={value}
+                        role="menuitemradio"
+                        aria-checked={theme === value}
+                        onClick={() => applyTheme(value)}
+                      >
+                        <Icon size={14} />
+                        {t(label)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="menu-list">
+                    <button
+                      onClick={() => {
+                        setAccountMenu(null);
+                        state.openAppearance('app');
+                      }}
+                    >
+                      <Palette />
+                      {t('Appearance')}
+                    </button>
+                    {utilities.map(({ label, Icon, run }) => (
+                      <button
+                        key={t(label)}
+                        onClick={() => {
+                          setAccountMenu(null);
+                          run();
+                        }}
+                      >
+                        <Icon />
+                        {t(label)}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => {
+                        setAccountMenu(null);
+                        void state.signOut().catch(state.setError);
+                      }}
+                    >
+                      <LogOut />
+                      {t('Sign out')}
+                    </button>
+                  </div>
+                </Popover>
+              )}
+            </footer>
           </div>
         </div>
       </aside>
