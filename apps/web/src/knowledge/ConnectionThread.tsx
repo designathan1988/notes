@@ -11,12 +11,13 @@ import { pageView } from '../workbench/route.js';
  */
 export function ConnectionThread() {
   const outline = useWorkspace((state) => state.outline);
-  const links = useWorkspace((state) => state.linkedPageIds);
+  // The pages that cite this one, as the board's "Citada em" list.
+  const mentions = useWorkspace((state) => state.mentions[state.selectedId ?? '']);
   const pages = useWorkspace((state) => state.pages);
   const [active, setActive] = useState(0);
   const [hover, setHover] = useState<string | null>(null);
   const leave = useRef(0);
-  const connected = links
+  const connected = [...new Set((mentions ?? []).map((link) => link.sourceId))]
     .map((id) => pages.find((page) => page.id === id))
     .filter((page): page is NonNullable<typeof page> => !!page);
 
@@ -70,7 +71,7 @@ export function ConnectionThread() {
         );
       })}
       {connected.length > 0 && <span className="thread-gap" aria-hidden="true" />}
-      {connected.length > 0 && <h4 className="thread-heading">{t('Connections')}</h4>}
+      {connected.length > 0 && <h4 className="thread-heading">{t('Cited in')}</h4>}
       {connected.map((page) => {
         const id = `p${page.id}`;
         return (

@@ -212,6 +212,7 @@ const messages: Record<string, string> = {
   'Open canvases': 'Abrir quadros',
   'Add comment': 'Adicionar comentário',
   Share: 'Compartilhar',
+  'Cited in': 'Citada em',
   '1 item to review': '1 item para revisar',
   '{{count}} items to review': '{{count}} itens para revisar',
   'To review': 'Para revisar',

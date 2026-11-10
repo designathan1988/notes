@@ -1,6 +1,7 @@
 import { t } from '../i18n/index.js';
 import { useEffect, useMemo, useState } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, Type } from 'lucide-react';
+import { fieldIcons } from './fieldIcons.js';
 import type { Page } from '@note/contracts';
 import { compileFormulas } from '@note/data/formulas';
 import { useWorkspace } from '../state/store.js';
@@ -53,20 +54,26 @@ export function RecordPageProperties({ page, readOnly }: { page: Page; readOnly:
       <dl className="record-properties">
         {definition.fields
           .filter((field) => !field.archived)
-          .map((field) => (
-            <div key={field.id}>
-              <dt>{field.name}</dt>
-              <dd>
-                <RecordProperty
-                  databaseId={page.parentId!}
-                  record={current}
-                  field={field}
-                  readOnly={readOnly}
-                  refresh={refresh}
-                />
-              </dd>
-            </div>
-          ))}
+          .map((field) => {
+            const Icon = fieldIcons[field.type] ?? Type;
+            return (
+              <div key={field.id}>
+                <dt>
+                  <Icon size={15} aria-hidden />
+                  {field.name}
+                </dt>
+                <dd>
+                  <RecordProperty
+                    databaseId={page.parentId!}
+                    record={current}
+                    field={field}
+                    readOnly={readOnly}
+                    refresh={refresh}
+                  />
+                </dd>
+              </div>
+            );
+          })}
       </dl>
       {!readOnly && (
         <div className="page-property-tools">

@@ -90,7 +90,8 @@ export function PageHeader({
   const parent = useWorkspace((state) => state.pages.find((item) => item.id === page.parentId));
   const backlinks = useWorkspace((state) => state.mentions[page.id]?.length);
   const statistics = usePageStatistics(page.id);
-  const chips = connections !== undefined;
+  // A record shows its properties where a page shows chips, as the Registro board does.
+  const chips = connections !== undefined && page.kind !== 'record';
   useEffect(() => {
     if (!chips) return;
     void useWorkspace
@@ -104,7 +105,7 @@ export function PageHeader({
   );
   return (
     <header
-      className={`page-heading${compact ? ' page-heading-compact' : ''}${!compact && !page.cover && page.kind === 'document' ? ' has-band' : ''}${page.cover ? ' has-cover' : ''}${editingDescription ? ' description-visible' : ''}`}
+      className={`page-heading${compact ? ' page-heading-compact' : ''}${!compact && !page.cover && page.kind === 'document' ? ' has-band' : ''}${page.cover ? ' has-cover' : ''}${editingDescription ? ' description-visible' : ''}${page.kind === 'record' ? ' record-heading' : ''}`}
     >
       {!compact && (
         <PagePresentation
@@ -208,7 +209,7 @@ export function PageHeader({
             <div className="page-meta">
               {/* A page's chips: when it was edited, who cites it, how long it is. Other kinds of
                   page show none of them (they would carry a stale count). */}
-              {connections !== undefined && (
+              {chips && (
                 <>
                   <span>
                     <Clock3 />

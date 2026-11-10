@@ -1,36 +1,9 @@
 import { t, getLocale } from '../i18n/index.js';
 import { useMemo } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
-import {
-  Calendar,
-  CircleDot,
-  Clock3,
-  FileText,
-  Hash,
-  Link2,
-  ListChecks,
-  MousePointerClick,
-  PanelRightOpen,
-  Sigma,
-  SquareCheck,
-  Tags,
-  Type,
-  type LucideIcon,
-} from 'lucide-react';
+import { Clock3, FileText, PanelRightOpen, Type, type LucideIcon } from 'lucide-react';
+import { fieldIcons } from './fieldIcons.js';
 
-/** Each column says its kind of value with an icon, as the Dados board does. */
-const fieldIcons: Record<RecordField['type'], LucideIcon> = {
-  text: Type,
-  number: Hash,
-  checkbox: SquareCheck,
-  select: CircleDot,
-  'multi-select': Tags,
-  date: Calendar,
-  url: Link2,
-  relation: ListChecks,
-  formula: Sigma,
-  button: MousePointerClick,
-};
 function Head({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
     <span className="th-label">

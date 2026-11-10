@@ -3276,7 +3276,7 @@
     box-shadow: inset 0 0 0 1px var(--rule-strong);
     color: var(--ink);
   }
-  .database-view .select-trigger.status-label {
+  :is(.database-view, .record-heading) .select-trigger.status-label {
     gap: 6px;
     height: 24px;
     padding: 0 9px;
@@ -3284,7 +3284,7 @@
     font-size: 12.5px;
     font-weight: 550;
   }
-  .database-view .select-trigger.status-label::before {
+  :is(.database-view, .record-heading) .select-trigger.status-label::before {
     content: '';
     width: 6px;
     height: 6px;
@@ -3316,5 +3316,57 @@
   .database-view .view-tabs > button svg {
     width: 14px;
     height: 14px;
+  }
+
+  /* Spec: a record (the Registro board) — a 38px title, then its properties as a grid. */
+  .record-heading:not(.page-heading-compact) .page-title {
+    font-size: 38px;
+  }
+  .record-heading .page-metadata-row {
+    display: block;
+    margin-top: 22px;
+    padding-bottom: 20px;
+  }
+  .record-heading .page-meta,
+  .record-heading .page-properties-disclosure > summary {
+    display: none;
+  }
+  .record-heading .page-metadata-content {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    border: 0;
+  }
+  .record-heading .page-metadata-content > .page-tags {
+    order: 2;
+    margin-top: 8px;
+  }
+  .record-heading .record-properties {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+  }
+  .record-heading .record-properties > div {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr);
+    align-items: center;
+    min-height: 34px;
+  }
+  .record-heading .record-properties dt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .record-heading .record-properties dt svg {
+    flex: none;
+    color: var(--faint);
+  }
+  .record-heading .record-properties dd {
+    margin: 0;
+    color: var(--text);
+    font-size: 14px;
   }
 }
