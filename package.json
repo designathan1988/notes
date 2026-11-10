@@ -14,7 +14,8 @@
     "start": "node dist/server/main.js",
     "lint": "eslint .",
     "format:check": "prettier --check \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"tests/**/*.ts\" \"e2e/**/*.ts\" eslint.config.mjs",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build",
+    "check": "node scripts/check.mjs",
+    "check:full": "node scripts/check.mjs --full && npm run build",
     "ui:shots": "node scripts/ui-shots.mjs",
     "ui:audit": "node scripts/ui-audit.mjs"
   },

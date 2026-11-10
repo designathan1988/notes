@@ -16,6 +16,7 @@ export default defineConfig({
   expect: { timeout: 15000 },
   fullyParallel: false,
   workers: 1,
+  reporter: [['list'], ['./e2e/impact-reporter.ts']],
   use: {
     baseURL: origin,
     viewport: { width: 1536, height: 1024 },
@@ -33,6 +34,7 @@ export default defineConfig({
       USER_CONTENT_ORIGIN_TEMPLATE: `http://preview-{token}.localhost:${content}`,
       APP_ORIGIN: origin,
       NOTE_RUNTIME: '.runtime-e2e',
+      IMPACT_LOG: '.runtime-e2e-impact.log',
     },
   },
 });

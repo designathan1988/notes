@@ -1,16 +1,35 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
+import { appendFileSync } from 'node:fs';
+import type { Plugin } from 'vite';
 
 const packages = fileURLToPath(new URL('./packages/', import.meta.url));
 const webPort = Number(process.env.WEB_PORT ?? 5173);
 const api = `127.0.0.1:${process.env.API_PORT ?? 3001}`;
 
+// Test impact analysis: while the browser suite runs, log each module and API request with its
+// time so e2e/impact-reporter.ts can tell which source files every spec exercises.
+const impactLog = process.env.IMPACT_LOG;
+const impactRecorder: Plugin = {
+  name: 'impact-recorder',
+  configureServer(server) {
+    server.middlewares.use((request, _response, next) => {
+      appendFileSync(
+        impactLog!,
+        [Date.now(), request.method, request.url].join(String.fromCharCode(9)) +
+          String.fromCharCode(10),
+      );
+      next();
+    });
+  },
+};
+
 export default defineConfig({
   root: 'apps/web',
   // A second dev server (the isolated browser-test instance) keeps its own optimizer cache.
   cacheDir: webPort === 5173 ? undefined : `../../node_modules/.vite-${webPort}`,
-  plugins: [react()],
+  plugins: [react(), ...(impactLog ? [impactRecorder] : [])],
   resolve: {
     // Workspace packages are TypeScript source. Resolve them to packages/ directly so Vite treats
     // them as application code: its dependency scanner then sees their imports up front instead
