@@ -5,7 +5,7 @@
    ========================================================================== */
 @layer sinapta {
   :root {
-    --ui: 'Manrope Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --ui: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
     --ground: #cdd0d6;
     --pane: rgb(247 247 249 / 0.94);
     --loose: rgb(255 255 255 / 0.55);

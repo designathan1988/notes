@@ -238,43 +238,9 @@ export function Sidebar() {
           <div className="sidebar-panel">
             <header className="sidebar-head">
               <span className="sidebar-brand" title="Sinapta">
-                <BrandMark size={18} />
+                <BrandMark size={20} />
               </span>
-              <div className="workspace-identity">
-                <label className="workspace-select">
-                  <span className="workspace-names">
-                    <Select
-                      aria-label={t('Workspace')}
-                      value={state.workspaceId ?? ''}
-                      onChange={(event) => void state.chooseWorkspace(event.target.value)}
-                    >
-                      {state.workspaces.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </span>
-                </label>
-              </div>
-              <IconButton
-                className="sidebar-collapse"
-                label={t('Hide sidebar')}
-                onClick={state.toggleSidebar}
-              >
-                <PanelLeft size={16} />
-              </IconButton>
-            </header>
-            <div className="sidebar-actions">
-              <button
-                className="search-trigger"
-                title={t('Search')}
-                onClick={() => state.openDialog('search')}
-              >
-                <Search size={15} />
-                <span>{t('Search')}</span>
-                <kbd>Ctrl K</kbd>
-              </button>
+              <span className="sidebar-head-space" />
               <nav className="workspace-destinations" aria-label={t('Workspace tools')}>
                 {destinations.map(({ view, label, Icon }) => {
                   const active = !template && state.view === view;
@@ -303,6 +269,24 @@ export function Sidebar() {
               >
                 <SquarePen size={17} />
               </IconButton>
+              <IconButton
+                className="sidebar-collapse"
+                label={t('Hide sidebar')}
+                onClick={state.toggleSidebar}
+              >
+                <PanelLeft size={16} />
+              </IconButton>
+            </header>
+            <div className="sidebar-actions">
+              <button
+                className="search-trigger"
+                title={t('Search')}
+                onClick={() => state.openDialog('search')}
+              >
+                <Search size={15} />
+                <span>{t('Search')}</span>
+                <kbd>Ctrl K</kbd>
+              </button>
             </div>
             <div className="sidebar-scroll">
               {state.favorites.length > 0 && (
@@ -402,6 +386,23 @@ export function Sidebar() {
                   label={t('Account')}
                   close={() => setAccountMenu(null)}
                 >
+                  <div className="workspace-identity">
+                    <label className="workspace-select">
+                      <span className="workspace-names">
+                        <Select
+                          aria-label={t('Workspace')}
+                          value={state.workspaceId ?? ''}
+                          onChange={(event) => void state.chooseWorkspace(event.target.value)}
+                        >
+                          {state.workspaces.map((item) => (
+                            <option key={item.id} value={item.id}>
+                              {item.name}
+                            </option>
+                          ))}
+                        </Select>
+                      </span>
+                    </label>
+                  </div>
                   <div className="theme-switch" role="group" aria-label={t('Theme')}>
                     {(
                       [

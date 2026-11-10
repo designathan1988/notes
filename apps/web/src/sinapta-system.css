@@ -5,9 +5,9 @@
    ========================================================================== */
 @layer sinapta {
   :root {
-    --fs-label: 11.5px;
-    --fs-meta: 12.5px;
-    --fs-ui: 13.5px;
+    --fs-label: 13px;
+    --fs-meta: 13px;
+    --fs-ui: 14px;
     --stage: #18181b;
     --stage-ink: #f4f4f5;
     --stage-muted: #a1a1aa;
@@ -520,7 +520,7 @@
     color: var(--muted);
     font: 600 11px var(--ui);
   }
-  .sidebar-actions .icon-button {
+  .sidebar-head .icon-button {
     flex: none;
     width: 32px;
     height: 32px;
@@ -529,10 +529,10 @@
     box-shadow: var(--graphite-shadow);
     color: var(--on-accent);
   }
-  .sidebar-actions .icon-button:hover:not(:disabled) {
+  .sidebar-head .icon-button:hover:not(:disabled) {
     filter: brightness(1.15);
   }
-  .sidebar-actions .icon-button svg {
+  .sidebar-head .icon-button svg {
     width: 16px;
     height: 16px;
     stroke-width: 2;
@@ -846,7 +846,7 @@
   .capture-dock {
     border-radius: 4px;
   }
-  .sidebar-actions .icon-button {
+  .sidebar-head .icon-button {
     box-shadow: none;
   }
   .sidebar-panel .tree-row.selected::before {
@@ -874,7 +874,7 @@
   .context-panel .context-section > summary,
   .home-section-head h2,
   .home-section > h2 {
-    font: 600 12px/1 var(--ui);
+    font: 500 var(--fs-label) / 1 var(--ui);
     letter-spacing: 0;
     text-transform: none;
     color: var(--muted);
@@ -993,8 +993,8 @@
   /* ---------- one icon button ---------- */
   .sidebar-collapse,
   .sidebar-expand,
-  .sidebar-actions .icon-button,
-  .sidebar-actions .workspace-destinations > button,
+  .sidebar-head .icon-button,
+  .sidebar-head .workspace-destinations > button,
   .topbar .icon-button,
   .context-panel header .icon-button {
     display: grid;
@@ -1015,8 +1015,8 @@
   }
   .sidebar-collapse:hover,
   .sidebar-expand:hover,
-  .sidebar-actions .icon-button:hover:not(:disabled),
-  .sidebar-actions .workspace-destinations > button:hover,
+  .sidebar-head .icon-button:hover:not(:disabled),
+  .sidebar-head .workspace-destinations > button:hover,
   .topbar .icon-button:hover:not(:disabled),
   .context-panel header .icon-button:hover {
     background: var(--row-hover);
@@ -1025,7 +1025,7 @@
     filter: none;
     transition-duration: 0ms;
   }
-  .sidebar-actions .workspace-destinations > button[aria-current='page'],
+  .sidebar-head .workspace-destinations > button[aria-current='page'],
   .topbar .icon-button[aria-pressed='true'] {
     background: var(--row-selected);
     box-shadow: none;
@@ -1037,7 +1037,7 @@
   }
   .sidebar-collapse svg,
   .sidebar-expand svg,
-  .sidebar-actions :is(.icon-button, .workspace-destinations > button) svg,
+  .sidebar-head :is(.icon-button, .workspace-destinations > button) svg,
   .topbar .icon-button svg,
   .context-panel header .icon-button svg {
     width: 16px;
@@ -1053,7 +1053,7 @@
   }
   .sidebar-actions .search-trigger {
     height: var(--control);
-    margin-right: 4px;
+    margin-right: 0;
     border-radius: 4px;
     background: var(--row-hover);
     box-shadow: none;
@@ -1073,7 +1073,7 @@
     color: var(--icon);
     font-weight: 500;
   }
-  .sidebar-actions .workspace-destinations {
+  .sidebar-head .workspace-destinations {
     flex-direction: row;
     gap: 2px;
     margin: 0;
@@ -1155,5 +1155,103 @@
     box-shadow:
       inset 0 0 0 1px var(--hairline),
       0 6px 18px -12px rgb(24 24 27 / 0.25);
+  }
+
+  /* ---------- the sidebar's first line: the mark, then the icons; search takes the next ---------- */
+  .sidebar-head {
+    gap: 2px;
+    padding: 0 0 0 8px;
+  }
+  .sidebar-head-space {
+    flex: 1;
+  }
+  .sidebar-actions {
+    margin-bottom: 8px;
+  }
+  .workspace-identity {
+    padding: 4px 4px 6px;
+  }
+  .workspace-identity .workspace-select {
+    display: block;
+  }
+
+  /* ---------- type: Inter, one scale ----------
+     13px secondary text and section titles · 14px interface · 16px page text.
+     Tight tracking on headings, a hair on interface text, tabular digits in counts and dates. */
+  .app-shell,
+  .auth-screen,
+  .dialog,
+  .app-popover {
+    letter-spacing: -0.006em;
+    font-feature-settings: 'cv11', 'ss03';
+  }
+  .document-canvas .page-title,
+  .home-head h1,
+  .all-pages h1 {
+    letter-spacing: -0.028em;
+    font-weight: 700;
+  }
+  .note-editor :is(h1, h2, h3) {
+    letter-spacing: -0.018em;
+  }
+  .sidebar-panel :is(.tree-page, .favorites > button, .account-trigger),
+  .sidebar-actions .search-trigger,
+  .topbar > .breadcrumb,
+  .share-button,
+  .context-panel :is(.context-outline, .connected-list) > button {
+    font-size: var(--fs-ui);
+  }
+  .sidebar-panel .section-label {
+    min-height: 28px;
+    margin: 10px 0 0;
+  }
+  .topbar .save-status,
+  .document-canvas .page-meta,
+  .context-panel .page-facts,
+  .context-panel .page-facts :is(dt, dd),
+  .context-panel .page-panel-tabs > button,
+  .context-panel .mention :is(span, small),
+  .home-section .text-button,
+  .home-counts {
+    font-size: var(--fs-meta);
+  }
+  .page-meta,
+  .home-recent time,
+  .tree-row,
+  .context-section > summary > span {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- menus and dialogs: the same corners and rows as the rest ---------- */
+  .app-popover {
+    padding: 6px;
+    border-radius: 6px;
+    box-shadow:
+      0 0 0 1px var(--hairline),
+      0 12px 32px -12px rgb(24 24 27 / 0.28);
+  }
+  .dialog {
+    border-radius: 8px;
+  }
+  .app-popover .menu-list > button {
+    min-height: 30px;
+    border-radius: 4px;
+    font-size: var(--fs-ui);
+    color: var(--text2);
+  }
+  .app-popover .menu-list > button:hover {
+    background: var(--row-hover);
+    color: var(--ink);
+  }
+  .app-popover .menu-list > button > svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 1.75;
+    color: var(--icon);
+  }
+  .theme-switch,
+  .theme-switch > button {
+    border-radius: 4px;
+    font-size: var(--fs-meta);
   }
 }
