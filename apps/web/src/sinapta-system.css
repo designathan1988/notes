@@ -81,56 +81,6 @@
     color: var(--ink);
   }
 
-  /* ---------- tabs: the open one is the sheet; the rest are quiet labels on the ground ---------- */
-  .workbench-tab {
-    max-width: 220px;
-    background: transparent;
-    box-shadow: none;
-    color: var(--muted);
-    font-size: var(--fs-ui);
-    font-weight: 500;
-  }
-  .workbench-tab:hover:not(.active) {
-    background: var(--loose);
-    box-shadow: var(--loose-edge);
-    color: var(--ink);
-  }
-  .workbench-tab.active,
-  .topbar .workbench-tab.active {
-    font-size: var(--fs-ui);
-    font-weight: 650;
-  }
-  .workbench-tab > [role='tab'] {
-    gap: 8px;
-    padding: 0 6px 0 12px;
-    font-size: inherit;
-  }
-  /* A hairline between two quiet tabs keeps them apart without boxing them. */
-  .workbench-tab:not(.active) + .workbench-tab:not(.active)::before {
-    content: '';
-    position: absolute;
-    left: -3px;
-    top: 6px;
-    bottom: 6px;
-    width: 1px;
-    background: var(--hairline);
-    transition: opacity 160ms var(--ease);
-  }
-  .workbench-tab:not(.active):hover::before,
-  .workbench-tab:not(.active):hover + .workbench-tab:not(.active)::before {
-    opacity: 0;
-  }
-  .tab-close {
-    width: 22px;
-    height: 22px;
-    border-radius: 6px;
-    color: var(--muted);
-  }
-  .tab-close:hover {
-    background: var(--row-hover);
-    color: var(--ink);
-  }
-
   /* ---------- pages pane: one rhythm ---------- */
   .sidebar-panel .workspace-identity {
     border-bottom: 0;
@@ -181,11 +131,6 @@
       border-radius: 16px;
       background: var(--canvas);
       box-shadow: var(--sheet-shadow);
-    }
-    .workspace-main:has(.workbench-tab.active:first-child)
-      .workspace-content:has(> .context-panel)
-      > :first-child {
-      border-top-left-radius: 0;
     }
     .context-panel,
     .context-panel.page-panel {
@@ -485,10 +430,6 @@
       align-self: flex-end;
       padding-bottom: 2px;
     }
-    .topbar .workbench-strip > .icon-button {
-      align-self: flex-end;
-      margin-bottom: 2px;
-    }
   }
 
   /* ---------- one pane, no rail ----------
@@ -498,11 +439,6 @@
     .sidebar-panel {
       margin: 8px 0 8px 8px;
       padding: 5px 10px 8px;
-    }
-    .app-shell.sidebar-collapsed .workbench-window-tools {
-      display: flex;
-      align-self: flex-end;
-      margin: 0 6px 2px 0;
     }
   }
   .sidebar-head {
@@ -748,10 +684,184 @@
     border-radius: 3px;
     background: var(--ink);
   }
-  .workbench-tab {
-    color: var(--text2);
-  }
   .topbar .icon-button {
     color: var(--ink);
+  }
+
+  /* ==========================================================================
+     Flat shell: no gaps, no rounded panes. The sidebar, the bar and the page meet edge to edge
+     and are told apart by tone and a hairline. Controls keep a 4px corner.
+     ========================================================================== */
+  :root {
+    --radius-xs: 2px;
+    --radius-sm: 3px;
+    --radius-md: 4px;
+    --radius-lg: 6px;
+    --radius-xl: 6px;
+    --bar: 44px;
+    --side: #f0f0f2;
+    --row-selected: #ffffff;
+    --row-selected-edge: inset 0 0 0 1px rgb(24 24 27 / 0.1);
+  }
+  :root[data-theme='dark'] {
+    --side: #121214;
+    --row-selected: rgb(255 255 255 / 0.1);
+    --row-selected-edge: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light'], [data-theme='dark']) {
+      --side: #121214;
+      --row-selected: rgb(255 255 255 / 0.1);
+      --row-selected-edge: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+    }
+  }
+  .app-shell {
+    background: var(--canvas);
+  }
+  @media (min-width: 701px) {
+    .sidebar-panel {
+      margin: 0;
+      padding: 0 8px 8px;
+      border-right: 1px solid var(--hairline);
+      border-radius: 0;
+      background: var(--side);
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+    .workspace-main,
+    .app-shell.sidebar-collapsed .workspace-main {
+      margin: 0;
+    }
+    .topbar {
+      gap: 4px;
+      height: var(--bar);
+      min-height: var(--bar);
+      padding: 0 12px;
+      border-bottom: 1px solid var(--hairline);
+      background: var(--canvas);
+    }
+    .topbar > :is(.history-controls, .topbar-actions) {
+      align-self: center;
+      padding-bottom: 0;
+    }
+    .topbar > .history-controls {
+      order: 0;
+      margin: 0;
+    }
+    .topbar > .breadcrumb {
+      order: 0;
+    }
+    .topbar > .topbar-actions {
+      order: 1;
+    }
+    .workspace-content,
+    .workspace-content:has(> .context-panel) > :not(.context-panel, .details-scrim) {
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .workspace-content:has(> .context-panel) {
+      gap: 0;
+      background: var(--canvas);
+    }
+    .context-panel,
+    .context-panel.page-panel {
+      border-left: 1px solid var(--hairline);
+      border-radius: 0;
+      background: var(--side);
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+    .workspace-main:has(.capture-dock) .workspace-content:not(:has(> .context-panel))::after {
+      border-radius: 0;
+    }
+    /* The page's path sits where the tabs were. */
+    .topbar > .breadcrumb {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      margin-left: 6px;
+      font-size: var(--fs-ui);
+    }
+    .topbar .breadcrumb-parent {
+      display: inline-flex;
+      flex: none;
+      max-width: 220px;
+      padding: 3px 6px;
+      overflow: hidden;
+      border-radius: 4px;
+      color: var(--muted);
+      font-weight: 500;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .topbar .breadcrumb-parent:hover {
+      background: var(--row-hover);
+      color: var(--ink);
+    }
+    .topbar .breadcrumb > span {
+      display: inline;
+      color: var(--faint);
+    }
+    .topbar .breadcrumb > strong {
+      min-width: 0;
+      padding: 3px 6px;
+      overflow: hidden;
+      color: var(--ink);
+      font-weight: 650;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .topbar .breadcrumb .mobile-save-label {
+      display: none;
+    }
+  }
+  .sidebar-head {
+    min-height: var(--bar);
+    margin-bottom: 0;
+  }
+  .sidebar-actions {
+    margin-bottom: 6px;
+  }
+  .sidebar-expand {
+    flex: none;
+  }
+  /* Square, quiet controls. */
+  .sidebar-panel
+    :is(.tree-row, .favorites > button, .workspace-destinations > button, .account-trigger),
+  .sidebar-actions :is(.search-trigger, .icon-button),
+  .sidebar-collapse,
+  .sidebar-head .workspace-select,
+  .topbar .icon-button,
+  .share-button,
+  .share-button:hover:not(:disabled),
+  .context-panel :is(.context-outline, .connected-list) > button,
+  .context-panel .mention,
+  .context-panel .page-panel-tabs,
+  .context-panel .page-panel-tabs > button,
+  .home-action,
+  .home-continue button,
+  .workspace-map,
+  .capture-dock {
+    border-radius: 4px;
+  }
+  .sidebar-actions .icon-button {
+    box-shadow: none;
+  }
+  .sidebar-panel .tree-row.selected::before {
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    border-radius: 0;
+  }
+  .capture-dock :is(.capture-field, .capture-kinds > button, input, kbd) {
+    border-radius: 3px;
+  }
+  .capture-dock {
+    box-shadow:
+      inset 0 0 0 1px var(--hairline),
+      0 10px 24px -14px rgb(24 24 27 / 0.3);
   }
 }

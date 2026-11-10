@@ -10,6 +10,7 @@ import {
   Plus,
   FileText,
   Database,
+  PanelLeft,
   PanelRight,
   ArrowLeft,
   ArrowRight,
@@ -31,7 +32,6 @@ import { MovePage } from '../navigation/MovePage.js';
 import { NewPage } from '../navigation/NewPage.js';
 import { AllPages } from '../navigation/AllPages.js';
 import { PageActions } from '../navigation/PageActions.js';
-import { TabStrip } from '../workbench/TabStrip.js';
 import { CommandPalette } from '../workbench/CommandPalette.js';
 import { TemplateBanner } from '../templates/TemplateBanner.js';
 import { TemplateDialog } from '../templates/TemplateDialog.js';
@@ -105,6 +105,15 @@ export function Workspace() {
       <Sidebar />
       <main className="workspace-main" inert={state.sidebarOpen}>
         <header className="topbar">
+          {state.sidebarCollapsed && (
+            <IconButton
+              className="sidebar-expand"
+              label={t('Show sidebar')}
+              onClick={state.toggleSidebar}
+            >
+              <PanelLeft />
+            </IconButton>
+          )}
           <div className="history-controls">
             <IconButton
               label={t('Go back')}
@@ -130,7 +139,6 @@ export function Workspace() {
               <Menu />
             </IconButton>
           </div>
-          <TabStrip />
           <div className="breadcrumb">
             {parent && !globalView && (
               <>

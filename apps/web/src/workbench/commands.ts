@@ -1,6 +1,5 @@
 import { t } from '../i18n/index.js';
 import type { WorkspaceState } from '../state/store.js';
-import { tabKey } from './state.js';
 export interface AppCommand {
   id: string;
   title: string;
@@ -170,29 +169,6 @@ export const commands: AppCommand[] = [
     group: 'Navigate',
     keywords: 'tables collections',
     run: (state) => state.navigate(null, 'database'),
-  },
-  {
-    id: 'tab.close',
-    title: 'Close current tab',
-    group: 'Workspace',
-    shortcut: { key: 'w', alt: true, label: 'Ctrl Alt W' },
-    available: (state) => state.tabs.length > 0,
-    run: (state) => state.closeTab(tabKey(state.selectedId, state.view)),
-  },
-  {
-    id: 'tab.reopen',
-    title: 'Reopen closed tab',
-    group: 'Workspace',
-    shortcut: { key: 't', alt: true, shift: true, label: 'Ctrl Alt Shift T' },
-    available: (state) => state.closedTabs.length > 0,
-    run: (state) => state.reopenTab(),
-  },
-  {
-    id: 'tab.keep',
-    title: 'Keep current tab open',
-    group: 'Workspace',
-    keywords: 'pin preview',
-    run: (state) => state.pinTab(tabKey(state.selectedId, state.view)),
   },
   {
     id: 'page.details',

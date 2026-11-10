@@ -4,7 +4,6 @@ import {
   ChevronDown,
   ChevronRight,
   Search,
-  Files,
   Network,
   Database,
   Plus,
@@ -18,7 +17,6 @@ import {
   Command,
   SlidersHorizontal,
   MoreHorizontal,
-  LayoutTemplate,
   PanelLeft,
   Shapes,
   House,
@@ -204,11 +202,7 @@ export function Sidebar() {
     template = state.pages.find((page) => page.id === templateId);
   const destinations = [
     { view: 'home', label: 'Home', Icon: House },
-    { view: 'all', label: 'All pages', Icon: Files },
     { view: 'graph', label: 'Knowledge graph', Icon: Network },
-    { view: 'database', label: 'Databases', Icon: Database },
-    { view: 'templates', label: 'Templates', Icon: LayoutTemplate },
-    { view: 'canvas', label: 'Canvases', Icon: Shapes },
   ] as const;
   const utilities = [
     { label: 'Commands', Icon: Command, run: state.showCommands },
@@ -284,18 +278,14 @@ export function Sidebar() {
               <IconButton
                 label={t('New page')}
                 disabled={workspace?.role === 'viewer'}
-                onClick={() => void state.createQuickPage().catch(state.setError)}
+                onClick={() => state.openDialog('new-page')}
               >
                 <SquarePen size={17} />
               </IconButton>
             </div>
             <nav className="workspace-destinations" aria-label={t('Workspace tools')}>
               {destinations.map(({ view, label, Icon }) => {
-                // Databases and Canvases are indexes: an open database or canvas page is
-                // highlighted in the page tree, not as the index.
-                const active = template
-                  ? view === 'templates'
-                  : state.view === view && (GLOBAL_VIEWS.includes(view) || !state.selectedId);
+                const active = !template && state.view === view;
                 return (
                   <button
                     key={view}
