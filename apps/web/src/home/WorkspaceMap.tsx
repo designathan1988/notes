@@ -81,15 +81,8 @@ export function WorkspaceMap() {
           {map.placed.map((node) => (
             <line key={node.id} x1={CX} y1={CY} x2={node.x} y2={node.y} className="map-edge" />
           ))}
-          <circle
-            cx={CX}
-            cy={CY}
-            r={13}
-            fill={fill[map.hub.kind]}
-            opacity={0.75}
-            filter="url(#workspace-map-glow)"
-          />
-          <circle cx={CX} cy={CY} r={6.5} fill={fill[map.hub.kind]} />
+          <circle cx={CX} cy={CY} r={15} fill="var(--signal)" opacity={0.18} />
+          <circle cx={CX} cy={CY} r={7} fill="var(--ink)" />
           {map.placed.map((node) => (
             <circle key={node.id} cx={node.x} cy={node.y} r={4} fill={fill[node.kind]} />
           ))}

@@ -1,5 +1,5 @@
 import { t, formatDate, formatNumber, formatRelative } from '../i18n/index.js';
-import { AppWindow, Database, FileText, LayoutTemplate, Shapes, Star } from 'lucide-react';
+import { Database, History, LayoutTemplate, Shapes, SquarePen, Star } from 'lucide-react';
 import type { Page, PageKind } from '@note/contracts';
 import { useEffect, useState } from 'react';
 import { useWorkspace } from '../state/store.js';
@@ -8,20 +8,6 @@ import { pageView } from '../workbench/route.js';
 import { PageGlyph } from '../ui/PageGlyph.js';
 import { pageType, typeLabel } from '../pages/type.js';
 import { WorkspaceMap } from './WorkspaceMap.js';
-import { MosaicPattern } from '../ui/MosaicPattern.js';
-
-const kindSingular: Record<PageKind, string> = {
-  document: 'Page',
-  database: 'Database',
-  canvas: 'Canvas',
-  record: 'Record',
-};
-const kindPlural: Record<PageKind, string> = {
-  document: 'Pages',
-  database: 'Databases',
-  canvas: 'Canvases',
-  record: 'Records',
-};
 
 export function edited(iso: string, now = Date.now()) {
   const seconds = Math.round((new Date(iso).getTime() - now) / 1000);
@@ -91,173 +77,195 @@ export function Home() {
   const open = (page: Page) => state.navigate(page.id, pageView(page.kind));
   const create = (kind: 'document' | 'database' | 'canvas') => () =>
     void state.createQuickPage(null, kind).catch(state.setError);
-  const actions = [
-    { label: 'Page', kind: 'document', Icon: FileText, run: create('document') },
-    {
-      label: 'Document',
-      kind: 'web',
-      Icon: AppWindow,
-      run: () => void state.createWebPage().catch(state.setError),
-    },
-    { label: 'Database', kind: 'database', Icon: Database, run: create('database') },
-    { label: 'Canvas', kind: 'canvas', Icon: Shapes, run: create('canvas') },
-    {
-      label: 'From template',
-      kind: 'template',
-      Icon: LayoutTemplate,
-      run: () => state.navigate(null, 'templates'),
-    },
-  ] as const;
+  // Pages nobody has touched for a week: the honest part of "Para revisar" today.
+  const stale = live
+    .filter((page) => page.kind !== 'database')
+    .map((page) => ({
+      page,
+      days: Math.floor((now.getTime() - new Date(page.updatedAt).getTime()) / 86400000),
+    }))
+    .filter((item) => item.days >= 7)
+    .sort((a, b) => b.days - a.days)
+    .slice(0, 3);
   return (
     <div className="home-scroll">
       <section className="home" aria-labelledby="home-title">
-        <header className="home-head">
-          <div>
+        <div className="home-main">
+          <header className="home-hello">
             <h1 id="home-title">
               {greeting(now.getHours())}
               {state.user ? `, ${state.user.name.split(' ')[0]}` : ''}
             </h1>
             <p>
               {formatDate(now, { weekday: 'long', month: 'long', day: 'numeric' })}
-              {' · '}
               {today === undefined
                 ? ''
-                : today === 1
-                  ? t('1 page edited today')
-                  : t('{{count}} pages edited today', { count: formatNumber(today) })}
+                : ' · ' +
+                  (today === 1
+                    ? t('1 page edited today')
+                    : t('{{count}} pages edited today', { count: formatNumber(today) }))}
+              {stale.length > 0 &&
+                ' · ' +
+                  t(stale.length === 1 ? '1 item to review' : '{{count}} items to review', {
+                    count: stale.length,
+                  })}
             </p>
-          </div>
-          <div className="home-actions" role="group" aria-label={t('Create')}>
-            {actions.map(({ label, kind, Icon, run }) => (
-              <button
-                key={t(label)}
-                type="button"
-                className="home-action"
-                data-kind={kind}
-                aria-label={
-                  kind === 'template'
-                    ? t('New from template')
-                    : t(
-                        kind === 'document'
-                          ? 'New page'
-                          : kind === 'database'
-                            ? 'New database'
-                            : 'New canvas',
-                      )
-                }
-                disabled={kind !== 'template' && !canWrite}
-                onClick={run}
-              >
-                <Icon size={14} />
-                {t(label)}
-              </button>
-            ))}
-          </div>
-        </header>
-
-        <div className="home-grid">
-          <div className="home-main">
-            {recent.length > 0 && (
-              <section className="home-section" aria-labelledby="home-continue">
-                <h2 id="home-continue">{t('Continue where you left off')}</h2>
-                <ul className="home-continue">
-                  {recent.slice(0, 3).map((page) => (
-                    <li key={page.id}>
-                      <button type="button" data-kind={page.kind} onClick={() => open(page)}>
-                        <MosaicPattern className="home-continue-band" />
-                        <span className="home-continue-body">
-                          <strong>
-                            <PageGlyph page={page} size={13} />
-                            <span>{page.title || t('Untitled')}</span>
-                          </strong>
-                          <span className="home-continue-text">
-                            {page.description || t(typeLabel[pageType(page)])}
-                          </span>
-                          <small>
-                            {titleOf(page.parentId) ?? workspace?.name ?? t('Workspace')}
-                            {' · '}
-                            {edited(page.updatedAt)}
-                          </small>
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-            <section className="home-section" aria-labelledby="home-recent">
-              <div className="home-section-head">
-                <h2 id="home-recent">{t('Recent')}</h2>
-                <button className="text-button" onClick={() => state.navigate(null, 'all')}>
-                  {t('View all')}
-                </button>
-              </div>
-              {recent.length ? (
-                <ul className="home-recent">
-                  {recent.slice(recent.length > 3 ? 3 : 0).map((page) => (
-                    <li key={page.id}>
-                      <button type="button" data-kind={page.kind} onClick={() => open(page)}>
-                        <PageGlyph page={page} size={15} />
-                        <span className="home-recent-text">
-                          <strong>{page.title || t('Untitled')}</strong>
-                          <small>
-                            {titleOf(page.parentId) ?? workspace?.name ?? t('Workspace')}
-                            {page.description ? ` · ${page.description}` : ''}
-                          </small>
-                        </span>
-                        <time dateTime={page.updatedAt}>{edited(page.updatedAt)}</time>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="home-empty">{t('Pages you edit will appear here.')}</p>
-              )}
-            </section>
+          </header>
+          <div className="home-create" role="group" aria-label={t('Create')}>
+            <button
+              type="button"
+              className="button primary"
+              aria-label={t('New page')}
+              disabled={!canWrite}
+              onClick={create('document')}
+            >
+              <SquarePen size={15} />
+              {t('New page')}
+            </button>
+            <button
+              type="button"
+              className="button"
+              aria-label={t('New database')}
+              disabled={!canWrite}
+              onClick={create('database')}
+            >
+              <Database size={15} />
+              {t('Database')}
+            </button>
+            <button
+              type="button"
+              className="button"
+              aria-label={t('New canvas')}
+              disabled={!canWrite}
+              onClick={create('canvas')}
+            >
+              <Shapes size={15} />
+              {t('Canvas')}
+            </button>
+            <button
+              type="button"
+              className="button quiet"
+              aria-label={t('New from template')}
+              onClick={() => state.navigate(null, 'templates')}
+            >
+              <LayoutTemplate size={15} />
+              {t('Templates')}
+            </button>
           </div>
 
-          <aside className="home-aside">
-            <section className="home-section" aria-labelledby="home-map">
-              <div className="home-section-head">
-                <h2 id="home-map">{t('Workspace map')}</h2>
-                <button className="text-button" onClick={() => state.navigate(null, 'graph')}>
-                  {t('Open graph')}
-                </button>
-              </div>
-              <WorkspaceMap />
-            </section>
-            <section className="home-section" aria-labelledby="home-favorites">
-              <h2 id="home-favorites">{t('Favorites')}</h2>
-              {favorites.length ? (
-                <ul className="home-links">
-                  {favorites.map((page) => (
-                    <li key={page.id}>
-                      <button type="button" data-kind={page.kind} onClick={() => open(page)}>
+          {recent.length > 0 && (
+            <section className="home-section" aria-labelledby="home-continue">
+              <h2 id="home-continue" className="home-sh">
+                {t('Continue where you left off')}
+              </h2>
+              <ul className="home-cards">
+                {recent.slice(0, 3).map((page) => (
+                  <li key={page.id}>
+                    <button type="button" data-kind={page.kind} onClick={() => open(page)}>
+                      <span className="home-card-top">
                         <PageGlyph page={page} size={14} />
-                        <span>{page.title || t('Untitled')}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="home-empty">
-                  <Star size={14} />
-                  {t('Star a page to pin it here.')}
-                </p>
-              )}
+                        {titleOf(page.parentId) ?? t(typeLabel[pageType(page)])}
+                      </span>
+                      <b>{page.title || t('Untitled')}</b>
+                      {page.description && (
+                        <span className="home-card-text">{page.description}</span>
+                      )}
+                      <small>{t('Edited {{when}}', { when: edited(page.updatedAt) })}</small>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </section>
-            {overview && (
-              <p className="home-counts">
-                {(['document', 'database', 'canvas', 'record'] as const)
-                  .map(
-                    (kind) =>
-                      `${formatNumber(overview.counts[kind])} ${t((overview.counts[kind] === 1 ? kindSingular : kindPlural)[kind]).toLowerCase()}`,
-                  )
-                  .join(' · ')}
+          )}
+          <section className="home-section" aria-labelledby="home-recent">
+            <div className="home-sh">
+              <h2 id="home-recent">{t('Recent')}</h2>
+              <button className="text-button" onClick={() => state.navigate(null, 'all')}>
+                {t('View all')}
+              </button>
+            </div>
+            {recent.length ? (
+              <ul className="home-rows">
+                {recent.slice(recent.length > 3 ? 3 : 0).map((page) => (
+                  <li key={page.id}>
+                    <button type="button" data-kind={page.kind} onClick={() => open(page)}>
+                      <span className="home-row-icon">
+                        <PageGlyph page={page} size={15} />
+                      </span>
+                      <span className="home-row-text">
+                        <b>{page.title || t('Untitled')}</b>
+                        <small>
+                          {titleOf(page.parentId) ?? workspace?.name ?? t('Workspace')}
+                          {page.description ? ` · ${page.description}` : ''}
+                        </small>
+                      </span>
+                      <time dateTime={page.updatedAt}>{edited(page.updatedAt)}</time>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="home-empty">{t('Pages you edit will appear here.')}</p>
+            )}
+          </section>
+        </div>
+
+        <aside className="home-aside">
+          <section aria-labelledby="home-map">
+            <div className="home-sh">
+              <h2 id="home-map">{t('Workspace map')}</h2>
+              <button className="text-button" onClick={() => state.navigate(null, 'graph')}>
+                {t('Open graph')} →
+              </button>
+            </div>
+            <WorkspaceMap />
+          </section>
+          {stale.length > 0 && (
+            <section aria-labelledby="home-review">
+              <div className="home-sh">
+                <h2 id="home-review">{t('To review')}</h2>
+                <span className="home-sh-count">{stale.length}</span>
+              </div>
+              <ul className="home-review">
+                {stale.map(({ page, days }) => (
+                  <li key={page.id}>
+                    <button type="button" onClick={() => open(page)}>
+                      <History size={16} className="home-review-icon" />
+                      <span>
+                        <b>{page.title || t('Untitled')}</b>
+                        <small>{t('No update for {{count}} days', { count: days })}</small>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <section aria-labelledby="home-favorites">
+            <div className="home-sh">
+              <h2 id="home-favorites">{t('Favorites')}</h2>
+            </div>
+            {favorites.length ? (
+              <ul className="home-review">
+                {favorites.map((page) => (
+                  <li key={page.id}>
+                    <button type="button" data-kind={page.kind} onClick={() => open(page)}>
+                      <PageGlyph page={page} size={16} />
+                      <span>
+                        <b>{page.title || t('Untitled')}</b>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="home-empty">
+                <Star size={14} />
+                {t('Star a page to pin it here.')}
               </p>
             )}
-          </aside>
-        </div>
+          </section>
+        </aside>
       </section>
     </div>
   );
