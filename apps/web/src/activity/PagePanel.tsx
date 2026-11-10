@@ -9,7 +9,8 @@ import { HistoryPanel } from './HistoryPanel.js';
 import type { PagePanelTab } from './state.js';
 export function PagePanel() {
   const pageId = useWorkspace((state) => state.selectedId),
-    tab = useWorkspace((state) => state.pagePanelTab);
+    tab = useWorkspace((state) => state.pagePanelTab),
+    connections = useWorkspace((state) => state.linkedPageIds.length);
   const role = useWorkspace(
     (state) => state.workspaces.find((workspace) => workspace.id === state.workspaceId)?.role,
   );
@@ -24,7 +25,7 @@ export function PagePanel() {
   }, []);
   if (!pageId) return null;
   const tabs = [
-    { id: 'details', label: 'Details', Icon: List },
+    { id: 'details', label: 'Connections', Icon: List },
     { id: 'discussion', label: 'Comments', Icon: MessageSquare },
     { id: 'history', label: 'History', Icon: History },
   ] as const;
@@ -83,6 +84,7 @@ export function PagePanel() {
           >
             <Icon size={14} />
             {t(label)}
+            {id === 'details' && <span className="tab-count">{connections}</span>}
           </button>
         ))}
       </div>

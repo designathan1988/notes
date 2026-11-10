@@ -2187,4 +2187,200 @@
       background: var(--hairline);
     }
   }
+
+  /* Unit 4, the details panel: underlined tabs with counts, the neighbourhood graph,
+     backlinks with the citing sentence, and what this page mentions. */
+  .workspace-content:has(> .context-panel) .connection-thread {
+    display: none;
+  }
+  .page-panel {
+    position: relative;
+  }
+  .page-panel > header {
+    position: absolute;
+    top: 8px;
+    right: 6px;
+    z-index: 1;
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+  .page-panel > header > h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .page-panel .page-panel-tabs {
+    display: flex;
+    gap: 14px;
+    margin: 0;
+    padding: 0 40px 0 16px;
+    border: 0;
+    border-bottom: 1px solid var(--hairline);
+    border-radius: 0;
+    background: none;
+  }
+  .page-panel .page-panel-tabs > button[role='tab'] {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 46px;
+    margin-bottom: -1px;
+    padding: 0;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 550;
+  }
+  .page-panel .page-panel-tabs > button[role='tab'] > svg {
+    display: none;
+  }
+  .page-panel .page-panel-tabs > button[role='tab'][aria-selected='true'] {
+    border-bottom-color: var(--ink);
+    color: var(--ink);
+  }
+  .page-panel .page-panel-tabs .tab-count {
+    color: var(--faint);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .details-content .context-block {
+    padding: 18px 20px 6px;
+  }
+  .details-content .context-heading {
+    display: flex;
+    align-items: center;
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  .details-content .context-heading > span {
+    margin-left: auto;
+    color: var(--faint);
+    font-weight: 500;
+  }
+  .details-content .local-graph {
+    overflow: hidden;
+    border-radius: 10px;
+    background-color: var(--canvas);
+    background-image: radial-gradient(var(--hair2) 1px, transparent 1px);
+    background-size: 16px 16px;
+    box-shadow: inset 0 0 0 1px var(--hair2);
+  }
+  .details-content .local-graph svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .local-edge {
+    stroke: var(--hair2);
+    stroke-width: 1.2;
+  }
+  .local-node {
+    cursor: pointer;
+  }
+  .local-node circle {
+    fill: var(--muted);
+  }
+  .local-node[data-kind='database'] circle {
+    fill: var(--signal);
+  }
+  .local-node[data-kind='canvas'] circle {
+    fill: var(--kind-canvas, #c2456f);
+  }
+  .local-node text {
+    fill: var(--text2, var(--muted));
+    font: 500 11px var(--ui);
+  }
+  .local-node:hover text,
+  .local-node:focus-visible text {
+    fill: var(--ink);
+  }
+  .local-halo {
+    fill: var(--signal-bg);
+  }
+  .local-center {
+    fill: var(--ink);
+  }
+  .details-content .details-graph-link {
+    margin-top: 10px;
+  }
+
+  .details-content .mentions-section .mention {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 0;
+    border: 0;
+    border-bottom: 1px solid var(--hairline);
+    border-radius: 0;
+    background: none;
+    text-align: left;
+  }
+  .details-content .mentions-section .mention:last-child {
+    border-bottom: 0;
+  }
+  .details-content .mentions-section .mention > svg {
+    width: 15px;
+    height: 15px;
+    margin-top: 2px;
+    flex: none;
+    color: var(--muted);
+  }
+  .details-content .mentions-section .mention strong {
+    display: block;
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .details-content .mentions-section .mention small {
+    display: block;
+    margin-top: 3px;
+    color: var(--text2, var(--muted));
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .details-content .mention mark {
+    padding: 0 1px;
+    border-radius: 2px;
+    background: rgb(242 193 78 / 0.3);
+    color: inherit;
+  }
+  .details-content .context-mentions {
+    display: grid;
+  }
+  .details-content .context-mentions > button {
+    display: flex;
+    align-items: center;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text2, var(--muted));
+    font-size: 13.5px;
+    text-align: left;
+  }
+  .details-content .context-mentions > button > span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .details-content .context-mentions > button > small {
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .details-content .context-mentions > button:hover > span {
+    color: var(--ink);
+  }
 }

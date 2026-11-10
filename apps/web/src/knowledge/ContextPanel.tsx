@@ -37,24 +37,21 @@ export function ContextPanel() {
     )
     .filter((page): page is NonNullable<typeof page> => !!page);
   const current = pages.find((page) => page.id === selectedId);
+  // The neighbourhood: pages this one links to and pages that cite it, around it.
+  const neighbours = [
+    ...connected.map((page) => ({ id: page.id, title: page.title, kind: page.kind })),
+    ...(mentions ?? [])
+      .filter((mention) => !connected.some((page) => page.id === mention.sourceId))
+      .map((mention) => ({
+        id: mention.sourceId,
+        title: mention.title,
+        kind: pages.find((page) => page.id === mention.sourceId)?.kind ?? 'document',
+      })),
+  ].slice(0, 6);
+  const go = (id: string) => useWorkspace.getState().navigate(id);
+  const title = current?.title ?? '';
   return (
     <div className="details-content">
-      <dl className="page-facts">
-        <div>
-          <dt>{t('Edited')}</dt>
-          <dd>
-            {current &&
-              new Intl.DateTimeFormat(getLocale(), {
-                dateStyle: 'medium',
-                timeStyle: 'short',
-              }).format(new Date(current.updatedAt))}
-          </dd>
-        </div>
-        <div>
-          <dt>{t('Access')}</dt>
-          <dd>{current?.visibility === 'private' ? t('Private') : t('Workspace')}</dd>
-        </div>
-      </dl>
       {current?.kind === 'canvas' && (
         <details className="context-section canvas-metadata">
           <summary>{t('Properties and tags')}</summary>
@@ -62,6 +59,101 @@ export function ContextPanel() {
           <PageProperties key={`properties-${current.id}`} page={current} readOnly={readOnly} />
         </details>
       )}
+      <section className="context-block">
+        <h3 className="context-heading">{t('Neighbourhood')}</h3>
+        <div className="local-graph">
+          <svg viewBox="0 0 300 168" role="img" aria-label={t('Connected pages')}>
+            {neighbours.map((page, index) => {
+              const angle = (index / Math.max(neighbours.length, 1)) * Math.PI * 2 - Math.PI / 2.6;
+              const x = 150 + Math.cos(angle) * 88;
+              const y = 84 + Math.sin(angle) * 56;
+              return (
+                <g key={page.id}>
+                  <line x1="150" y1="84" x2={x} y2={y} className="local-edge" />
+                  <g
+                    role="button"
+                    tabIndex={0}
+                    aria-label={page.title}
+                    className="local-node"
+                    data-kind={page.kind}
+                    onClick={() => go(page.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        go(page.id);
+                      }
+                    }}
+                  >
+                    <circle cx={x} cy={y} r="5" />
+                    <text x={x} y={y < 84 ? y - 11 : y + 19} textAnchor="middle">
+                      {page.title.length > 16 ? page.title.slice(0, 14) + '…' : page.title}
+                    </text>
+                  </g>
+                </g>
+              );
+            })}
+            <circle cx="150" cy="84" r="15" className="local-halo" />
+            <circle cx="150" cy="84" r="8" className="local-center" />
+          </svg>
+        </div>
+        <button
+          className="details-graph-link"
+          onClick={() => useWorkspace.getState().navigate(selectedId, 'graph')}
+        >
+          <Network size={13} />
+          {t('Explore knowledge graph')}
+        </button>
+      </section>
+      <section className="context-block mentions-section">
+        <h3 className="context-heading">
+          {t('Backlinks')} <span>{mentions?.length ?? 0}</span>
+        </h3>
+        {mentions?.length ? (
+          mentions.map((mention) => (
+            <button className="mention" key={mention.sourceId} onClick={() => go(mention.sourceId)}>
+              <FileText />
+              <span>
+                <strong>{mention.title}</strong>
+                <small>{highlight(mention.excerpt, title)}</small>
+              </span>
+            </button>
+          ))
+        ) : (
+          <p className="muted-text">{t('No linked mentions yet.')}</p>
+        )}
+      </section>
+      <section className="context-block">
+        <h3 className="context-heading">
+          {t('Mentions')} <span>{connected.length}</span>
+        </h3>
+        {connected.length ? (
+          <div className="context-mentions">
+            {connected.map((page) => (
+              <button key={page.id} onClick={() => go(page.id)}>
+                <span>{page.title}</span>
+                <small>{t(kindName[page.kind ?? 'document'] ?? 'Page')}</small>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="muted-text">{t('No outgoing page links.')}</p>
+        )}
+      </section>
+      {current?.kind !== 'database' && (
+        <button
+          className="context-connect"
+          disabled={readOnly}
+          onClick={() => {
+            useWorkspace.getState().requestEditor('link');
+            if (matchMedia('(max-width:1050px)').matches)
+              useWorkspace.getState().setContextOpen(false);
+          }}
+        >
+          <Link2 />
+          {t('Connect an idea')}
+        </button>
+      )}
+      {/* With the panel open the right-hand outline steps aside, so it lives here, open. */}
       <details className="context-section" open>
         <summary>
           {t('On this page')} <span>{outline.length}</span>
@@ -85,119 +177,42 @@ export function ContextPanel() {
           )}
         </nav>
       </details>
-      <details className="context-section" open>
-        <summary>
-          {t('Connections')} <span>{connected.length}</span>
-        </summary>
-        <div className="connected-list">
-          {connected.map((page) => (
-            <button key={page.id} onClick={() => useWorkspace.getState().navigate(page.id)}>
-              <FileText size={14} />
-              {page.title}
-            </button>
-          ))}
+      <dl className="page-facts">
+        <div>
+          <dt>{t('Edited')}</dt>
+          <dd>
+            {current &&
+              new Intl.DateTimeFormat(getLocale(), {
+                dateStyle: 'medium',
+                timeStyle: 'short',
+              }).format(new Date(current.updatedAt))}
+          </dd>
         </div>
-        {!connected.length && <p className="muted-text">{t('No outgoing page links.')}</p>}
-        <details className="context-graph-preview">
-          <summary>{t('Graph preview')}</summary>
-          <div className="local-graph">
-            <svg viewBox="0 0 300 180" role="img" aria-label={t('Connected pages')}>
-              {connected.slice(0, 3).map((page, index) => {
-                const [x, y] = [
-                  [150, 25],
-                  [65, 145],
-                  [235, 145],
-                ][index];
-                return (
-                  <g key={page.id}>
-                    <path d={`M150 85L${x} ${y}`} stroke="var(--rule)" />
-                    <g
-                      role="button"
-                      tabIndex={0}
-                      aria-label={page.title}
-                      onClick={() => useWorkspace.getState().navigate(page.id)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          useWorkspace.getState().navigate(page.id);
-                        }
-                      }}
-                    >
-                      <rect
-                        x={x - 52}
-                        y={y - 15}
-                        width="104"
-                        height="30"
-                        rx="3"
-                        fill="var(--canvas)"
-                        stroke="var(--rule)"
-                      />
-                      <text x={x} y={y + 4} textAnchor="middle">
-                        {page.title.length > 18 ? page.title.slice(0, 16) + '…' : page.title}
-                      </text>
-                    </g>
-                  </g>
-                );
-              })}
-              <rect
-                x="70"
-                y="70"
-                width="160"
-                height="30"
-                rx="3"
-                fill="var(--selected)"
-                stroke="var(--rule)"
-              />
-              <text x="150" y="89" textAnchor="middle">
-                {current?.title.slice(0, 23)}
-              </text>
-            </svg>
-          </div>
-        </details>
-        <button
-          className="details-graph-link"
-          onClick={() => useWorkspace.getState().navigate(selectedId, 'graph')}
-        >
-          <Network size={13} />
-          {t('Explore knowledge graph')}
-        </button>
-      </details>
-      <details className="context-section mentions-section" open>
-        <summary>
-          {t('Linked mentions')} <span>{mentions?.length ?? 0}</span>
-        </summary>
-        {mentions?.length ? (
-          mentions.map((mention) => (
-            <button
-              className="mention"
-              key={mention.sourceId}
-              onClick={() => useWorkspace.getState().navigate(mention.sourceId)}
-            >
-              <FileText />
-              <span>
-                <strong>{mention.title}</strong>
-                <small>{mention.excerpt}</small>
-              </span>
-            </button>
-          ))
-        ) : (
-          <p className="muted-text">{t('No linked mentions yet.')}</p>
-        )}
-      </details>
-      {current?.kind !== 'database' && (
-        <button
-          className="context-connect"
-          disabled={readOnly}
-          onClick={() => {
-            useWorkspace.getState().requestEditor('link');
-            if (matchMedia('(max-width:1050px)').matches)
-              useWorkspace.getState().setContextOpen(false);
-          }}
-        >
-          <Link2 />
-          {t('Connect an idea')}
-        </button>
-      )}
+        <div>
+          <dt>{t('Access')}</dt>
+          <dd>{current?.visibility === 'private' ? t('Private') : t('Workspace')}</dd>
+        </div>
+      </dl>
     </div>
+  );
+}
+
+const kindName: Record<string, string> = {
+  document: 'Page',
+  database: 'Database',
+  canvas: 'Canvas',
+  record: 'Record',
+};
+
+/** The cited page's title, marked inside the snippet that cites it. */
+function highlight(text: string, title: string) {
+  const at = title ? text.toLowerCase().indexOf(title.toLowerCase()) : -1;
+  if (at < 0) return text;
+  return (
+    <>
+      {text.slice(0, at)}
+      <mark>{text.slice(at, at + title.length)}</mark>
+      {text.slice(at + title.length)}
+    </>
   );
 }
