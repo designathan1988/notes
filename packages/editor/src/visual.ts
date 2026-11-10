@@ -403,7 +403,11 @@ function blockHtml(block: Block): string {
   }
 }
 
-/** The published page: one HTML file and one stylesheet, with no editor code in them. */
+/**
+ * The published page: one HTML file and one stylesheet, with no editor code in them. The page
+ * also loads main.js, the Document's own script (empty until its author writes one), so code
+ * written in the Code view runs in the preview and the export.
+ */
 export function renderVisual(document: VisualDocument, title = ''): { html: string; css: string } {
   const body = document.sections
     .map(
@@ -418,6 +422,7 @@ export function renderVisual(document: VisualDocument, title = ''): { html: stri
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escape(title)}</title>
 <link rel="stylesheet" href="./styles.css">
+<script type="module" src="./main.js"></script>
 </head>
 <body>
 ${body}

@@ -55,6 +55,7 @@ test('a preview derives its immutable source from the committed document and has
     'index.html',
     'styles.css',
     'main.js',
+    'document.json',
   ]);
   expect(read.pageId).toBe(source.id);
   await expect(
