@@ -5,7 +5,7 @@
    ========================================================================== */
 @layer sinapta {
   :root {
-    --fs-label: 13px;
+    --fs-label: 12px;
     --fs-meta: 13px;
     --fs-ui: 14px;
     --stage: #18181b;
@@ -1202,8 +1202,8 @@
     font-size: var(--fs-ui);
   }
   .sidebar-panel .section-label {
-    min-height: 28px;
-    margin: 10px 0 0;
+    min-height: 24px;
+    margin: 12px 0 2px;
   }
   .topbar .save-status,
   .document-canvas .page-meta,
