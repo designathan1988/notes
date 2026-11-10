@@ -2,10 +2,17 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 export function IconButton({
   label,
   children,
+  className,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { label: string; children: ReactNode }) {
   return (
-    <button type="button" className="icon-button" aria-label={label} title={label} {...props}>
+    <button
+      type="button"
+      className={className ? `icon-button ${className}` : 'icon-button'}
+      aria-label={label}
+      title={label}
+      {...props}
+    >
       {children}
     </button>
   );

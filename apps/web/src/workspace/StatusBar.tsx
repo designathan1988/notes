@@ -14,9 +14,6 @@ const label = {
 export function StatusBar({ editing }: { editing: boolean }) {
   const saveStatus = useWorkspace((state) => state.saveStatus);
   const offline = useWorkspace((state) => !!state.connectionError);
-  const workspace = useWorkspace(
-    (state) => state.workspaces.find((item) => item.id === state.workspaceId)?.name,
-  );
   const dot = offline ? 'error' : editing ? saveStatus : 'saved';
   return (
     <footer className="status-bar" aria-label={t('Status')}>
@@ -24,7 +21,6 @@ export function StatusBar({ editing }: { editing: boolean }) {
         <i className="status-dot" data-state={dot} aria-hidden="true" />
         {offline ? t('Offline') : editing ? t(label[saveStatus]) : t('Synced')}
       </span>
-      {workspace && <span>{workspace}</span>}
       <span className="status-spacer" />
       {editing && (
         <span>

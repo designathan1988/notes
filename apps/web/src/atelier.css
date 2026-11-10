@@ -636,4 +636,31 @@
   .workbench-window-tools {
     display: none;
   }
+
+  /* The rail is the frame, the panel is the content: one tone apart, with a hairline between. */
+  .sidebar-rail {
+    background: color-mix(in oklab, var(--soft) 94%, var(--ink));
+    border-right: 1px solid var(--rule);
+  }
+
+  /* An overflowing strip fades its clipped edge; an inactive tab shows its close button only under
+     the pointer, so a clipped tab never reads as a lone close button. */
+  .topbar .workbench-tab:not(.active, :hover, :focus-within) .tab-close {
+    display: none;
+  }
+
+  /* Inviting is available everywhere but never the loudest thing on the screen. */
+  .share-button,
+  .share-button:hover:not(:disabled) {
+    border: 1px solid var(--rule-strong);
+    background: transparent;
+    color: var(--text2);
+  }
+  .share-button:hover:not(:disabled) {
+    background: var(--hover);
+    color: var(--ink);
+  }
+  .share-button svg {
+    color: var(--muted);
+  }
 }

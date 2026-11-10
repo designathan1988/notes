@@ -118,6 +118,25 @@ for (const scheme of schemes) {
       await page.keyboard.press('Control+Shift+p');
       await page.locator('dialog[open]').waitFor();
     });
+    // The visual Document in each of its modes, and the rail with the pages panel closed.
+    const web = list.find((p) => p.format === 'web');
+    if (web)
+      for (const mode of ['Visual', 'Code', 'Split', 'Preview'])
+        await shot(`webdoc-${mode.toLowerCase()}`, async () => {
+          await go(`${web.id}/document`);
+          await page.locator('.web-authoring').waitFor();
+          const button = page.locator('.web-mode-control button').nth(
+            ['Visual', 'Code', 'Split', 'Preview'].indexOf(mode),
+          );
+          if (await button.isVisible()) await button.click();
+          await page.waitForTimeout(1200);
+        });
+    if (device === 'desktop')
+      await shot('rail-closed', async () => {
+        await go('/home');
+        await page.locator('.home').waitFor();
+        await page.locator('.rail-pages').click();
+      });
     await context.close();
   }
 }

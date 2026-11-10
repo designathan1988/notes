@@ -16,11 +16,13 @@ import {
   MousePointerClick,
   MoveVertical,
   Plus,
+  Palette,
   Quote,
   Redo2,
   Trash2,
   Type,
   Undo2,
+  X,
 } from 'lucide-react';
 import {
   baseCss,
@@ -69,12 +71,20 @@ export function VisualBuilder({
   document: model,
   onChange,
   readOnly = false,
+  leading,
+  trailing,
 }: {
   document: VisualDocument;
   onChange(next: VisualDocument): void;
   readOnly?: boolean;
+  /** The document's own title, at the start of the toolbar. */
+  leading?: ReactNode;
+  /** The view switch and other document actions, at the end of the toolbar. */
+  trailing?: ReactNode;
 }) {
   const [selected, setSelected] = useState<Selected>(null);
+  // On narrow screens the design panel is a sheet: it rises for a selection or on request.
+  const [styleOpen, setStyleOpen] = useState(false);
   const [adding, setAdding] = useState<
     { section: string; after: string | null } | 'section' | null
   >(null);
@@ -88,8 +98,12 @@ export function VisualBuilder({
   const css = useMemo(
     () =>
       [
+        ':where(.vb-page :is(h1,h2,h3,p,blockquote,ul,li,hr,img,span.button)){all:revert}',
+        ":where(.vb-page [contenteditable='true']){outline:none;cursor:text}",
         baseCss(model.theme, '.vb-page '),
         ...model.sections.map((s) => sectionCss(s, '.vb-page ')),
+        // An image without an address is a compact slot while editing, not a screen of grey.
+        '.vb-page .media.empty{aspect-ratio:auto;height:160px}',
       ].join('\n'),
     [model],
   );
@@ -365,9 +379,15 @@ export function VisualBuilder({
   };
 
   return (
-    <div className="visual-builder" onKeyDown={keys} data-readonly={readOnly || undefined}>
+    <div
+      className="visual-builder"
+      onKeyDown={keys}
+      data-readonly={readOnly || undefined}
+      data-sheet={selected || styleOpen ? 'open' : undefined}
+    >
       {!readOnly && (
         <div className="vb-bar" role="toolbar" aria-label={t('Insert')}>
+          {leading && <div className="vb-bar-title">{leading}</div>}
           {palette.map(({ type, label, Icon }) => (
             <button key={type} title={t(label)} onClick={() => insertFromBar(type)}>
               <Icon size={15} />
@@ -386,18 +406,30 @@ export function VisualBuilder({
             <span>{t('Section')}</span>
           </button>
           <span className="vb-bar-spacer" />
+          <IconButton
+            className="vb-style-toggle"
+            label={t('Document style')}
+            onClick={() => {
+              setSelected(null);
+              setStyleOpen((open) => !open);
+            }}
+          >
+            <Palette size={15} />
+          </IconButton>
           <IconButton label={t('Undo')} disabled={!history.current.past.length} onClick={undo}>
             <Undo2 size={15} />
           </IconButton>
           <IconButton label={t('Redo')} disabled={!history.current.future.length} onClick={redo}>
             <Redo2 size={15} />
           </IconButton>
+          {trailing && <div className="vb-bar-end">{trailing}</div>}
         </div>
       )}
       <div
         className="vb-stage"
         onClick={() => {
           setSelected(null);
+          setStyleOpen(false);
           setAdding(null);
         }}
       >
@@ -498,6 +530,16 @@ export function VisualBuilder({
       </div>
       {!readOnly && (
         <aside className="vb-inspector" aria-label={t('Design')}>
+          <IconButton
+            className="vb-sheet-close"
+            label={t('Close')}
+            onClick={() => {
+              setSelected(null);
+              setStyleOpen(false);
+            }}
+          >
+            <X size={16} />
+          </IconButton>
           {block ? (
             <BlockPanel
               block={block}

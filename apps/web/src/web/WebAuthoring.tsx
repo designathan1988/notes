@@ -285,6 +285,44 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
       if (!editor.isDestroyed) setError((error as Error).message);
     }
   }
+  // In the visual editor its own toolbar carries the title, the view switch and export, so the
+  // page keeps one bar of chrome instead of two.
+  const merged = !!visual && mode === 'visual' && canEdit;
+  const views = (
+    <div className="web-mode-control" role="group" aria-label={t('Document view')}>
+      {([...(visual ? (['visual'] as const) : []), 'code', 'split', 'preview'] as const).map(
+        (view) => (
+          <button key={view} aria-pressed={mode === view} onClick={() => setMode(view)}>
+            {t(view[0].toUpperCase() + view.slice(1))}
+          </button>
+        ),
+      )}
+    </div>
+  );
+  const exporter = (
+    <IconButton
+      label={t('Export document')}
+      onClick={() => {
+        void (async () => {
+          const state = useWorkspace.getState(),
+            actor = state.user?.id,
+            workspace = state.workspaceId;
+          if (!actor || !workspace || !page) return;
+          await ensureCopySourcesSaved(actor, workspace, [page]);
+          if (
+            actor !== useWorkspace.getState().user?.id ||
+            workspace !== useWorkspace.getState().workspaceId ||
+            editor.isDestroyed
+          )
+            return;
+          const { position } = current();
+          await download(`/api/pages/${pageId}/website?position=${position}`, `${page.title}.zip`);
+        })().catch((error) => setError(error.message));
+      }}
+    >
+      <Download size={14} />
+    </IconButton>
+  );
   return (
     <NodeViewWrapper
       as="section"
@@ -294,73 +332,54 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
       data-web-mode={mode}
       contentEditable={false}
     >
-      <div className="web-toolbar">
-        {fullPage && page ? (
-          <PageHeader page={page} compact />
-        ) : (
-          <span className="web-component-label">
-            <Code2 size={15} />
-            {t('Web component')}
-          </span>
-        )}
-        <div className="web-mode-control" role="group" aria-label={t('Document view')}>
-          {([...(visual ? (['visual'] as const) : []), 'code', 'split', 'preview'] as const).map(
-            (view) => (
-              <button key={view} aria-pressed={mode === view} onClick={() => setMode(view)}>
-                {t(view[0].toUpperCase() + view.slice(1))}
-              </button>
-            ),
+      {!merged && (
+        <div className="web-toolbar">
+          {fullPage && page ? (
+            <PageHeader page={page} compact />
+          ) : (
+            <span className="web-component-label">
+              <Code2 size={15} />
+              {t('Web component')}
+            </span>
           )}
+          {views}
+          <span className="web-run-state">
+            {runNode && node !== runNode ? t('Source changed') : ''}
+          </span>
+          <button
+            className="button web-run"
+            onClick={() => {
+              if (mode === 'code')
+                setMode(matchMedia('(max-width:700px)').matches ? 'preview' : 'split');
+              void preview.current?.run();
+            }}
+          >
+            <Play size={14} />
+            {t('Run')}
+          </button>
+          <IconButton
+            label={t('Stop document')}
+            disabled={!running}
+            onClick={() => preview.current?.stop()}
+          >
+            <Square size={14} />
+          </IconButton>
+          {exporter}
         </div>
-        <span className="web-run-state">
-          {runNode && node !== runNode ? t('Source changed') : ''}
-        </span>
-        <button
-          className="button web-run"
-          onClick={() => {
-            if (mode === 'code')
-              setMode(matchMedia('(max-width:700px)').matches ? 'preview' : 'split');
-            void preview.current?.run();
-          }}
-        >
-          <Play size={14} />
-          {t('Run')}
-        </button>
-        <IconButton
-          label={t('Stop document')}
-          disabled={!running}
-          onClick={() => preview.current?.stop()}
-        >
-          <Square size={14} />
-        </IconButton>
-        <IconButton
-          label={t('Export document')}
-          onClick={() => {
-            void (async () => {
-              const state = useWorkspace.getState(),
-                actor = state.user?.id,
-                workspace = state.workspaceId;
-              if (!actor || !workspace || !page) return;
-              await ensureCopySourcesSaved(actor, workspace, [page]);
-              if (
-                actor !== useWorkspace.getState().user?.id ||
-                workspace !== useWorkspace.getState().workspaceId ||
-                editor.isDestroyed
-              )
-                return;
-              const { position } = current();
-              await download(
-                `/api/pages/${pageId}/website?position=${position}`,
-                `${page.title}.zip`,
-              );
-            })().catch((error) => setError(error.message));
-          }}
-        >
-          <Download size={14} />
-        </IconButton>
-      </div>
+      )}
       {visual && mode === 'visual' && (
-        <VisualBuilder document={visual} onChange={saveVisual} readOnly={!canEdit} />
+        <VisualBuilder
+          document={visual}
+          onChange={saveVisual}
+          readOnly={!canEdit}
+          leading={fullPage && page ? <PageHeader page={page} compact /> : undefined}
+          trailing={
+            <>
+              {views}
+              {exporter}
+            </>
+          }
+        />
       )}
       <div
         className="web-workspace"
@@ -421,6 +440,13 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
                   <Plus size={15} />
                 </IconButton>
                 <IconButton
+                  label={t('Insert document media')}
+                  disabled={uploading > 0}
+                  onClick={() => upload.current?.click()}
+                >
+                  <Upload size={14} />
+                </IconButton>
+                <IconButton
                   label={t('Source file actions')}
                   onClick={(event) => setMenu(event.currentTarget)}
                 >
@@ -459,20 +485,6 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
             </form>
           )}
           <NodeViewContent className="web-source-files" />
-          <footer>
-            <span>
-              {selected?.path} {t(' · UTF-8 · shared source')}
-            </span>
-            {canEdit && (
-              <IconButton
-                label={t('Insert document media')}
-                disabled={uploading > 0}
-                onClick={() => upload.current?.click()}
-              >
-                <Upload size={14} />
-              </IconButton>
-            )}
-          </footer>
         </section>
         <Preview
           ref={preview}
