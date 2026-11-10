@@ -376,4 +376,52 @@
       z-index: 2;
     }
   }
+
+  /* ---------- neutral surfaces everywhere: no warm beige, no leftover violet ---------- */
+  :root[data-theme='light'] {
+    --canvas: #ffffff;
+    --selected: rgb(24 24 27 / 0.07);
+    --soft: #f4f4f5;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme='dark']) {
+      --canvas: #ffffff;
+      --selected: rgb(24 24 27 / 0.07);
+      --soft: #f4f4f5;
+    }
+  }
+  .search-results [aria-selected='true'] {
+    background: var(--row-hover);
+    box-shadow: inset 0 0 0 1px var(--hairline);
+  }
+  .all-pages .select-trigger,
+  .all-pages select,
+  .search-dialog .select-trigger {
+    height: 36px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--soft);
+    box-shadow: inset 0 0 0 1px rgb(24 24 27 / 0.05);
+    font-size: var(--fs-ui);
+  }
+  /* The graph keeps its dark stage, in graphite, with the brand's amber as the active signal. */
+  .graph-screen {
+    --stage: #121214;
+    --soft: #1c1c1f;
+    --sidebar: #1c1c1f;
+    --ink: #f4f4f5;
+    --text2: #d4d4d8;
+    --muted: #a1a1aa;
+    --faint: #71717a;
+    --rule: #2a2a2e;
+    --rule-strong: #3a3a40;
+    --selected: #26262a;
+    --accent: #ffc247;
+    --accent-ink: #ffd27a;
+    --on-accent: #18181b;
+    --kind-document: #9dbcdb;
+    --kind-database: #e8b54c;
+    --kind-canvas: #ea94b6;
+    --kind-record: #93cba3;
+  }
 }
