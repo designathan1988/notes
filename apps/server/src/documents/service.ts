@@ -24,6 +24,42 @@ interface DocumentCommit {
   acknowledgement: DurableAcknowledgement;
   repair?: Uint8Array;
 }
+/** A document whose single root is a web page is the free-form Document type. */
+export function isWebDocument(doc: Y.Doc): boolean {
+  const first = doc.getXmlFragment('default').get(0);
+  return first instanceof Y.XmlElement && first.nodeName === 'webPage';
+}
+/**
+ * One-time repair for pages created before formats existed: a document page whose content is
+ * a web page becomes format 'web'. Recorded in schema_migrations so it runs once.
+ */
+export async function backfillPageFormats(db: Database): Promise<void> {
+  const marker = 'data-002-page-format';
+  const [done] = await db.query('SELECT 1 FROM schema_migrations WHERE version=$1', [marker]);
+  if (done) return;
+  const rows = await db.query<{ page_id: string; state: Uint8Array }>(
+    "SELECT d.page_id,d.state FROM documents d JOIN pages p ON p.id=d.page_id WHERE p.kind='document' AND p.format='blocks'",
+  );
+  const web: string[] = [];
+  for (const row of rows) {
+    const doc = new Y.Doc();
+    try {
+      Y.applyUpdate(doc, new Uint8Array(row.state));
+      if (isWebDocument(doc)) web.push(row.page_id);
+    } catch {
+      // An unreadable state is left as it is; opening the page reports it.
+    } finally {
+      doc.destroy();
+    }
+  }
+  await db.transaction(async (tx) => {
+    if (web.length) await tx.query("UPDATE pages SET format='web' WHERE id=ANY($1::text[])", [web]);
+    await tx.query(
+      'INSERT INTO schema_migrations (version, checksum) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [marker, 'data'],
+    );
+  });
+}
 export class Documents {
   constructor(readonly db: Database) {}
   async importContent(actor: Actor, pageId: string, source: Y.Doc, generation: number) {
@@ -54,6 +90,9 @@ export class Documents {
               throw new DomainError('INVALID', 'Unsupported imported document structure.');
             }),
         );
+        // The format is decided by what the page is created from: a web root makes a Document.
+        if (page.kind === 'document' && isWebDocument(current))
+          await tx.query("UPDATE pages SET format='web' WHERE id=$1", [pageId]);
         return new Documents(tx).save(actor, pageId, Y.encodeStateAsUpdate(current), generation);
       } finally {
         current.destroy();

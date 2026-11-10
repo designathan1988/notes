@@ -7,6 +7,7 @@ import { createAuth } from './identity/auth.js';
 import { createApp } from './app.js';
 import { seed } from './seed.js';
 import { seedContent } from './documents/seed-content.js';
+import { backfillPageFormats } from './documents/service.js';
 import { seedRecords } from './databases/seed.js';
 import { seedPreferences } from './identity/seed-preferences.js';
 import { storageFromEnvironment } from './attachments/storage.js';
@@ -35,6 +36,7 @@ const db = await openDatabase({
   url: process.env.DATABASE_URL,
 });
 await migrate(db);
+await backfillPageFormats(db);
 const auth = createAuth(db, { secret, origin: process.env.APP_ORIGIN });
 await seed(db, auth);
 await seedContent(db);

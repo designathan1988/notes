@@ -25,7 +25,7 @@ test('creates a web page directly from commands and inserts a website component 
     await page.goto('/#ea293f81-c7fa-4551-9da5-58b8af0510a9/document');
     await expect(page.locator('.save-status')).toHaveText('Saved');
     await page.keyboard.press('Control+Shift+p');
-    await page.getByRole('combobox', { name: 'Search commands', exact: true }).fill('New web page');
+    await page.getByRole('combobox', { name: 'Search commands', exact: true }).fill('New document');
     await page.keyboard.press('Enter');
     await expect(page.locator('.web-authoring-page')).toBeVisible();
     created = page.url().split('#')[1].split('/')[0];
@@ -131,7 +131,7 @@ test('a real website edits canonical files, runs modules and interactions, stays
   try {
     await page.goto(`/#${note.id}/document`);
     const workspace = page.locator('.web-authoring-page'),
-      frame = page.frameLocator('iframe[title="Rendered website"]');
+      frame = page.frameLocator('iframe[title="Rendered document"]');
     await expect(workspace).toBeVisible();
     const source = workspace.getByRole('textbox', { name: 'index.html source', exact: true });
     await expect(source).toContainText('Website proof');
@@ -145,8 +145,8 @@ test('a real website edits canonical files, runs modules and interactions, stays
     await expect(page.locator('.save-status')).toHaveText('Saved');
     await workspace.getByRole('button', { name: 'Run', exact: true }).click();
     await expect(frame.locator('#durable')).toHaveText('A new durable section.');
-    await workspace.getByRole('button', { name: 'Stop website', exact: true }).click();
-    await expect(page.locator('iframe[title="Rendered website"]')).toHaveCount(0);
+    await workspace.getByRole('button', { name: 'Stop document', exact: true }).click();
+    await expect(page.locator('iframe[title="Rendered document"]')).toHaveCount(0);
     await workspace.getByRole('button', { name: 'Add source file', exact: true }).click();
     await workspace.getByRole('textbox', { name: 'File path', exact: true }).fill('data.json');
     await workspace.getByRole('button', { name: 'Add file', exact: true }).click();
@@ -350,7 +350,7 @@ test('website media retains a failed original, retries once and stays readable a
     ).toContainText('.note/assets/');
     await expect(page.locator('.save-status')).toHaveText('Saved');
     await editor.getByRole('button', { name: 'Run', exact: true }).click();
-    const frame = page.frameLocator('iframe[title="Rendered website"]');
+    const frame = page.frameLocator('iframe[title="Rendered document"]');
     await expect(
       frame.getByRole('img', { name: 'A meaningful picture.png', exact: true }),
     ).toBeVisible();
@@ -358,7 +358,7 @@ test('website media retains a failed original, retries once and stays readable a
       await frame.locator('img').evaluate((image) => (image as HTMLImageElement).naturalWidth),
     ).toBe(1);
     const downloaded = page.waitForEvent('download');
-    await editor.getByRole('button', { name: 'Export website', exact: true }).click();
+    await editor.getByRole('button', { name: 'Export document', exact: true }).click();
     const path = await (await downloaded).path();
     expect(path).toBeTruthy();
     const exported = unzipSync(await readFile(path!));

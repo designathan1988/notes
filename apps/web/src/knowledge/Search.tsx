@@ -90,7 +90,7 @@ export function Search() {
           onChange={(event) => setKind(event.target.value)}
         >
           <option value="">{t('All content')}</option>
-          <option value="document">{t('Documents')}</option>
+          <option value="document">{t('Pages')}</option>
           <option value="database">{t('Databases')}</option>
           <option value="canvas">{t('Canvases')}</option>
           <option value="record">{t('Records')}</option>

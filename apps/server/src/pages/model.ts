@@ -16,6 +16,7 @@ export interface PageRow {
   title: string;
   description: string;
   kind: Page['kind'];
+  format?: string;
   visibility: Page['visibility'];
   created_by: string;
   position: number;
@@ -44,6 +45,7 @@ export function toPage(row: PageRow): Page {
     title: row.title,
     description: row.description,
     kind: row.kind,
+    format: row.format === 'web' ? 'web' : 'blocks',
     visibility: row.visibility,
     createdBy: row.created_by,
     position: row.position,

@@ -11,6 +11,7 @@ import {
   UserPlus,
   Settings,
   FileText,
+  AppWindow,
   Folder,
   LogOut,
   X,
@@ -67,9 +68,11 @@ function PageRow({
       ? Shapes
       : page.kind === 'database'
         ? Database
-        : hasChildren
-          ? Folder
-          : FileText;
+        : page.format === 'web'
+          ? AppWindow
+          : hasChildren
+            ? Folder
+            : FileText;
   return (
     <>
       <div

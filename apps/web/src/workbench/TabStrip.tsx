@@ -2,6 +2,7 @@ import { t, formatNumber } from '../i18n/index.js';
 import { useEffect, useRef, useState } from 'react';
 import {
   FileText,
+  AppWindow,
   Database,
   Network,
   Files,
@@ -164,7 +165,9 @@ export function TabStrip() {
                     ? Database
                     : tab.view === 'canvas'
                       ? Shapes
-                      : FileText;
+                      : page?.format === 'web'
+                        ? AppWindow
+                        : FileText;
         return (
           <div
             key={tab.id}

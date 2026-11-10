@@ -7,6 +7,7 @@ import { api } from '../state/api.js';
 import { useWorkspace } from '../state/store.js';
 import { pageView } from '../workbench/route.js';
 import { PageGlyph } from '../ui/PageGlyph.js';
+import { pageType, typeLabel } from '../pages/type.js';
 export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
   const [input, setInput] = useState(''),
     [query, setQuery] = useState(''),
@@ -138,7 +139,8 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
             onChange={(event) => setType(event.target.value)}
           >
             <option value="">{t('All types')}</option>
-            <option value="document">{t('Documents')}</option>
+            <option value="page">{t('Pages')}</option>
+            <option value="web">{t('Documents')}</option>
             <option value="database">{t('Databases')}</option>
             <option value="canvas">{t('Canvases')}</option>
             <option value="record">{t('Records')}</option>
@@ -172,11 +174,7 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
             key={page.id}
             aria-label={t('{{title}} {{kind}}', {
               title: page.title,
-              kind: t(
-                { document: 'document', canvas: 'canvas', database: 'database', record: 'record' }[
-                  page.kind
-                ],
-              ),
+              kind: t(typeLabel[pageType(page)]).toLocaleLowerCase(),
             })}
             data-kind={page.kind}
             onClick={() => useWorkspace.getState().navigate(page.id, pageView(page.kind))}
@@ -185,13 +183,7 @@ export function AllPages({ kind }: { kind?: 'database' | 'canvas' }) {
             <span className="explorer-name">{page.title}</span>
             <small className="explorer-location">{page.parentTitle ?? t('Workspace')}</small>
             <small className="explorer-kind" hidden={!!kind}>
-              {page.kind === 'document'
-                ? t('Document')
-                : page.kind === 'canvas'
-                  ? t('Canvas')
-                  : page.kind === 'database'
-                    ? t('Database')
-                    : t('Record')}
+              {t(typeLabel[pageType(page)])}
             </small>
             <time dateTime={page.updatedAt}>
               {formatDate(page.updatedAt, { month: 'short', day: 'numeric' })}

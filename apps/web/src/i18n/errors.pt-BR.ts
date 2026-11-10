@@ -68,7 +68,7 @@ const messages: Record<string, string> = {
   'Choose a document in the same workspace.': 'Escolha um documento no mesmo espaço de trabalho.',
   'Choose a record template.': 'Escolha um modelo de registro.',
   'Choose a saved web source to preview.': 'Escolha um código web salvo para visualizar.',
-  'Choose a saved website to export.': 'Escolha um site salvo para exportar.',
+  'Choose a saved website to export.': 'Escolha um documento salvo para exportar.',
   'Choose a supported document creation operation.':
     'Escolha uma operação de criação de documento compatível.',
   'Choose a template root.': 'Escolha a raiz de um modelo.',
@@ -216,7 +216,7 @@ const messages: Record<string, string> = {
   'The uploaded byte count does not match the file. Retry the upload.':
     'A quantidade de bytes enviados não corresponde ao arquivo. Tente enviar novamente.',
   'The web source was removed or moved.': 'O código web foi removido ou movido.',
-  'The website source was removed or moved.': 'O código do site foi removido ou movido.',
+  'The website source was removed or moved.': 'O código do documento foi removido ou movido.',
   'This action is unavailable.': 'Esta ação está indisponível.',
   'This asset does not belong to the previewed page.':
     'Este recurso não pertence à página da prévia.',
@@ -278,8 +278,9 @@ const messages: Record<string, string> = {
     'Esta visualização mudou ou foi removida. Recarregue antes de editá-la.',
   'This view changed or was removed. Reload before removing it.':
     'Esta visualização mudou ou foi removida. Recarregue antes de removê-la.',
-  'This website preview expired or stopped.': 'Esta prévia do site expirou ou foi interrompida.',
-  'This website preview is unavailable.': 'Esta prévia do site está indisponível.',
+  'This website preview expired or stopped.':
+    'Esta prévia do documento expirou ou foi interrompida.',
+  'This website preview is unavailable.': 'Esta prévia do documento está indisponível.',
   'This workspace has reached its storage allowance.':
     'Este espaço de trabalho atingiu o limite de armazenamento.',
   'Unknown page type.': 'Tipo de página desconhecido.',

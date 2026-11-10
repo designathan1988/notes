@@ -58,7 +58,8 @@ export function pageRoutes(app: FastifyInstance, pages: Pages) {
       request.actor,
       request.params.workspace,
       Number(request.query.offset) || 0,
-      ['document', 'database', 'record', 'canvas'].includes(request.query.kind ?? '')
+      // 'page' and 'web' are the two formats of the document kind (Page and Document).
+      ['page', 'web', 'document', 'database', 'record', 'canvas'].includes(request.query.kind ?? '')
         ? request.query.kind!
         : '',
       request.query.q ?? '',

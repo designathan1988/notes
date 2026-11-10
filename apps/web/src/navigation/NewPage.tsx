@@ -12,13 +12,21 @@ export function NewPage() {
     event.preventDefault();
     setBusy(true);
     const data = new FormData(event.currentTarget);
+    const input = {
+      title: String(data.get('title')),
+      parentId: String(data.get('parent')) || undefined,
+      visibility: String(data.get('visibility')) as 'workspace' | 'private',
+    };
     try {
-      await state.createPage({
-        title: String(data.get('title')),
-        parentId: String(data.get('parent')) || undefined,
-        kind: String(data.get('kind')) as 'document' | 'database',
-        visibility: String(data.get('visibility')) as 'workspace' | 'private',
-      });
+      // A Document is a document page created from free-form content.
+      if (data.get('kind') === 'web') {
+        await state.createWebPage(input.parentId ?? null, input);
+        state.openDialog(null);
+      } else
+        await state.createPage({
+          ...input,
+          kind: String(data.get('kind')) as 'document' | 'database' | 'canvas',
+        });
     } catch (error) {
       setError((error as Error).message);
       setBusy(false);
@@ -26,19 +34,6 @@ export function NewPage() {
   }
   return (
     <Dialog title={t('Create a page')} onClose={() => state.openDialog(null)}>
-      <button
-        className="button new-website-action"
-        disabled={busy}
-        onClick={() => {
-          setBusy(true);
-          void state.createWebPage(state.newPageParentId).catch((error) => {
-            setError(error.message);
-            setBusy(false);
-          });
-        }}
-      >
-        {t('New web page')}
-      </button>
       <form onSubmit={submit}>
         <label>
           {t('Title')}
@@ -47,7 +42,8 @@ export function NewPage() {
         <label>
           {t('Page type')}
           <Select name="kind" defaultValue={state.newPageKind}>
-            <option value="document">{t('Document')}</option>
+            <option value="document">{t('Page')}</option>
+            <option value="web">{t('Document')}</option>
             <option value="database">{t('Database')}</option>
             <option value="canvas">{t('Canvas')}</option>
           </Select>

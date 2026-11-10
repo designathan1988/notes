@@ -109,10 +109,10 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
   }, [operationKind]);
   function current() {
     const position = getPos();
-    if (position === undefined || editor.isDestroyed) throw new Error('This website was removed.');
+    if (position === undefined || editor.isDestroyed) throw new Error('This document was removed.');
     const value = editor.state.doc.nodeAt(position);
     if (!value || !['webPage', 'webComponent'].includes(value.type.name))
-      throw new Error('This website was removed.');
+      throw new Error('This document was removed.');
     return { position, value };
   }
   function edit(work: () => void) {
@@ -258,7 +258,7 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
             {t('Web component')}
           </span>
         )}
-        <div className="web-mode-control" role="group" aria-label={t('Website view')}>
+        <div className="web-mode-control" role="group" aria-label={t('Document view')}>
           {(['code', 'split', 'preview'] as const).map((view) => (
             <button key={view} aria-pressed={mode === view} onClick={() => setMode(view)}>
               {t(view[0].toUpperCase() + view.slice(1))}
@@ -280,14 +280,14 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
           {t('Run')}
         </button>
         <IconButton
-          label={t('Stop website')}
+          label={t('Stop document')}
           disabled={!running}
           onClick={() => preview.current?.stop()}
         >
           <Square size={14} />
         </IconButton>
         <IconButton
-          label={t('Export website')}
+          label={t('Export document')}
           onClick={() => {
             void (async () => {
               const state = useWorkspace.getState(),
@@ -318,14 +318,14 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
       >
         <section
           className="web-code-pane"
-          aria-label={t('Website source files')}
+          aria-label={t('Document source files')}
           hidden={mode === 'preview'}
         >
           <div className="web-file-bar">
             <div
               className="web-file-tabs"
               role="tablist"
-              aria-label={t('Website files')}
+              aria-label={t('Document files')}
               onKeyDown={(event) => {
                 if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
                 event.preventDefault();
@@ -414,7 +414,7 @@ export function WebAuthoring({ node, editor, getPos, pageId }: NodeViewProps & {
             </span>
             {canEdit && (
               <IconButton
-                label={t('Insert website media')}
+                label={t('Insert document media')}
                 disabled={uploading > 0}
                 onClick={() => upload.current?.click()}
               >

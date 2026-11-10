@@ -69,7 +69,7 @@ export const Preview = forwardRef<
       const position = getPos(),
         node = position === undefined ? null : editor.state.doc.nodeAt(position);
       if (!node || !['webPage', 'webComponent'].includes(node.type.name))
-        throw new Error('The website source was removed.');
+        throw new Error('The document source was removed.');
       const fingerprint = await sourceFingerprint(webSource(node.toJSON()));
       const next = await api<Ticket>(`/pages/${pageId}/web-preview`, {
         method: 'POST',
@@ -146,7 +146,7 @@ export const Preview = forwardRef<
     };
   }, [ticket]);
   return (
-    <section className="web-preview" aria-label={t('Website preview')} hidden={!visible}>
+    <section className="web-preview" aria-label={t('Document preview')} hidden={!visible}>
       <div className="web-viewport-tools">
         <span>{t('Preview')}</span>
         <div role="group" aria-label={t('Preview width')}>
@@ -169,7 +169,7 @@ export const Preview = forwardRef<
         {ticket ? (
           <iframe
             ref={frame}
-            title={t('Rendered website')}
+            title={t('Rendered document')}
             src={ticket.url}
             sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups"
             allow="fullscreen; clipboard-write"
@@ -179,10 +179,10 @@ export const Preview = forwardRef<
         ) : (
           <div className="web-preview-empty">
             <p>
-              {starting ? t('Preparing the saved website…') : t('Run the website to preview it.')}
+              {starting ? t('Preparing the saved document…') : t('Run the document to preview it.')}
             </p>
             <button className="button" disabled={starting} onClick={() => void run()}>
-              {t('Run website')}
+              {t('Run document')}
             </button>
           </div>
         )}

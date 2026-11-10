@@ -1,5 +1,5 @@
 import { t, formatDate, formatNumber, formatRelative } from '../i18n/index.js';
-import { Database, FileText, LayoutTemplate, Shapes, Star } from 'lucide-react';
+import { AppWindow, Database, FileText, LayoutTemplate, Shapes, Star } from 'lucide-react';
 import type { Page, PageKind } from '@note/contracts';
 import { useEffect, useState } from 'react';
 import { useWorkspace } from '../state/store.js';
@@ -86,6 +86,12 @@ export function Home() {
     void state.createQuickPage(null, kind).catch(state.setError);
   const actions = [
     { label: 'Page', kind: 'document', Icon: FileText, run: create('document') },
+    {
+      label: 'Document',
+      kind: 'web',
+      Icon: AppWindow,
+      run: () => void state.createWebPage().catch(state.setError),
+    },
     { label: 'Database', kind: 'database', Icon: Database, run: create('database') },
     { label: 'Canvas', kind: 'canvas', Icon: Shapes, run: create('canvas') },
     {

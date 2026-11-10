@@ -61,7 +61,10 @@ export interface WorkbenchSlice {
     parentId?: string | null,
     kind?: 'document' | 'database' | 'canvas',
   ): Promise<void>;
-  createWebPage(parentId?: string | null): Promise<void>;
+  createWebPage(
+    parentId?: string | null,
+    options?: { title?: string; visibility?: 'workspace' | 'private' },
+  ): Promise<void>;
 }
 export function workbenchSlice(
   set: (partial: Partial<WorkspaceState>) => void,
@@ -416,15 +419,16 @@ export function workbenchSlice(
       });
       persist();
     },
-    async createWebPage(parentId = null) {
+    async createWebPage(parentId = null, options = {}) {
       const user = get().user?.id,
         workspace = get().workspaceId;
       const { newWebContent } = await import('@note/editor/web');
       if (get().user?.id !== user || get().workspaceId !== workspace) return;
       const page = await get().createPage(
         {
-          title: t('Untitled site'),
+          title: options.title?.trim() || t('Untitled document'),
           parentId: parentId ?? undefined,
+          visibility: options.visibility,
           kind: 'document',
           content: newWebContent(),
           requestId: crypto.randomUUID(),

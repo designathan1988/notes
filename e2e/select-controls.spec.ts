@@ -28,7 +28,7 @@ test('themed selects support labels, keyboard navigation, dialog dismissal and f
   await expect(kind).toContainText('Canvas');
   await kind.press('Home');
   await kind.press('Enter');
-  await expect(kind).toContainText('Document');
+  await expect(kind).toContainText('Page');
   await kind.press('d');
   await kind.press('Enter');
   await expect(kind).toContainText('Document');

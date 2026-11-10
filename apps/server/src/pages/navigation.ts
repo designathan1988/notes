@@ -176,7 +176,7 @@ export class Navigation {
     const order = sort === 'title' ? 'lower(p.title)' : 'p.updated_at';
     const orientation = direction === 'asc' ? 'ASC' : 'DESC';
     const rows = await this.db.query<VisiblePageRow & { parent_title: string | null }>(
-      `${scope.sql} SELECT p.*,parent.title AS parent_title FROM visible p LEFT JOIN visible parent ON parent.id=p.parent_id WHERE (p.template_root_id IS NULL OR p.template_root_id=$6) AND ($4='' OR p.kind=$4) AND p.title ILIKE $5 ORDER BY ${order} ${orientation},p.id LIMIT 51 OFFSET $3`,
+      `${scope.sql} SELECT p.*,parent.title AS parent_title FROM visible p LEFT JOIN visible parent ON parent.id=p.parent_id WHERE (p.template_root_id IS NULL OR p.template_root_id=$6) AND ($4='' OR p.kind=$4 OR ($4='page' AND p.kind='document' AND p.format='blocks') OR ($4='web' AND p.kind='document' AND p.format='web')) AND p.title ILIKE $5 ORDER BY ${order} ${orientation},p.id LIMIT 51 OFFSET $3`,
       [
         ...scope.params,
         Math.max(0, Math.min(100000, offset)),

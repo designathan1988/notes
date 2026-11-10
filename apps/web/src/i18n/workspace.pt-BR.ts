@@ -191,7 +191,7 @@ const messages: Record<string, string> = {
   'New subpage': 'Nova subpágina',
   'New tab': 'Nova aba',
   'New to Mosaic?': 'Novo no Mosaic?',
-  'New web page': 'Nova página web',
+  'New document': 'Novo documento',
   'New workspace': 'Novo espaço de trabalho',
   Next: 'Próxima',
   'No canvases match these filters.': 'Nenhum quadro corresponde a estes filtros.',
@@ -327,7 +327,7 @@ const messages: Record<string, string> = {
   'Untitled canvas': 'Quadro sem título',
   'Untitled group': 'Grupo sem título',
   'Untitled database': 'Banco de dados sem título',
-  'Untitled site': 'Site sem título',
+  'Untitled document': 'Documento sem título',
   'Use another account': 'Usar outra conta',
   'Verify email': 'Verificar e-mail',
   'Verify {{email}} before joining this workspace.':

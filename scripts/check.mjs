@@ -118,7 +118,13 @@ function routesNear(file) {
 }
 function affectedSpecs() {
   const hit = new Map();
-  const add = (spec, reason) => hit.set(spec, hit.get(spec) ?? reason);
+  // How many changed files each spec loads directly: the strongest evidence it covers the change.
+  const direct = new Map();
+  const add = (spec, reason) => {
+    hit.set(spec, hit.get(spec) ?? reason);
+    if (reason.startsWith('loads ') || reason === 'spec changed')
+      direct.set(spec, (direct.get(spec) ?? 0) + 1);
+  };
   for (const file of changed) {
     if (/^e2e\/.*\.spec\.ts$/.test(file)) add(file, 'spec changed');
     else if (
@@ -145,7 +151,7 @@ function affectedSpecs() {
   }
   // Specs never recorded cannot be ruled out.
   if (hit.size) for (const spec of allSpecs) if (!map[spec]) add(spec, 'not in the impact map yet');
-  return hit;
+  return { hit, direct };
 }
 
 const clean = () => rmSync('.runtime-e2e', { recursive: true, force: true });
@@ -153,17 +159,20 @@ if (full) {
   clean();
   run('browser specs (all)', '@playwright/test/cli.js', ['test']);
 } else {
-  const hit = affectedSpecs();
+  const { hit, direct } = affectedSpecs();
   if (!hit.size) console.log('ok   browser specs: no spec is affected by this change');
   else {
-    // The narrowest specs first: the fewer files a spec loads, the more it is about the change.
+    // Specs that load the most changed files first; among equals, the narrowest spec.
     const ordered = [...hit.keys()].sort(
-      (a, b) => (map[a]?.files.length ?? 0) - (map[b]?.files.length ?? 0),
+      (a, b) =>
+        (direct.get(b) ?? 0) - (direct.get(a) ?? 0) ||
+        (map[a]?.files.length ?? 0) - (map[b]?.files.length ?? 0),
     );
     const chosen = [];
-    let spent = 0;
+    let spent = 20000; // starting the test server
     for (const spec of ordered) {
-      const cost = map[spec]?.ms ?? 15000;
+      // Recorded test time plus what each spec costs in setup around it.
+      const cost = (map[spec]?.ms ?? 15000) * 1.3 + 1500;
       if (chosen.length && spent + cost > budget) continue;
       chosen.push(spec);
       spent += cost;

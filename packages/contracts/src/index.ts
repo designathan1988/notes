@@ -2,6 +2,11 @@ export type Role = 'owner' | 'admin' | 'editor' | 'viewer';
 export * from './appearance.js';
 import type { AppearanceOverrides } from './appearance.js';
 export type PageKind = 'document' | 'database' | 'record' | 'canvas';
+/**
+ * How a page of kind 'document' is written. People see two types: a Page ('blocks': text in
+ * blocks) and a Document ('web': a free-form page). Other kinds are always 'blocks'.
+ */
+export type PageFormat = 'blocks' | 'web';
 export const DOCUMENT_ACCESS_CHANGED = 'document-access-changed';
 export interface Actor {
   userId: string;
@@ -28,6 +33,7 @@ export interface Page {
   title: string;
   description: string;
   kind: PageKind;
+  format?: PageFormat;
   visibility: 'workspace' | 'private';
   createdBy: string;
   position: number;
