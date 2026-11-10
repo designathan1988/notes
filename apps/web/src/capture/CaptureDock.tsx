@@ -13,9 +13,9 @@ const kinds: { kind: Kind; label: string; Icon: typeof FileText }[] = [
 ];
 
 /**
- * A second brain lives or dies by capture. The dock floats at the bottom of every reading view:
- * type a thought, press Enter, and it becomes a note without leaving what you were doing.
- * It opens fast and closes with a grace period, so moving the pointer away never loses it.
+ * A second brain lives or dies by capture. A quiet button waits in the bottom-right corner of
+ * every reading view; it opens the capture panel, where a thought typed and sent with Enter
+ * becomes a note without leaving what you were doing. Ctrl/⌘ + . opens it from anywhere.
  */
 export function CaptureDock() {
   const [text, setText] = useState('');
@@ -30,6 +30,7 @@ export function CaptureDock() {
   const input = useRef<HTMLInputElement>(null);
   const root = useRef<HTMLFormElement>(null);
   const closing = useRef<number>(0);
+  const focusOnOpen = useRef(false);
   // The close check runs later than the render that scheduled it, so it reads the live text.
   const current = useRef('');
   current.current = text;
@@ -39,6 +40,7 @@ export function CaptureDock() {
     const key = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key === '.') {
         event.preventDefault();
+        focusOnOpen.current = true;
         setOpen(true);
         input.current?.focus();
       }
@@ -46,6 +48,12 @@ export function CaptureDock() {
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
   }, []);
+  useEffect(() => {
+    if (open && focusOnOpen.current) {
+      focusOnOpen.current = false;
+      input.current?.focus();
+    }
+  }, [open]);
   useEffect(() => {
     if (!saved) return;
     const timer = window.setTimeout(() => setSaved(null), 5000);
@@ -93,76 +101,92 @@ export function CaptureDock() {
   }
 
   return (
-    <form
-      ref={root}
-      className="capture-dock"
-      data-open={open || undefined}
-      aria-label={t('Capture')}
-      onPointerEnter={show}
-      onPointerLeave={hide}
-      onFocus={show}
-      onBlur={hide}
-      onSubmit={(event) => {
-        event.preventDefault();
-        void capture(false);
-      }}
-    >
-      <div className="capture-kinds" role="radiogroup" aria-label={t('Capture as')}>
-        {kinds.map(({ kind: value, label, Icon }) => (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={kind === value}
-            data-kind={value}
-            onClick={() => {
-              setKind(value);
-              input.current?.focus();
-            }}
-          >
-            <Icon size={13} />
-            {t(label)}
-          </button>
-        ))}
-      </div>
-      <div className="capture-field">
-        <Feather size={16} aria-hidden="true" />
-        <input
-          ref={input}
-          value={text}
-          readOnly={busy}
-          aria-busy={busy || undefined}
+    <>
+      {!open && (
+        <button
+          type="button"
+          className="capture-trigger"
           aria-label={t('Capture a thought')}
-          placeholder={t('Jot something down…')}
-          onChange={(event) => setText(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') {
-              event.currentTarget.blur();
-              setOpen(false);
-            }
-            if (event.key === 'Enter' && (event.shiftKey || event.ctrlKey || event.metaKey)) {
-              event.preventDefault();
-              void capture(true);
-            }
+          title={`${t('Jot something down…')} (Ctrl .)`}
+          onClick={() => {
+            focusOnOpen.current = true;
+            show();
           }}
-        />
-        {saved ? (
-          <button
-            type="button"
-            className="capture-saved"
-            onClick={() => {
-              useWorkspace.getState().openTab(saved.id, pageView(saved.kind));
-              setSaved(null);
+        >
+          <Feather size={16} aria-hidden="true" />
+        </button>
+      )}
+      <form
+        ref={root}
+        className="capture-dock"
+        data-open={open || undefined}
+        aria-label={t('Capture')}
+        onPointerEnter={show}
+        onPointerLeave={hide}
+        onFocus={show}
+        onBlur={hide}
+        onSubmit={(event) => {
+          event.preventDefault();
+          void capture(false);
+        }}
+      >
+        <div className="capture-kinds" role="radiogroup" aria-label={t('Capture as')}>
+          {kinds.map(({ kind: value, label, Icon }) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={kind === value}
+              data-kind={value}
+              onClick={() => {
+                setKind(value);
+                input.current?.focus();
+              }}
+            >
+              <Icon size={13} />
+              {t(label)}
+            </button>
+          ))}
+        </div>
+        <div className="capture-field">
+          <Feather size={16} aria-hidden="true" />
+          <input
+            ref={input}
+            value={text}
+            readOnly={busy}
+            aria-busy={busy || undefined}
+            aria-label={t('Capture a thought')}
+            placeholder={t('Jot something down…')}
+            onChange={(event) => setText(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.currentTarget.blur();
+                setOpen(false);
+              }
+              if (event.key === 'Enter' && (event.shiftKey || event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                void capture(true);
+              }
             }}
-          >
-            <Check size={14} />
-            <span>{t('Saved')}</span>
-            <ArrowUpRight size={13} />
-          </button>
-        ) : (
-          <kbd className="capture-hint">{open ? '↵' : 'Ctrl .'}</kbd>
-        )}
-      </div>
-    </form>
+          />
+          {saved ? (
+            <button
+              type="button"
+              className="capture-saved"
+              onClick={() => {
+                useWorkspace.getState().openTab(saved.id, pageView(saved.kind));
+                setSaved(null);
+              }}
+            >
+              <Check size={14} />
+              <span>{t('Saved')}</span>
+              <ArrowUpRight size={13} />
+            </button>
+          ) : (
+            <kbd className="capture-hint">{open ? '↵' : 'Ctrl .'}</kbd>
+          )}
+        </div>
+      </form>
+    </>
   );
 }
