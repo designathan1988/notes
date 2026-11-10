@@ -42,9 +42,9 @@
 
   /* ---------- the bar on the ground: one control size, no outlined odd one ---------- */
   .topbar .icon-button {
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
+    width: 30px;
+    height: 28px;
+    border-radius: 8px;
     color: var(--text2);
   }
   .topbar .icon-button:hover:not(:disabled),
@@ -63,10 +63,10 @@
   }
   .share-button,
   .share-button:hover:not(:disabled) {
-    height: 32px;
-    padding: 0 12px 0 10px;
+    height: 28px;
+    padding: 0 10px 0 8px;
     border: 0;
-    border-radius: 9px;
+    border-radius: 8px;
     background: transparent;
     color: var(--text2);
     font-size: var(--fs-ui);
@@ -107,8 +107,8 @@
     content: '';
     position: absolute;
     left: -3px;
-    top: 9px;
-    bottom: 9px;
+    top: 6px;
+    bottom: 6px;
     width: 1px;
     background: var(--hairline);
     transition: opacity 160ms var(--ease);
@@ -161,9 +161,6 @@
     width: 16px;
     height: 16px;
     color: var(--k, var(--muted));
-  }
-  .sidebar-panel .tree-row.selected .tree-page > svg {
-    color: var(--on-accent);
   }
 
   /* ---------- the work area: when details are open, they are their own pane ---------- */
@@ -255,14 +252,13 @@
     border-radius: 8px;
     font-size: var(--fs-ui);
     color: var(--text2);
-    transition: background-color 280ms var(--ease) 90ms;
+    transition: background-color 140ms var(--ease);
   }
   .context-panel :is(.context-outline, .connected-list) > button:hover,
   .context-panel .mention:hover {
     background: var(--row-hover);
     color: var(--ink);
-    transition-duration: 70ms;
-    transition-delay: 0ms;
+    transition-duration: 0ms;
   }
   .context-panel :is(.context-outline, .connected-list) {
     display: flex;
@@ -423,5 +419,134 @@
     --kind-database: #e8b54c;
     --kind-canvas: #ea94b6;
     --kind-record: #93cba3;
+  }
+
+  /* ---------- shell geometry ----------
+     The mark, the workspace name and the tabs share one centre line (y = 30).
+     Inside the pages pane everything starts at the same gutter: 10px pane + 8px row. */
+  :root {
+    --rail: 48px;
+    --panel: 244px;
+  }
+  .sidebar-rail {
+    gap: 2px;
+    padding: 19px 0 8px;
+  }
+  .rail-brand {
+    height: 22px;
+    margin-bottom: 12px;
+    color: var(--ink);
+  }
+  .sidebar-rail .rail-brand svg {
+    width: 30px;
+    height: 22.5px;
+  }
+  /* Rail icons: heavier strokes in the text colour, so they read at a glance. */
+  .sidebar-rail svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2;
+  }
+  .sidebar-rail .workspace-destinations {
+    gap: 2px;
+  }
+  .sidebar-rail
+    :is(
+      .search-trigger,
+      .workspace-destinations > button,
+      .rail-pages,
+      .icon-button,
+      .account-trigger
+    ) {
+    width: 34px;
+    height: 32px;
+    border-radius: 8px;
+    color: var(--text2);
+    transition: background-color 140ms var(--ease);
+  }
+  .sidebar-rail
+    :is(.search-trigger, .workspace-destinations > button, .rail-pages, .icon-button):hover {
+    background: var(--row-hover);
+    box-shadow: none;
+    color: var(--ink);
+    transition-duration: 0ms;
+  }
+  /* Where you are: the same raised light tile as the current page in the list. */
+  .sidebar-rail .workspace-destinations > button[aria-current='page'],
+  .sidebar-rail .rail-pages[aria-pressed='true'] {
+    background: var(--row-selected);
+    box-shadow: var(--row-selected-edge);
+    color: var(--ink);
+  }
+  .sidebar-rail
+    :is(.workspace-destinations > button[aria-current='page'], .rail-pages[aria-pressed='true'])
+    svg {
+    stroke-width: 2.3;
+  }
+  .sidebar-rail .rail-pages {
+    margin-top: 6px;
+  }
+  .sidebar-rail .avatar {
+    width: 26px;
+    height: 26px;
+  }
+  @media (min-width: 701px) {
+    .sidebar-panel {
+      padding: 5px 10px 0;
+    }
+  }
+  .sidebar-panel .workspace-identity {
+    min-height: 34px;
+    margin: 0 0 6px;
+    padding: 0;
+    box-shadow: none;
+  }
+  .sidebar-panel .workspace-select {
+    height: 34px;
+    padding: 0 8px;
+    border-radius: 8px;
+  }
+  .sidebar-panel .sidebar-scroll {
+    border-top: 0;
+  }
+  .sidebar-panel .section-label {
+    margin: 14px 0 2px;
+    padding: 0 4px 0 8px;
+  }
+  .sidebar-panel .sidebar-scroll > :first-child.section-label,
+  .sidebar-panel .sidebar-scroll > :first-child > .section-label:first-child {
+    margin-top: 4px;
+  }
+  .sidebar-panel .favorites > button {
+    gap: 8px;
+    padding: 0 8px 0 24px;
+  }
+  .sidebar-panel .section-label,
+  .sidebar-panel .section-label.favorites-label {
+    border-top: 0;
+  }
+  .sidebar-panel .tree-toggle {
+    width: 16px;
+    min-width: 16px;
+    margin-left: 4px;
+  }
+  .sidebar-panel .tree-page {
+    gap: 8px;
+    padding-left: 2px;
+  }
+  .sidebar-panel .page-tree {
+    padding-top: 0;
+  }
+
+  /* The bar: history, tabs and actions sit on the same line as the tab labels. */
+  @media (min-width: 701px) {
+    .topbar > :is(.history-controls, .topbar-actions) {
+      align-self: flex-end;
+      padding-bottom: 2px;
+    }
+    .topbar .workbench-strip > .icon-button {
+      align-self: flex-end;
+      margin-bottom: 2px;
+    }
   }
 }

@@ -4,7 +4,7 @@ const hubs = [
   {
     x: 150,
     y: 110,
-    color: '#a297ff',
+    color: '#9dbcdb',
     label: 'Write in blocks',
     leaves: [
       [60, 60],
@@ -14,7 +14,7 @@ const hubs = [
   {
     x: 400,
     y: 120,
-    color: '#f47fb1',
+    color: '#ea94b6',
     label: 'Think on free-form canvases',
     leaves: [
       [480, 60],
@@ -24,7 +24,7 @@ const hubs = [
   {
     x: 390,
     y: 300,
-    color: '#f5b83d',
+    color: '#e8b54c',
     label: 'Organize in tables, boards and calendars',
     leaves: [
       [490, 350],
@@ -34,7 +34,7 @@ const hubs = [
   {
     x: 140,
     y: 300,
-    color: '#4fd69a',
+    color: '#93cba3',
     label: 'See how everything connects',
     leaves: [
       [50, 340],
@@ -43,7 +43,7 @@ const hubs = [
   },
 ] as const;
 
-/** The product's own picture: four kinds of work joined around the Mosaic mark. */
+/** The product's own picture: four kinds of work joined around the Sinapta mark. */
 export function AuthIllustration() {
   return (
     <svg className="auth-illustration" viewBox="0 0 540 410" aria-hidden="true">
@@ -52,7 +52,7 @@ export function AuthIllustration() {
           <feGaussianBlur stdDeviation="10" />
         </filter>
       </defs>
-      <g stroke="#3a3750" strokeWidth="1.2">
+      <g stroke="#3a3a40" strokeWidth="1.2">
         {hubs.map((hub) => (
           <g key={hub.label}>
             <line x1={270} y1={210} x2={hub.x} y2={hub.y} />
@@ -62,21 +62,29 @@ export function AuthIllustration() {
           </g>
         ))}
       </g>
-      <g transform="translate(270 210) rotate(45)">
-        <rect
-          x="-44"
-          y="-44"
-          width="86"
-          height="86"
-          rx="18"
-          fill="#8b7dff"
-          filter="url(#auth-glow)"
-          opacity=".4"
-        />
-        <rect x="-38" y="-38" width="35" height="35" rx="8" fill="var(--brand-iris)" />
-        <rect x="3" y="-38" width="35" height="35" rx="8" fill="var(--brand-rose)" />
-        <rect x="3" y="3" width="35" height="35" rx="8" fill="var(--brand-amber)" />
-        <rect x="-38" y="3" width="35" height="35" rx="8" fill="var(--brand-mint)" />
+      <circle cx="270" cy="210" r="30" fill="#f4f4f5" filter="url(#auth-glow)" opacity=".18" />
+      <g transform="translate(270 210) scale(2.6) translate(-24 -24)">
+        <g
+          fill="none"
+          stroke="#18181b"
+          strokeWidth="11"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M8.5 13.5c7.4 0 12.6 4.4 13.6 10.5-1 6.1-6.2 10.5-13.6 10.5" />
+          <path d="M39.5 13.5c-7.4 0-12.6 4.4-13.6 10.5 1 6.1 6.2 10.5 13.6 10.5" />
+        </g>
+        <g
+          fill="none"
+          stroke="#f4f4f5"
+          strokeWidth="6.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M8.5 13.5c7.4 0 12.6 4.4 13.6 10.5-1 6.1-6.2 10.5-13.6 10.5" />
+          <path d="M39.5 13.5c-7.4 0-12.6 4.4-13.6 10.5 1 6.1 6.2 10.5 13.6 10.5" />
+        </g>
+        <circle cx="24" cy="24" r="3.6" fill="#f4f4f5" />
       </g>
       {hubs.map((hub) => (
         <g key={hub.label}>
@@ -96,11 +104,11 @@ export function AuthIllustration() {
             x={hub.x}
             y={hub.y < 200 ? hub.y - 22 : hub.y + 32}
             textAnchor="middle"
-            fill="#edecf5"
+            fill="#f4f4f5"
             fontSize="13"
             fontWeight="500"
             paintOrder="stroke"
-            stroke="#12111b"
+            stroke="#18181b"
             strokeWidth="5"
             strokeLinejoin="round"
           >
