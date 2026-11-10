@@ -10,6 +10,12 @@ import { pageType, typeLabel } from '../pages/type.js';
 import { WorkspaceMap } from './WorkspaceMap.js';
 import { MosaicPattern } from '../ui/MosaicPattern.js';
 
+const kindSingular: Record<PageKind, string> = {
+  document: 'Page',
+  database: 'Database',
+  canvas: 'Canvas',
+  record: 'Record',
+};
 const kindPlural: Record<PageKind, string> = {
   document: 'Pages',
   database: 'Databases',
@@ -245,7 +251,7 @@ export function Home() {
                 {(['document', 'database', 'canvas', 'record'] as const)
                   .map(
                     (kind) =>
-                      `${formatNumber(overview.counts[kind])} ${t(kindPlural[kind]).toLowerCase()}`,
+                      `${formatNumber(overview.counts[kind])} ${t((overview.counts[kind] === 1 ? kindSingular : kindPlural)[kind]).toLowerCase()}`,
                   )
                   .join(' · ')}
               </p>

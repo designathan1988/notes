@@ -309,6 +309,7 @@ const messages: Record<string, string> = {
   reply: 'resposta',
   '{{value0}} group': 'Grupo {{value0}}',
   '{{value0}} results': '{{value0}} resultados',
+  '{{value0}} result': '{{value0}} resultado',
   '”? Your current document will remain available as “Before restore” in history.':
     '”? Seu documento atual permanecerá disponível como “Antes da restauração” no histórico.',
   '↑ ↓ to navigate · Enter to open': '↑ ↓ para navegar · Enter para abrir',

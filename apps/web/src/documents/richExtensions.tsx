@@ -1,4 +1,4 @@
-import { useLocale } from '../i18n/index.js';
+import { t, useLocale } from '../i18n/index.js';
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react';
 import { editorExtensions, databaseView } from '@note/editor/schema';
 import { toggleBlock } from '@note/editor/structure';
@@ -20,12 +20,26 @@ function EmbeddedDatabase({ node }: NodeViewProps) {
 }
 /** Shared rich block rendering for continuous documents and spatial card bodies. */
 export const richEditorExtensions = (pageId = '') => [
-  ...editorExtensions().filter(
-    (extension) =>
-      !['databaseView', 'toggleBlock', 'webPage', 'webComponent', 'webFile'].includes(
-        extension.name,
-      ),
-  ),
+  ...editorExtensions()
+    .filter(
+      (extension) =>
+        !['databaseView', 'toggleBlock', 'webPage', 'webComponent', 'webFile'].includes(
+          extension.name,
+        ),
+    )
+    // The to-do checkbox is named in the reader's language (Tiptap's default label is English).
+    .map((extension) =>
+      extension.name === 'taskItem'
+        ? extension.configure({
+            a11y: {
+              checkboxLabel: (node: { textContent: string }, checked: boolean) =>
+                t(checked ? 'Done: {{text}}' : 'To-do: {{text}}', {
+                  text: node.textContent || t('empty to-do'),
+                }),
+            },
+          })
+        : extension,
+    ),
   toggleBlock.extend({
     addNodeView: () => ReactNodeViewRenderer(ToggleSection, interactiveNodeView),
   }),

@@ -210,6 +210,7 @@ const messages: Record<string, string> = {
   'Open comments': 'Abrir comentários',
   'Open databases': 'Abrir bancos de dados',
   'Open canvases': 'Abrir quadros',
+  'Add comment': 'Adicionar comentário',
   'Open demo workspace': 'Abrir espaço de trabalho de demonstração',
   'Open in new tab': 'Abrir em nova aba',
   'Open knowledge graph': 'Abrir grafo de conhecimento',

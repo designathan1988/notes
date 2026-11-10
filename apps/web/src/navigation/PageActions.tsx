@@ -21,16 +21,24 @@ import type { Page } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { Popover } from '../ui/Popover.js';
 import { download } from '../settings/DataSettings.js';
-import { pageView } from '../workbench/route.js';
+import { openInBrowserTab, pageView } from '../workbench/route.js';
+/**
+ * The page menu. From the page's own bar it holds everything about the page; from a row in the
+ * sidebar it is Notion's short row menu: favourite, copy link, duplicate, rename, move, new tab,
+ * trash. Workspace actions and the page's panels stay in the page's own menu.
+ */
 export function PageActions({
   page,
   anchor,
   close,
+  variant = 'page',
 }: {
   page: Page;
   anchor: HTMLElement | null;
   close(): void;
+  variant?: 'page' | 'sidebar';
 }) {
+  const full = variant === 'page';
   const state = useWorkspace(),
     readOnly = state.workspaces.find((item) => item.id === state.workspaceId)?.role === 'viewer';
   const run = (action: () => void | Promise<void>) => {
@@ -40,11 +48,13 @@ export function PageActions({
   return (
     <Popover label={t('Page actions')} anchor={anchor} close={close}>
       <div className="menu-list">
-        <button onClick={() => run(() => state.openDialog('invite'))}>
-          <Users />
-          {t('Invite to workspace')}
-        </button>
-        {['document', 'record'].includes(page.kind) && (
+        {full && (
+          <button onClick={() => run(() => state.openDialog('invite'))}>
+            <Users />
+            {t('Invite to workspace')}
+          </button>
+        )}
+        {full && ['document', 'record'].includes(page.kind) && (
           <>
             <button
               onClick={() =>
@@ -84,7 +94,7 @@ export function PageActions({
             <hr />
           </>
         )}
-        <button onClick={() => run(() => state.openTab(page.id))}>
+        <button onClick={() => run(() => openInBrowserTab(page.id, pageView(page.kind)))}>
           <ExternalLink />
           {t('Open in new tab')}
         </button>
@@ -158,40 +168,44 @@ export function PageActions({
           <FileText />
           {t('Export text as Markdown')}
         </button>
-        <hr />
-        <button
-          onClick={() =>
-            run(() => {
-              state.navigate(page.id);
-              state.openPagePanel('details');
-            })
-          }
-        >
-          <PanelRight />
-          {t('Page details')}
-        </button>
-        <button
-          onClick={() =>
-            run(() => {
-              state.navigate(page.id);
-              state.openPagePanel('discussion');
-            })
-          }
-        >
-          <MessageSquare />
-          {t('Comments')}
-        </button>
-        <button
-          onClick={() =>
-            run(() => {
-              state.navigate(page.id);
-              state.openPagePanel('history');
-            })
-          }
-        >
-          <History />
-          {t('Version history')}
-        </button>
+        {full && (
+          <>
+            <hr />
+            <button
+              onClick={() =>
+                run(() => {
+                  state.navigate(page.id);
+                  state.openPagePanel('details');
+                })
+              }
+            >
+              <PanelRight />
+              {t('Page details')}
+            </button>
+            <button
+              onClick={() =>
+                run(() => {
+                  state.navigate(page.id);
+                  state.openPagePanel('discussion');
+                })
+              }
+            >
+              <MessageSquare />
+              {t('Comments')}
+            </button>
+            <button
+              onClick={() =>
+                run(() => {
+                  state.navigate(page.id);
+                  state.openPagePanel('history');
+                })
+              }
+            >
+              <History />
+              {t('Version history')}
+            </button>
+          </>
+        )}
         <hr />
         <button
           className="danger"

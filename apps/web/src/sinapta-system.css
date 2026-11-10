@@ -1552,11 +1552,28 @@
     }
   }
 
+  /* The page path gives way before any button does: the bar never overflows its width. */
+  .topbar > .breadcrumb {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .topbar > .breadcrumb :is(span, b, button) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   /* ---------- a finger needs 44px: the bar's buttons on a phone ---------- */
   @media (max-width: 700px) {
     .topbar .icon-button {
       width: 44px;
       height: 44px;
+    }
+    /* On a phone the bar keeps only the page menu; details and comments live inside it. */
+    .topbar .topbar-actions > :not([data-page-actions]) {
+      display: none;
     }
   }
 
@@ -1603,5 +1620,159 @@
   .workspace-main:has(.capture-dock) .workspace-content::after,
   .workspace-main:has(.capture-dock) .workspace-content:not(:has(> .context-panel))::after {
     content: none;
+  }
+
+  /* ==========================================================================
+     Audit 2026-11-10 fixes (docs/audit/2026-11-10-interface-report.md)
+     ========================================================================== */
+
+  /* #55 Focus inside an off-screen element must never slide the whole app sideways. */
+  .app-shell {
+    overflow: clip;
+  }
+
+  /* #11 Modals dim the app, as Notion does; nothing behind them is blurred. */
+  .dialog::backdrop {
+    background: rgb(15 15 15 / 0.45);
+    backdrop-filter: none;
+  }
+
+  /* #23 Inline code, Notion's way: a little smaller than the text, red-tinted, on a neutral tint. */
+  .note-editor :is(p, li, h1, h2, h3, td, th, blockquote) > code:not(.web-authoring-page *) {
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    background: rgb(135 131 120 / 0.15);
+    color: #eb5757;
+    font-size: 85%;
+    line-height: normal;
+  }
+
+  /* #21 Simple tables: 14px text, headers aligned like the cells, rows about 33px. */
+  .note-editor table :is(th, td) {
+    padding: 6px 9px;
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: left;
+    vertical-align: top;
+  }
+  .note-editor table th {
+    font-weight: 500;
+  }
+  .note-editor table :is(th, td) > p {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* #4 To-do checkboxes: an outlined square, filled blue when done. */
+  .note-editor li[data-checked] > label > input[type='checkbox'] {
+    appearance: none;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    padding: 0;
+    flex: 0 0 16px;
+    align-self: center;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: 1.5px solid currentColor;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition:
+      background-color 120ms var(--ease),
+      border-color 120ms var(--ease);
+  }
+  .note-editor li[data-checked] > label > input[type='checkbox']:hover {
+    background: var(--row-hover);
+  }
+  .note-editor li[data-checked] > label > input[type='checkbox']:checked {
+    border-color: #2383e2;
+    background: #2383e2
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      center / 12px no-repeat;
+  }
+
+  /* #29 #49 #57 The capture button steps aside while a side pane, the phone drawer or a dialog is open. */
+  .workspace-main:has(.context-panel, .appearance-panel) .capture-trigger,
+  .app-shell:has(.sidebar.open) .capture-trigger,
+  body:has(dialog[open]) .capture-trigger {
+    display: none;
+  }
+
+  /* #56 #57 Phones: the text column is centred with equal margins; drawer rows fit a finger. */
+  @media (max-width: 700px) {
+    .document-canvas:not(.database-page, :has(.web-authoring-page)) {
+      width: calc(100% - 44px);
+      margin-inline: auto;
+    }
+    .sidebar.open .tree-row,
+    .sidebar.open .tree-row > button.tree-page,
+    .sidebar.open .favorites > button {
+      min-height: 40px;
+    }
+  }
+
+  /* #58 Above the title, on hover: Add icon · Add cover · Add comment, quiet until wanted. */
+  .page-affordances {
+    position: absolute;
+    left: -6px;
+    top: -34px;
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 140ms var(--ease);
+  }
+  .page-heading:hover .page-affordances,
+  .page-affordances:focus-within {
+    opacity: 1;
+  }
+  .page-affordances > button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 6px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--faint);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .page-affordances > button:hover {
+    background: var(--row-hover);
+    color: var(--muted);
+  }
+  @media (hover: none) {
+    .page-affordances {
+      display: none;
+    }
+  }
+
+  /* #37 Home: no boxed cards (standing rule) and quiet create buttons; both tint on hover. */
+  .home-continue > li > button,
+  .home-action {
+    box-shadow: none;
+    background: transparent;
+    transition: background-color 120ms var(--ease);
+  }
+  .home-continue > li > button:hover,
+  .home-action:hover {
+    background: var(--row-hover);
+  }
+  .home-continue-band {
+    display: none;
+  }
+
+  /* #50 The Document builder's block tools sit inside the selected block's top-right corner
+     (Notion's media-block pattern), so they never cover the block above. */
+  .vb-toolbar {
+    top: 6px;
+    right: 6px;
+    left: auto;
+    border-radius: 6px;
+    transform-origin: top right;
   }
 }

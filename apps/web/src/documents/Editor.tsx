@@ -1,4 +1,5 @@
 import { t, useLocale, formatNumber } from '../i18n/index.js';
+import { openInBrowserTab, pageView } from '../workbench/route.js';
 import { Select } from '../ui/Select.js';
 import {
   lazy,
@@ -185,8 +186,10 @@ function ConnectedEditor({ session, embedded }: { session: DocumentSession; embe
           if (target) {
             event.preventDefault();
             const id = target.dataset.pageLink ?? target.dataset.wikiLink ?? null;
-            if (event.ctrlKey || event.metaKey) useWorkspace.getState().openTab(id);
-            else useWorkspace.getState().navigate(id);
+            if ((event.ctrlKey || event.metaKey) && id) {
+              const kind = useWorkspace.getState().pages.find((page) => page.id === id)?.kind;
+              openInBrowserTab(id, pageView(kind));
+            } else useWorkspace.getState().navigate(id);
             return true;
           }
           return false;

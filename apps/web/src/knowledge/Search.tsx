@@ -138,7 +138,11 @@ export function Search() {
       </div>
       <footer className="search-footer">
         <span>
-          {loading ? t('Searching…') : t('{{value0}} results', { value0: results.length })}
+          {loading
+            ? t('Searching…')
+            : t(results.length === 1 ? '{{value0}} result' : '{{value0}} results', {
+                value0: results.length,
+              })}
           {indexing ? t(' · Indexing latest changes…') : ''}
         </span>
         <span>{t('↑ ↓ to navigate · Enter to open')}</span>

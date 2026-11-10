@@ -5,6 +5,13 @@ import { useWorkspace } from '../state/store.js';
 import type { DiscussionThread } from '@note/contracts';
 import { ACTIVITY_PAGE_SIZE } from '@note/contracts';
 
+/** As in Notion: Enter posts the comment, Shift+Enter starts a new line. */
+function submitOnEnter(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+  if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return;
+  event.preventDefault();
+  event.currentTarget.form?.requestSubmit();
+}
+
 export const activityTime = (value: string) =>
   new Date(value).toLocaleString(getLocale(), {
     month: 'short',
@@ -157,6 +164,7 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
                 placeholder={t('Add to the discussion…')}
                 value={reply}
                 onChange={(event) => setReply(event.target.value)}
+                onKeyDown={submitOnEnter}
                 maxLength={10000}
                 rows={3}
               />
@@ -185,8 +193,12 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
                 </span>
                 <span className="discussion-excerpt">{item.firstMessage.body}</span>
                 <small>
-                  <CornerDownRight size={12} />
-                  {item.messageCount - 1} {item.messageCount === 2 ? t('reply') : t('replies')}
+                  {item.messageCount > 1 && (
+                    <>
+                      <CornerDownRight size={12} />
+                      {item.messageCount - 1} {item.messageCount === 2 ? t('reply') : t('replies')}
+                    </>
+                  )}
                   {item.resolved && (
                     <>
                       <Check size={12} />
@@ -262,6 +274,7 @@ export function DiscussionPanel({ pageId, canWrite }: { pageId: string; canWrite
                 placeholder={t('Leave a comment…')}
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
+                onKeyDown={submitOnEnter}
                 maxLength={10000}
                 rows={3}
               />

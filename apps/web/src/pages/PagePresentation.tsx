@@ -1,6 +1,14 @@
 import { t } from '../i18n/index.js';
 import { useRef, useState } from 'react';
-import { Image, Smile, Tag, X, MoreHorizontal, SlidersHorizontal } from 'lucide-react';
+import {
+  Image,
+  Smile,
+  Tag,
+  X,
+  MoreHorizontal,
+  SlidersHorizontal,
+  MessageSquare,
+} from 'lucide-react';
 import type { Page, PageUpdate } from '@note/contracts';
 import { useWorkspace } from '../state/store.js';
 import { Popover } from '../ui/Popover.js';
@@ -158,6 +166,42 @@ export function PagePresentation({
       )}
       {!readOnly && (
         <div className="page-presentation-tools">
+          {/* Notion's quiet row above the title, shown on hover: the common touches one click away. */}
+          <div className="page-affordances">
+            {!page.icon && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={(event) => {
+                  setAnchor(event.currentTarget);
+                  setMenu('icon');
+                }}
+              >
+                <Smile size={15} />
+                {t('Add icon')}
+              </button>
+            )}
+            {!cover && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={(event) => {
+                  setAnchor(event.currentTarget);
+                  setMenu('cover');
+                }}
+              >
+                <Image size={15} />
+                {t('Add cover')}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => useWorkspace.getState().openPagePanel('discussion')}
+            >
+              <MessageSquare size={15} />
+              {t('Add comment')}
+            </button>
+          </div>
           <button
             className="page-customize-trigger icon-button"
             aria-label={t('Customize page')}

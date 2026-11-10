@@ -8,7 +8,7 @@ import { useGraphLayout } from './useGraphLayout.js';
 import { GraphInspector } from './GraphInspector.js';
 import { useSpatialView } from '../spatial/useSpatialView.js';
 import { graphLabels } from './labels.js';
-import { pageView } from '../workbench/route.js';
+import { openInBrowserTab, pageView } from '../workbench/route.js';
 
 export default function Graph() {
   const workspace = useWorkspace((state) => state.workspaceId);
@@ -135,7 +135,7 @@ function GraphSurface({
   const open = (node: GraphData['nodes'][number], newTab = false) => {
     const state = useWorkspace.getState(),
       view = pageView(node.kind);
-    if (newTab) state.openTab(node.id, view);
+    if (newTab) openInBrowserTab(node.id, view);
     else state.navigate(node.id, view);
   };
   const moveKey = (event: KeyboardEvent<SVGGElement>, id: string) => {

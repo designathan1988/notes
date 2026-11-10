@@ -36,7 +36,7 @@ import { Popover } from '../ui/Popover.js';
 import { BrandMark } from '../ui/BrandMark.js';
 import { GLOBAL_VIEWS } from '../state/views.js';
 import { applyTheme, useTheme, type Theme } from '../ui/theme.js';
-import { pageView } from '../workbench/route.js';
+import { openInBrowserTab, pageView } from '../workbench/route.js';
 function PageRow({
   page,
   depth,
@@ -101,7 +101,7 @@ function PageRow({
           className="tree-page"
           onClick={(event) => {
             const state = useWorkspace.getState();
-            if (event.ctrlKey || event.metaKey) state.openTab(page.id, pageView(page.kind));
+            if (event.ctrlKey || event.metaKey) openInBrowserTab(page.id, pageView(page.kind));
             else state.navigate(page.id, pageView(page.kind));
           }}
         >
@@ -136,7 +136,9 @@ function PageRow({
           </button>
         </span>
       </div>
-      {menu && <PageActions page={page} anchor={menu} close={() => setMenu(null)} />}
+      {menu && (
+        <PageActions page={page} anchor={menu} close={() => setMenu(null)} variant="sidebar" />
+      )}
       {expanded &&
         children.map((child) => (
           <PageRow key={child.id} page={child} depth={depth + 1} drop={drop} />

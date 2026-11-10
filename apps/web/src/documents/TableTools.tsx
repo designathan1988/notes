@@ -31,13 +31,20 @@ export function TableTools({ editor, attached = false }: { editor: Editor; attac
   const state = useEditorState({
     editor,
     selector: ({ editor }) =>
-      editor.isActive('table') ? { corner: attached ? tableCorner(editor) : null } : null,
+      editor.isActive('table')
+        ? { corner: attached ? tableCorner(editor) : null, focused: editor.view.hasFocus() }
+        : null,
     equalityFn: (a, b) =>
       a === b ||
-      (!!a && !!b && a.corner?.top === b.corner?.top && a.corner?.left === b.corner?.left),
+      (!!a &&
+        !!b &&
+        a.focused === b.focused &&
+        a.corner?.top === b.corner?.top &&
+        a.corner?.left === b.corner?.left),
   });
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
-  if (!state || (attached && !state.corner)) return null;
+  // Attached to the table only while someone is working in it (or its menu is open).
+  if (!state || (attached && (!state.corner || (!state.focused && !anchor)))) return null;
   const actions = [
     ['Add row above', 'addRowBefore'],
     ['Add row below', 'addRowAfter'],
@@ -51,7 +58,12 @@ export function TableTools({ editor, attached = false }: { editor: Editor; attac
     ['Delete table', 'deleteTable'],
   ] as const;
   const button = (
-    <IconButton label={t('Table actions')} onClick={(event) => setAnchor(event.currentTarget)}>
+    <IconButton
+      label={t('Table actions')}
+      // Pressing it keeps the caret in the table, so the button does not vanish mid-click.
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={(event) => setAnchor(event.currentTarget)}
+    >
       <Table2 />
     </IconButton>
   );

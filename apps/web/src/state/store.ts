@@ -126,7 +126,12 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   outline: [],
   linkedPageIds: [],
   setSidebarOpen(open) {
-    set({ sidebarOpen: open });
+    // The phone drawer and a side panel never share the screen: opening one closes the other.
+    set(
+      open
+        ? { sidebarOpen: true, contextOpen: false, appearanceScope: null }
+        : { sidebarOpen: false },
+    );
   },
   setContextOpen(open) {
     set({ contextOpen: open });
