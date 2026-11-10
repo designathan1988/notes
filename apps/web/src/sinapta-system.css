@@ -864,4 +864,91 @@
       inset 0 0 0 1px var(--hairline),
       0 10px 24px -14px rgb(24 24 27 / 0.3);
   }
+
+  /* ==========================================================================
+     The list, the way people know it: items start at the gutter, the disclosure arrow takes
+     the icon's place under the pointer, icons share the text colour, and section titles are
+     written in sentence case.
+     ========================================================================== */
+  .sidebar-panel .section-label,
+  .context-panel .context-section > summary,
+  .home-section-head h2,
+  .home-section > h2 {
+    font: 600 12px/1 var(--ui);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted);
+  }
+  .sidebar-panel .section-label {
+    margin: 14px 0 2px;
+    padding: 0 4px 0 8px;
+  }
+  .sidebar-panel :is(.tree-page, .favorites > button, .workspace-destinations > button) {
+    color: var(--text2);
+  }
+  .sidebar-panel :is(.tree-page, .favorites > button, .workspace-destinations > button) > svg,
+  .sidebar-panel .workspace-destinations > button[aria-current='page'] > svg {
+    color: inherit;
+  }
+  .sidebar-panel .tree-row:hover .tree-page,
+  .sidebar-panel .tree-row.selected .tree-page,
+  .sidebar-panel .favorites > button:hover,
+  .sidebar-panel .workspace-destinations > button:is(:hover, [aria-current='page']) {
+    color: var(--ink);
+  }
+  .sidebar-panel .favorites > button {
+    padding: 0 8px;
+  }
+  .sidebar-panel .tree-page {
+    padding-left: 6px;
+  }
+  /* The arrow takes no room of its own: it sits over the icon and shows when it is useful. */
+  .sidebar-panel .tree-toggle {
+    position: relative;
+    z-index: 1;
+    width: 0;
+    min-width: 0;
+    height: 28px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+  .sidebar-panel span.tree-toggle {
+    display: none;
+  }
+  .sidebar-panel button.tree-toggle > svg {
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    width: 20px;
+    height: 20px;
+    padding: 3px;
+    border-radius: 4px;
+    translate: 0 -50%;
+    opacity: 0;
+    color: var(--text2);
+  }
+  .sidebar-panel button.tree-toggle > svg:hover {
+    background: var(--row-hover);
+    color: var(--ink);
+  }
+  .sidebar-panel .tree-row:hover > button.tree-toggle > svg,
+  .sidebar-panel button.tree-toggle:focus-visible > svg {
+    opacity: 1;
+  }
+  .sidebar-panel .tree-row:hover > button.tree-toggle ~ .tree-page > :is(svg, .page-reference-icon),
+  .sidebar-panel
+    .tree-row:has(> button.tree-toggle:focus-visible)
+    > .tree-page
+    > :is(svg, .page-reference-icon) {
+    opacity: 0;
+  }
+  @media (hover: none) {
+    .sidebar-panel button.tree-toggle > svg {
+      opacity: 1;
+    }
+    .sidebar-panel button.tree-toggle ~ .tree-page > :is(svg, .page-reference-icon) {
+      opacity: 0;
+    }
+  }
 }
