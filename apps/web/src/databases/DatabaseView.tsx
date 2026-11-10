@@ -278,7 +278,7 @@ export function DatabaseView({ id, compact = false }: { id: string; compact?: bo
         <div className="table-empty">{t('No records match this view.')}</div>
       )}
       {!query && !loadError && (
-        <div className="table-empty" role="status">
+        <div className="table-empty loading-note" role="status">
           {t('Loading records…')}
         </div>
       )}

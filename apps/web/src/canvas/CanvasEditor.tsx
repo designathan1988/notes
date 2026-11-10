@@ -42,7 +42,7 @@ export default function CanvasEditor({ session }: { session: DocumentSession }) 
   return ready ? (
     <ConnectedCanvasEditor session={session} />
   ) : (
-    <p className="editor-prompt" role="status">
+    <p className="editor-prompt loading-note" role="status">
       {t('Opening canvas…')}
     </p>
   );

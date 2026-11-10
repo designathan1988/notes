@@ -334,3 +334,62 @@ test('the page rail stays a labelled list to the right of the text at every widt
   }
   await context.close();
 });
+
+test('moving between pages never flashes a loading message, a connecting status or a wrong count', async ({
+  browser,
+}) => {
+  const { context, page } = await open(browser);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#/home');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  // Let the idle preloading finish, as it has for anyone who has used the app for a second.
+  await page.waitForTimeout(1500);
+  const record = () =>
+    page.evaluate(() => {
+      const shown = (element: Element) => Number(getComputedStyle(element).opacity) > 0.05;
+      const seen = new Set<string>();
+      const chips = new Map<string, Set<string>>();
+      const w = window as unknown as { __stop: () => string[] };
+      let run = true;
+      const loop = () => {
+        for (const element of document.querySelectorAll('.loading-note, .save-status.connecting'))
+          if (shown(element)) seen.add(element.textContent?.trim() ?? '');
+        const rail = document.querySelector('.connection-thread'),
+          column = document.querySelector('.document-canvas');
+        if (rail && column && shown(rail)) {
+          const railBox = rail.getBoundingClientRect();
+          if (railBox.width && railBox.left < column.getBoundingClientRect().right)
+            seen.add(`rail over the text at x${Math.round(railBox.left)}`);
+        }
+        const title = (document.querySelector('.page-title') as HTMLTextAreaElement | null)?.value;
+        const links = [...document.querySelectorAll('.page-meta > span')]
+          .map((element) => element.textContent ?? '')
+          .find((text) => /backlink/.test(text));
+        if (title && links) chips.set(title, (chips.get(title) ?? new Set()).add(links));
+        if (run) requestAnimationFrame(loop);
+      };
+      loop();
+      w.__stop = () => {
+        run = false;
+        return [
+          ...seen,
+          ...[...chips]
+            .filter(([, values]) => values.size > 1)
+            .map(([title]) => `count of ${title}`),
+        ];
+      };
+    });
+  const tree = page.getByRole('complementary', { name: 'Workspace navigation' });
+  for (const title of ['Product direction', 'Meeting notes', 'Getting started']) {
+    await record();
+    await tree.getByRole('button', { name: title, exact: true }).first().click();
+    await expect(page.getByRole('textbox', { name: 'Page title' })).toHaveValue(title);
+    await expect(page.locator('.note-editor[role="textbox"]')).not.toBeEmpty();
+    await page.waitForTimeout(400);
+    const flashes = await page.evaluate(() =>
+      (window as unknown as { __stop: () => string[] }).__stop(),
+    );
+    expect(flashes, `opening ${title}`).toEqual([]);
+  }
+  await context.close();
+});

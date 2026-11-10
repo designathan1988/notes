@@ -92,13 +92,16 @@ export function PageHeader({
   const statistics = usePageStatistics(page.id);
   // A record shows its properties where a page shows chips, as the Registro board does.
   const chips = connections !== undefined && page.kind !== 'record';
+  // A load answered after the knowledge changed is dropped by the store, so ask again on every
+  // change; otherwise the count would wait for ever.
+  const knowledgeVersion = useWorkspace((state) => state.knowledgeVersion);
   useEffect(() => {
     if (!chips) return;
     void useWorkspace
       .getState()
       .loadMentions(page.id)
       .catch(() => {});
-  }, [page.id, chips]);
+  }, [page.id, chips, knowledgeVersion]);
   const Icon = page.kind === 'canvas' ? Shapes : page.kind === 'database' ? Database : FileText;
   const readOnly = useWorkspace(
     (state) => state.workspaces.find((item) => item.id === state.workspaceId)?.role === 'viewer',
@@ -209,7 +212,7 @@ export function PageHeader({
             <div className="page-meta">
               {/* A page's chips: when it was edited, who cites it, how long it is. Other kinds of
                   page show none of them (they would carry a stale count). */}
-              {chips && (
+              {chips && backlinks !== undefined && statistics && (
                 <>
                   <span>
                     <Clock3 />
@@ -220,7 +223,7 @@ export function PageHeader({
                     <b>{formatNumber(backlinks ?? 0)}</b>
                     {t(backlinks === 1 ? 'backlink' : 'backlinks')}
                   </span>
-                  {statistics && (
+                  {
                     <span>
                       <AlignLeft />
                       {t(statistics.words === 1 ? '{{count}} word' : '{{count}} words', {
@@ -229,7 +232,7 @@ export function PageHeader({
                       {' · '}
                       {t('{{count}} min', { count: formatNumber(statistics.minutes) })}
                     </span>
-                  )}
+                  }
                 </>
               )}
             </div>

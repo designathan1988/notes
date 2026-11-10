@@ -15,10 +15,13 @@ export function useDocumentProjection(editor: Editor | null, pageId: string) {
         state = useWorkspace.getState();
       if (
         state.selectedId === pageId &&
-        (JSON.stringify(state.outline) !== JSON.stringify(projection.headings) ||
+        (state.projectionPageId !== pageId ||
+          JSON.stringify(state.outline) !== JSON.stringify(projection.headings) ||
           JSON.stringify(state.linkedPageIds) !== JSON.stringify(projection.links))
       )
-        useWorkspace.getState().setDocumentProjection(projection.headings, projection.links);
+        useWorkspace
+          .getState()
+          .setDocumentProjection(projection.headings, projection.links, pageId);
       setStatistics(documentStatistics(editor.state.doc));
     };
     const schedule = () => {

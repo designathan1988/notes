@@ -2762,9 +2762,11 @@
     font-size: var(--body-size, 16px);
     line-height: 1.7;
   }
+  /* Space between blocks lives inside them, so consecutive blocks touch and the pointer
+     never falls into a gap where the block handle disappears. */
   .note-editor > p {
-    margin: 0 0 10px;
-    padding: 0;
+    margin: 0;
+    padding: 0 0 10px;
   }
   .note-editor > h2 {
     margin: 34px 0 10px;
@@ -2785,8 +2787,19 @@
   }
   .note-editor ul[data-type='taskList'] > li {
     min-height: 34px;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
+  }
+  /* The box sits on the first line of the task, also when the text wraps. */
+  .note-editor li[data-checked] > label {
+    display: flex;
+    align-self: flex-start;
+    height: auto;
+    margin: 0;
+    padding: 0;
+  }
+  .note-editor li[data-checked] > label > input[type='checkbox'] {
+    margin: calc((var(--body-size, 16px) * 1.7 - 18px) / 2 + 3px) 0 0;
   }
   .note-editor li[data-checked] > label > input[type='checkbox'] {
     flex: 0 0 18px;
@@ -4144,6 +4157,43 @@
       margin-right: 0;
       margin-left: max(48px, min(calc((100% - 720px) / 2), calc(100% - 720px - 252px)));
       flex-shrink: 0;
+    }
+  }
+
+  /* Moving between pages: a load that finishes quickly shows no message at all, a slow one
+     says so after 450ms, and what arrives fades in instead of popping. Opening a page does
+     not flash "Connecting…" in the bar either. */
+  @keyframes sinapta-arrive {
+    from {
+      opacity: 0;
+    }
+  }
+  .loading-note {
+    animation: sinapta-arrive 160ms var(--ease) 450ms both;
+  }
+  .save-status.connecting {
+    animation: sinapta-arrive 160ms var(--ease) 700ms both;
+  }
+  :is(
+    .note-editor[role='textbox'],
+    .database-view .table-scroll,
+    .home-scroll > .home,
+    .connection-thread,
+    .page-meta > span
+  ) {
+    animation: sinapta-arrive 180ms var(--ease) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .loading-note,
+    .save-status.connecting,
+    :is(
+      .note-editor[role='textbox'],
+      .database-view .table-scroll,
+      .home-scroll > .home,
+      .connection-thread,
+      .page-meta > span
+    ) {
+      animation-duration: 1ms;
     }
   }
 }

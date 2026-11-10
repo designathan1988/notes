@@ -485,10 +485,9 @@ test('copying a closed page cannot silently omit its unsynchronized local draft'
       .pressSequentially('Important text written without a connection');
     await expect(page.locator('.save-status')).toHaveText('Saved locally');
     await openCatalog(page, 'templates');
-    await expect(page.getByRole('button', { name: 'Reload view', exact: true })).toBeVisible();
-    await context.setOffline(false);
-    await page.getByRole('button', { name: 'Reload view', exact: true }).click();
+    // The catalog's code is preloaded while idle, so it opens even without a connection.
     await expect(page.getByRole('heading', { name: 'Templates', exact: true })).toBeVisible();
+    await context.setOffline(false);
     await page.getByRole('button', { name: `Actions for ${source.title}`, exact: true }).click();
     await page.getByRole('menuitem', { name: 'Save as template', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Save as template', exact: true });

@@ -51,6 +51,19 @@ const DatabaseView = lazy(() =>
 const DocumentEditor = lazy(() =>
   import('../documents/Editor.js').then((module) => ({ default: module.DocumentEditor })),
 );
+// The screens' code is fetched while the app is idle, so the first visit to each one opens at
+// once instead of showing an empty area while it downloads.
+if (typeof window !== 'undefined') {
+  const warm = () => {
+    void import('../knowledge/Graph.js');
+    void import('../databases/DatabaseView.js');
+    void import('../documents/Editor.js');
+    void import('../canvas/CanvasEditor.js');
+    void import('../templates/Library.js');
+  };
+  if ('requestIdleCallback' in window) window.requestIdleCallback(warm, { timeout: 4000 });
+  else setTimeout(warm, 1500);
+}
 export function Workspace() {
   const state = useWorkspace();
   const page = state.pages.find((item) => item.id === state.selectedId);
@@ -284,7 +297,9 @@ export function Workspace() {
             </LazyBoundary>
           ) : state.view === 'graph' ? (
             <LazyBoundary key={`graph:${state.workspaceId}`} name="Knowledge graph">
-              <Suspense fallback={<p className="table-empty">{t('Opening graph…')}</p>}>
+              <Suspense
+                fallback={<p className="table-empty loading-note">{t('Opening graph…')}</p>}
+              >
                 <Graph />
               </Suspense>
             </LazyBoundary>
@@ -309,7 +324,9 @@ export function Workspace() {
                 />
                 <TemplateBanner page={page} />
                 <LazyBoundary key={page.id} name="Canvas">
-                  <Suspense fallback={<p className="editor-prompt">{t('Opening canvas…')}</p>}>
+                  <Suspense
+                    fallback={<p className="editor-prompt loading-note">{t('Opening canvas…')}</p>}
+                  >
                     <DocumentEditor key={page.id} page={page} />
                   </Suspense>
                 </LazyBoundary>
@@ -328,7 +345,9 @@ export function Workspace() {
           ) : page ? (
             <>
               <div className="document-scroll" data-kind={page.kind}>
-                {state.view === 'document' && page.format !== 'web' && <ConnectionThread />}
+                {state.view === 'document' && page.format !== 'web' && (
+                  <ConnectionThread key={page.id} />
+                )}
                 <TemplateBanner page={page} />
                 <article
                   className={`document-canvas ${state.view === 'database' ? 'database-page' : ''}`}
@@ -349,7 +368,9 @@ export function Workspace() {
                     page.kind === 'database' ? (
                       <LazyBoundary key={page.id} name="Database">
                         <Suspense
-                          fallback={<p className="table-empty">{t('Opening database…')}</p>}
+                          fallback={
+                            <p className="table-empty loading-note">{t('Opening database…')}</p>
+                          }
                         >
                           <DatabaseView key={page.id} id={page.id} />
                         </Suspense>
@@ -369,7 +390,11 @@ export function Workspace() {
                     )
                   ) : (
                     <LazyBoundary key={page.id} name="Editor">
-                      <Suspense fallback={<p className="editor-prompt">{t('Opening editor…')}</p>}>
+                      <Suspense
+                        fallback={
+                          <p className="editor-prompt loading-note">{t('Opening editor…')}</p>
+                        }
+                      >
                         <DocumentEditor key={page.id} page={page} />
                       </Suspense>
                     </LazyBoundary>

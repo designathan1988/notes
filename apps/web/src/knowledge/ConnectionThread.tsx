@@ -14,6 +14,8 @@ export function ConnectionThread() {
   // The pages that cite this one, as the board's "Citada em" list.
   const mentions = useWorkspace((state) => state.mentions[state.selectedId ?? '']);
   const pages = useWorkspace((state) => state.pages);
+  // Shown only once the editor has read this page, so it appears once and complete, in place.
+  const ready = useWorkspace((state) => state.projectionPageId === state.selectedId);
   const [active, setActive] = useState(0);
   const [hover, setHover] = useState<string | null>(null);
   const leave = useRef(0);
@@ -39,7 +41,7 @@ export function ConnectionThread() {
     return () => scroller.removeEventListener('scroll', spy);
   }, [outline.length]);
 
-  if (outline.length + connected.length < 2) return null;
+  if (!ready || outline.length + connected.length < 2) return null;
   const enter = (id: string) => {
     window.clearTimeout(leave.current);
     setHover(id);

@@ -51,6 +51,8 @@ export interface WorkspaceState
   favorites: string[];
   online: boolean;
   outline: { level: number; text: string }[];
+  /** The page the outline and links were read from; null while the next page is opening. */
+  projectionPageId: string | null;
   linkedPageIds: string[];
   initialize(): Promise<void>;
   reload(): Promise<void>;
@@ -89,7 +91,11 @@ export interface WorkspaceState
   setOnline(online: boolean): void;
   clearError(): void;
   setSaveStatus(status: SaveStatus): void;
-  setDocumentProjection(outline: { level: number; text: string }[], links: string[]): void;
+  setDocumentProjection(
+    outline: { level: number; text: string }[],
+    links: string[],
+    pageId: string,
+  ): void;
   receivePage(page: Page): void;
 }
 export const useWorkspace = create<WorkspaceState>((set, get) => ({
@@ -124,6 +130,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   favorites: [],
   online: true,
   outline: [],
+  projectionPageId: null,
   linkedPageIds: [],
   setSidebarOpen(open) {
     // The phone drawer and a side panel never share the screen: opening one closes the other.
@@ -145,8 +152,8 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   setSaveStatus(status) {
     set({ saveStatus: status });
   },
-  setDocumentProjection(outline, links) {
-    set({ outline, linkedPageIds: links });
+  setDocumentProjection(outline, links, pageId) {
+    set({ outline, linkedPageIds: links, projectionPageId: pageId });
   },
   receivePage(page) {
     set({ pages: [...get().pages.filter((item) => item.id !== page.id), page] });
@@ -326,6 +333,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
           tableQueries: {},
           recordEntities: {},
           outline: [],
+          projectionPageId: null,
           linkedPageIds: [],
         });
         get().invalidateKnowledge();
@@ -346,7 +354,9 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       selectedId: id,
       view,
       ...(options.preserveOverlays ? {} : { sidebarOpen: false, dialog: null, commandOpen: false }),
-      ...(get().selectedId !== id ? { outline: [], linkedPageIds: [], editorRequest: null } : {}),
+      ...(get().selectedId !== id
+        ? { outline: [], projectionPageId: null, linkedPageIds: [], editorRequest: null }
+        : {}),
       ...(get().errorPageId && get().errorPageId !== id
         ? { error: null, errorPageId: null, connectionError: false }
         : {}),
@@ -491,6 +501,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       searchResults: [],
       searchTag: '',
       outline: [],
+      projectionPageId: null,
       linkedPageIds: [],
     });
     get().restoreTemplateCommands();

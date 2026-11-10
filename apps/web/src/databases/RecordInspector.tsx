@@ -123,7 +123,7 @@ export function RecordInspector({
             ))}
         </dl>
         <div className="record-document">
-          <Suspense fallback={<p>{t('Opening document…')}</p>}>
+          <Suspense fallback={<p className="loading-note">{t('Opening document…')}</p>}>
             {page && <Editor page={page} embedded />}
           </Suspense>
         </div>

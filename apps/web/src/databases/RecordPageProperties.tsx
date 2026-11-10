@@ -47,7 +47,8 @@ export function RecordPageProperties({ page, readOnly }: { page: Page; readOnly:
         </button>
       </p>
     );
-  if (!definition || !record) return <p className="muted-text">{t('Loading properties…')}</p>;
+  if (!definition || !record)
+    return <p className="muted-text loading-note">{t('Loading properties…')}</p>;
   const current = { ...record, computedValues: calculate(record.values) };
   return (
     <section className="page-properties" aria-label={t('Record properties')}>

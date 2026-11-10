@@ -93,13 +93,13 @@ export function DocumentEditor({ page, embedded = false }: { page: Page; embedde
       </div>
     );
   return session && page.kind === 'canvas' ? (
-    <Suspense fallback={<p className="editor-prompt">{t('Opening canvas…')}</p>}>
+    <Suspense fallback={<p className="editor-prompt loading-note">{t('Opening canvas…')}</p>}>
       <CanvasEditor session={session} />
     </Suspense>
   ) : session ? (
     <ReadyDocument session={session} embedded={embedded} />
   ) : (
-    <p className="editor-prompt">{t('Opening document…')}</p>
+    <p className="editor-prompt loading-note">{t('Opening document…')}</p>
   );
 }
 function ReadyDocument({ session, embedded }: { session: DocumentSession; embedded: boolean }) {
@@ -119,7 +119,7 @@ function ReadyDocument({ session, embedded }: { session: DocumentSession; embedd
   return ready ? (
     <ConnectedEditor session={session} embedded={embedded} />
   ) : (
-    <p className="editor-prompt">{t('Opening document…')}</p>
+    <p className="editor-prompt loading-note">{t('Opening document…')}</p>
   );
 }
 function ConnectedEditor({ session, embedded }: { session: DocumentSession; embedded: boolean }) {

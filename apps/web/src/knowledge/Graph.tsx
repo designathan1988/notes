@@ -464,7 +464,7 @@ function GraphSurface({
           </g>
         </svg>
         {(!data || (layout.pending && !Object.keys(positions).length)) && (
-          <p className="graph-empty" role="status">
+          <p className="graph-empty loading-note" role="status">
             {t('Loading graph…')}
           </p>
         )}
