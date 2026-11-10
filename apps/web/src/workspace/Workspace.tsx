@@ -1,11 +1,9 @@
 import { t } from '../i18n/index.js';
 import {
-  Check,
   CloudOff,
   LoaderCircle,
   MoreHorizontal,
   Menu,
-  Users,
   X,
   Plus,
   FileText,
@@ -16,6 +14,8 @@ import {
   ArrowRight,
   Command,
   MessageSquare,
+  Link2,
+  UserPlus,
 } from 'lucide-react';
 import { useEffect, lazy, Suspense } from 'react';
 import { useWorkspace } from '../state/store.js';
@@ -178,7 +178,7 @@ export function Workspace() {
             {page && !globalView && ['document', 'canvas'].includes(state.view) && (
               <span className={`save-status ${state.saveStatus}`}>
                 {state.saveStatus === 'saved' ? (
-                  <Check />
+                  <i className="save-dot" aria-hidden="true" />
                 ) : state.saveStatus === 'local' || state.saveStatus === 'error' ? (
                   <CloudOff />
                 ) : (
@@ -187,14 +187,18 @@ export function Workspace() {
                 <span>{t(status)}</span>
               </span>
             )}
-            {['document', 'canvas'].includes(state.view) && (
-              <IconButton
-                label={state.contextOpen ? t('Close page details') : t('Open page details')}
+            {page && !globalView && state.view === 'document' && (
+              <button
+                type="button"
+                className="bar-connections"
+                aria-label={t('Connections: {{count}}', { count: state.linkedPageIds.length })}
                 aria-pressed={state.contextOpen}
-                onClick={() => useWorkspace.getState().setContextOpen(!state.contextOpen)}
+                onClick={() => state.setContextOpen(!state.contextOpen)}
               >
-                <PanelRight />
-              </IconButton>
+                <Link2 size={15} />
+                <span>{t('Connections')}</span>
+                <b>{state.linkedPageIds.length}</b>
+              </button>
             )}
             {page && !globalView && (
               <IconButton
@@ -203,6 +207,15 @@ export function Workspace() {
                 onClick={() => state.openPagePanel('discussion')}
               >
                 <MessageSquare size={17} />
+              </IconButton>
+            )}
+            {['document', 'canvas'].includes(state.view) && (
+              <IconButton
+                label={state.contextOpen ? t('Close page details') : t('Open page details')}
+                aria-pressed={state.contextOpen}
+                onClick={() => useWorkspace.getState().setContextOpen(!state.contextOpen)}
+              >
+                <PanelRight />
               </IconButton>
             )}
             <IconButton
@@ -215,12 +228,12 @@ export function Workspace() {
             </IconButton>
             {page && !globalView && (
               <button
-                className="button share-button"
+                className="button primary share-button"
                 title={t('Invite people to the workspace')}
                 onClick={() => state.openDialog('invite')}
               >
-                <Users />
-                {t('Invite people')}
+                <UserPlus />
+                {t('Share')}
               </button>
             )}
           </div>

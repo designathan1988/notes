@@ -19,6 +19,13 @@ function fit(element: HTMLTextAreaElement) {
   element.style.height = 'auto';
   element.style.height = element.scrollHeight + 'px';
 }
+const kindNames: Record<string, string> = {
+  document: 'Page',
+  database: 'Database',
+  canvas: 'Canvas',
+  record: 'Record',
+};
+
 export function PageHeader({
   page,
   connections,
@@ -95,12 +102,19 @@ export function PageHeader({
       {!compact && !page.cover && page.kind === 'document' && (
         <MosaicPattern className="page-band" mark />
       )}
-      {parent && !compact && (
-        <nav className="page-ancestry" aria-label={t('Page ancestry')}>
-          <button onClick={() => useWorkspace.getState().navigate(parent.id)}>
-            {parent.title}
-          </button>
-          <span>/</span>
+      {/* The kind line: what this is and where it lives, with the signal dot. */}
+      {!compact && (
+        <nav className="page-ancestry page-kind" aria-label={t('Page ancestry')}>
+          <i aria-hidden="true" />
+          <span>{t(kindNames[page.kind] ?? 'Page')}</span>
+          {parent && (
+            <>
+              <span aria-hidden="true">·</span>
+              <button onClick={() => useWorkspace.getState().navigate(parent.id)}>
+                {parent.title}
+              </button>
+            </>
+          )}
         </nav>
       )}
       <div className="title-row">

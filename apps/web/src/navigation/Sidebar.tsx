@@ -25,6 +25,7 @@ import {
   Sun,
   Palette,
   SquarePen,
+  ChevronsUpDown,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '../state/store.js';
@@ -200,6 +201,9 @@ export function Sidebar() {
     };
   }, [state.sidebarOpen]);
   const workspace = state.workspaces.find((item) => item.id === state.workspaceId);
+  const rootCount = state.pages.filter(
+    (page) => !page.parentId && !page.templateRootId && page.kind !== 'record',
+  ).length;
   const templateId = state.pages.find((page) => page.id === state.selectedId)?.templateRootId,
     template = state.pages.find((page) => page.id === templateId);
   const destinations = [
@@ -286,7 +290,7 @@ export function Sidebar() {
                 onClick={() => state.openDialog('search')}
               >
                 <Search size={15} />
-                <span>{t('Search')}</span>
+                <span>{t('Search or go to…')}</span>
                 <kbd>Ctrl K</kbd>
               </button>
             </div>
@@ -322,6 +326,7 @@ export function Sidebar() {
                 data-drag-over={drag.target?.id === null || undefined}
               >
                 <span>{t('Pages')}</span>
+                <span className="section-count">{rootCount}</span>
                 <IconButton
                   label={t('Create page')}
                   disabled={workspace?.role === 'viewer'}
@@ -378,8 +383,11 @@ export function Sidebar() {
                 onClick={(event) => setAccountMenu(accountMenu ? null : event.currentTarget)}
               >
                 <span className="avatar">{state.user?.name[0]}</span>
-                <span>{state.user?.name}</span>
-                <ChevronDown size={13} />
+                <span className="account-who">
+                  <b>{state.user?.name}</b>
+                  <small>{workspace?.name}</small>
+                </span>
+                <ChevronsUpDown size={15} />
                 {!state.online && <small>{t('Offline')}</small>}
               </button>
               {accountMenu && (

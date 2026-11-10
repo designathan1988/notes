@@ -209,7 +209,7 @@ test('creates and edits a structured record, finds its body, and follows its gra
     .getByRole('button', { name: 'Product direction', exact: true })
     .click();
   await expect(page.locator('.save-status')).toHaveText('Saved');
-  await page.getByRole('button', { name: 'Search Ctrl K' }).click();
+  await page.getByRole('button', { name: /^Search or go to/ }).click();
   await page.getByLabel('Search query', { exact: true }).fill('uniquediscoveryphrase');
   await expect(page.getByRole('option').filter({ hasText: title })).toBeVisible();
   await page.getByRole('option').filter({ hasText: title }).click();

@@ -49,6 +49,7 @@ export function ConnectionThread() {
   };
   return (
     <nav className="connection-thread" aria-label={t('Page thread')} onPointerLeave={exit}>
+      {outline.length > 0 && <h4 className="thread-heading">{t('On this page')}</h4>}
       {outline.map((heading, index) => {
         const id = `h${index}`;
         return (
@@ -69,6 +70,7 @@ export function ConnectionThread() {
         );
       })}
       {connected.length > 0 && <span className="thread-gap" aria-hidden="true" />}
+      {connected.length > 0 && <h4 className="thread-heading">{t('Connections')}</h4>}
       {connected.map((page) => {
         const id = `p${page.id}`;
         return (

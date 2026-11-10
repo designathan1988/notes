@@ -1775,4 +1775,416 @@
     border-radius: 6px;
     transform-origin: top right;
   }
+
+  /* ==========================================================================
+     Layout from the "Interface design e usabilidade" session (2026-11-10).
+     Unit 1, the shell: 260px sidebar, 48px bar, a real search field, the account
+     row with its workspace, a saved dot, the connections count and one primary
+     action. Colour only where it carries meaning: amber is the signal, green is
+     saved/online.
+     ========================================================================== */
+  :root {
+    --panel: 260px;
+    --bar: 48px;
+    --signal: #d99a1e;
+    --signal-ink: #9a6a08;
+    --signal-bg: rgb(217 154 30 / 0.13);
+    --ok: #2f8a5b;
+    --ok-bg: rgb(47 138 91 / 0.1);
+    --hair2: rgb(31 30 28 / 0.13);
+  }
+  :root[data-theme='dark'] {
+    --signal: #f2c14e;
+    --signal-ink: #f2c14e;
+    --signal-bg: rgb(242 193 78 / 0.13);
+    --ok: #6cc496;
+    --ok-bg: rgb(108 196 150 / 0.13);
+    --hair2: rgb(255 255 255 / 0.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light'], [data-theme='dark']) {
+      --signal: #f2c14e;
+      --signal-ink: #f2c14e;
+      --signal-bg: rgb(242 193 78 / 0.13);
+      --ok: #6cc496;
+      --ok-bg: rgb(108 196 150 / 0.13);
+      --hair2: rgb(255 255 255 / 0.12);
+    }
+  }
+
+  /* The search field reads as a field: page-coloured, a hairline, the shortcut at its end. */
+  .sidebar-actions .search-trigger {
+    height: 34px;
+    gap: 9px;
+    padding: 0 8px 0 10px;
+    border-radius: 8px;
+    background: var(--canvas);
+    box-shadow:
+      0 0 0 1px var(--hair2),
+      0 1px 2px rgb(15 15 14 / 0.04);
+    color: var(--muted);
+  }
+  .sidebar-actions .search-trigger:hover {
+    background: var(--canvas);
+    box-shadow:
+      0 0 0 1px var(--rule-strong, var(--hair2)),
+      0 1px 2px rgb(15 15 14 / 0.06);
+  }
+  .sidebar-actions .search-trigger > span {
+    flex: 1;
+    text-align: left;
+  }
+  .sidebar-actions .search-trigger kbd {
+    padding: 3px 5px;
+    border-radius: 4px;
+    background: var(--canvas);
+    box-shadow: inset 0 0 0 1px var(--hair2);
+    color: var(--muted);
+    font: 500 11px/1 var(--ui);
+  }
+
+  /* Section counts sit quietly at the end of the label. */
+  .section-label .section-count {
+    flex: none;
+    margin-left: auto;
+    padding-right: 4px;
+    color: var(--faint);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .section-label:hover .section-count {
+    display: none;
+  }
+
+  /* The account row: who you are and where you are. */
+  .sidebar-footer .account-trigger {
+    width: 100%;
+    height: 44px;
+    gap: 10px;
+    padding: 0 8px;
+    border-radius: 8px;
+  }
+  .sidebar-footer .account-trigger .avatar {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    flex: none;
+    border-radius: 50%;
+    background: linear-gradient(140deg, #3a3a3f, #141416);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .sidebar-footer .account-trigger .avatar::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 2px var(--side, var(--sidebar));
+  }
+  .account-who {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.25;
+    text-align: left;
+  }
+  .account-who b {
+    overflow: hidden;
+    color: var(--ink);
+    font-size: 13.5px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .account-who small {
+    margin-left: 0;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sidebar-footer .account-trigger > svg {
+    flex: none;
+    color: var(--faint);
+  }
+
+  /* Saved: a small green dot instead of a tick. */
+  .save-status .save-dot {
+    width: 7px;
+    height: 7px;
+    margin-right: 2px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 3px var(--ok-bg);
+  }
+
+  /* Connections: a labelled count that opens the page's connections. */
+  .bar-connections {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text2, var(--muted));
+    font-size: 13px;
+    font-weight: 550;
+    cursor: pointer;
+  }
+  .bar-connections:hover,
+  .bar-connections[aria-pressed='true'] {
+    background: var(--row-hover);
+    color: var(--ink);
+  }
+  .bar-connections > b {
+    display: grid;
+    place-items: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--signal-bg);
+    color: var(--signal-ink);
+    font-size: 11px;
+    font-weight: 650;
+  }
+
+  /* One primary action in the bar. */
+  .topbar .share-button.primary {
+    gap: 7px;
+    height: 32px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--ink);
+    color: var(--canvas);
+    font-size: 13.5px;
+    font-weight: 550;
+  }
+  .topbar .share-button.primary:hover {
+    background: color-mix(in srgb, var(--ink) 88%, var(--canvas));
+  }
+  .topbar .share-button.primary svg {
+    width: 15px;
+    height: 15px;
+  }
+  @media (max-width: 1100px) {
+    .bar-connections > span {
+      display: none;
+    }
+  }
+
+  /* Unit 2, the document: a kind line with the signal dot, properties as quiet chips,
+     the quote with an amber rule, page links as rows. */
+  .page-heading .page-kind {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-size: 12.5px;
+    font-weight: 550;
+  }
+  .page-heading .page-kind > i {
+    width: 6px;
+    height: 6px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--signal);
+  }
+  .page-heading .page-kind > button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  .page-heading .page-kind > button:hover {
+    color: var(--ink);
+  }
+
+  .page-metadata-row .page-meta {
+    gap: 6px;
+  }
+  .page-metadata-row .page-meta > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 7px;
+    box-shadow: inset 0 0 0 1px var(--hair2);
+    color: var(--text2, var(--muted));
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .page-metadata-row .page-meta > span::before,
+  .page-metadata-row .page-meta > span + span::before {
+    content: none;
+  }
+  .page-metadata-row .page-meta > span > svg {
+    width: 14px;
+    height: 14px;
+    color: var(--faint);
+  }
+
+  .note-editor > blockquote {
+    margin: 4px 0 8px;
+    padding: 2px 0 2px 18px;
+    border-left: 2px solid var(--signal);
+    color: var(--ink);
+    font-size: 18px;
+    line-height: 1.55;
+    letter-spacing: -0.012em;
+  }
+
+  .note-editor > a.page-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    margin: 0;
+    padding: 0 6px;
+    border-bottom: 1px solid var(--hairline);
+    border-radius: 0;
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 120ms var(--ease);
+  }
+  .note-editor > a.page-link:first-of-type,
+  .note-editor > :not(a.page-link) + a.page-link {
+    border-top: 1px solid var(--hairline);
+  }
+  .note-editor > a.page-link:hover {
+    border-radius: 8px;
+    background: var(--row-hover);
+  }
+  .note-editor > a.page-link > svg:first-child {
+    box-sizing: content-box;
+    width: 16px;
+    height: 16px;
+    padding: 6px;
+    flex: none;
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 1px var(--hair2);
+    color: var(--muted);
+  }
+  .note-editor > a.page-link > svg:last-child {
+    margin-left: auto;
+    color: var(--faint);
+  }
+  .note-editor > a.page-link:hover > svg:last-child {
+    color: var(--ink);
+  }
+
+  /* Unit 3, the right gutter: a labelled outline (Nesta página, the current heading in amber)
+     and the pages this one connects to. Wide screens only, so it never reaches the text. */
+  .connection-thread .thread-heading {
+    display: none;
+  }
+  @media (min-width: 1400px) {
+    .connection-thread {
+      top: 72px;
+      width: 176px;
+      margin-right: 28px;
+      align-items: stretch;
+      gap: 0;
+    }
+    .connection-thread .thread-heading {
+      display: block;
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .connection-thread :is(.thread-tick, .thread-knot) {
+      display: block;
+      width: auto;
+      height: auto;
+      padding: 5px 0 5px 14px;
+      border: 0;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+    }
+    .connection-thread .thread-tick::after,
+    .connection-thread
+      .thread-tick:is([data-level='2'], [data-level='3'], [data-level='4'])::after {
+      position: absolute;
+      left: 0;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      height: auto;
+      background: var(--hair2);
+    }
+    .connection-thread .thread-tick:is([data-level='3'], [data-level='4']) {
+      padding-left: 26px;
+    }
+    .connection-thread .thread-tick[data-active]::after {
+      width: 2px;
+      background: var(--signal);
+    }
+    .connection-thread .thread-knot::after {
+      content: none;
+    }
+    .connection-thread .thread-knot::before {
+      content: '';
+      position: absolute;
+      left: 1px;
+      top: 50%;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--knot, var(--kind-document));
+      transform: translateY(-50%);
+    }
+    .connection-thread .thread-label {
+      position: static;
+      display: block;
+      width: 100%;
+      margin: 0;
+      overflow: hidden;
+      text-align: left;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: none;
+      padding: 0;
+      border-radius: 0;
+      background: none;
+      box-shadow: none;
+      color: var(--muted);
+      font: 400 13px/1.35 var(--ui);
+      opacity: 1;
+      transform: none;
+    }
+    .connection-thread .thread-tick[data-active] > .thread-label {
+      color: var(--ink);
+      font-weight: 550;
+    }
+    .connection-thread :is(.thread-tick, .thread-knot):hover > .thread-label {
+      color: var(--ink);
+    }
+    .connection-thread .thread-gap {
+      width: auto;
+      height: 1px;
+      margin: 16px 0 14px;
+      background: var(--hairline);
+    }
+  }
 }
